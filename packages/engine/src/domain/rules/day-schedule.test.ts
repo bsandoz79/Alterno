@@ -38,6 +38,16 @@ describe('DaySchedule', () => {
       expect(schedule.latestDeparture.equals(TimeOfDay.parse('18:15'))).toBe(true);
     });
 
+    it('expose ses cinq plages dans l’ordre de la journée', () => {
+      const schedule = mondayToThursday();
+
+      expect(schedule.flexibleArrival.format()).toBe('7h30 – 9h00');
+      expect(schedule.morningCore.format()).toBe('9h00 – 11h45');
+      expect(schedule.lunchWindow.format()).toBe('11h45 – 13h45');
+      expect(schedule.afternoonCore.format()).toBe('13h45 – 16h00');
+      expect(schedule.flexibleDeparture.format()).toBe('16h00 – 18h15');
+    });
+
     it('refuse des plages qui ne s’enchaînent pas (trou entre deux plages)', () => {
       expect(() =>
         DaySchedule.create({
