@@ -131,25 +131,29 @@ export function computeDayBalance(worked: Duration, expected: Duration): Duratio
    - `fix(mobile): corrige l'affichage de la pause [ALT-20]`
    - Types : `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `ci`.
 4. Après chaque commit cohérent : `git push` sur la branche.
-5. À la fin de la feature : proposer le titre et la description de la PR (quoi, pourquoi, comment tester, ticket lié).
-6. **Jamais** de commit ni de push sur `main`. Jamais de `--force` sur une branche partagée. Jamais `--no-verify`.
+5. À la fin de la feature : proposer le titre et la description de la PR en suivant `.github/pull_request_template.md`. Le titre de la PR suit le format Conventional Commits avec l'ID du ticket : on merge en **squash**, donc ce titre devient le commit sur `main`.
+6. **Jamais** de commit ni de push sur `main` (protégée par une règle GitHub). Jamais de `--force` sur une branche partagée. Jamais `--no-verify`.
+7. Après le merge, la branche distante est supprimée automatiquement ; revenir sur `main` et faire un pull.
 
 Je travaille avec GitHub Desktop (branches, commits, push, PR) et VS Code + GitLens (historique, petits commits). Quand une action Git est à faire, indique-la aussi en clair (« dans GitHub Desktop : Current branch → New branch depuis main… ») pour que je puisse la faire moi-même si je préfère.
 
 ## 10. Plane : me dire quoi mettre à jour
 
+Statuts du projet : Backlog → Todo → En cours → Test → Done (ou Cancelled). Les modules sont les jalons (Jalon 0 à Jalon 6) ; pas de cycles, j'avance à mon rythme.
+
 À chaque étape clé, termine ta réponse par un bloc **« À faire dans Plane »** :
 
 ```
 À faire dans Plane — ALT-12
-- Statut : Todo → In Progress
+- Statut : Todo → En cours
 - Commentaire : « Branche feature/ALT-12-compute-day-balance créée »
 ```
 
 Moments où ce bloc est obligatoire :
-- Début de tâche → statut **In Progress**, commentaire avec le nom de la branche.
-- PR ouverte → statut **In Review**, commentaire avec le lien de la PR.
+- Début de tâche → statut **En cours**, commentaire avec le nom de la branche.
+- PR ouverte → statut **Test**, commentaire avec le lien de la PR.
 - PR mergée → statut **Done**, commentaire avec un résumé en une ligne.
+- Un seul ticket « En cours » à la fois.
 - Bug ou idée découverte en route → proposer un **nouveau ticket** (titre, module, description courte), sans le coder.
 
 ## 11. Format de fin de tâche
