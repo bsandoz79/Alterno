@@ -3,14 +3,14 @@
     { "name": "Alterno (racine)", "path": "." },
     { "name": "engine", "path": "packages/engine" },
     { "name": "mobile (frontend)", "path": "apps/mobile" },
-    { "name": "api (backend)", "path": "apps/api" }
+    { "name": "api (backend)", "path": "apps/api" },
   ],
   "settings": {
     "files.eol": "\n",
     "editor.formatOnSave": true,
     "files.exclude": {
       "**/node_modules": true,
-      "**/vendor": true
-    }
-  }
+      "**/vendor": true,
+    },
+  },
 }
