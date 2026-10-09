@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "check:architecture": "npm run check:architecture --workspaces --if-present",
