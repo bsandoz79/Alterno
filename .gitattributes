@@ -1,0 +1,21 @@
+# Normalise les fins de ligne en LF dans le repo (Windows convertit à l'ouverture).
+# Évite les faux diffs CRLF/LF entre Windows, la CI Linux et les outils.
+* text=auto eol=lf
+
+# Scripts Windows : gardent leurs CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binaires : jamais modifiés par Git
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.apk binary
+*.aab binary
