@@ -1,0 +1,19 @@
+{
+  "name": "alterno",
+  "private": true,
+  "description": "Monorepo Alterno — planificateur d'horaires variables pour alternants",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check:architecture": "npm run check:architecture --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9"
+  }
+}
