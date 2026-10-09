@@ -58,6 +58,14 @@ describe('TimeSlot', () => {
       expect(worked.overlapDuration(fixedMorning).equals(Duration.ofHours(2, 45))).toBe(true);
     });
 
+    it('donne la même durée commune quel que soit le sens du calcul', () => {
+      const worked = TimeSlot.between(at(8, 12), at(11, 50));
+
+      expect(
+        fixedMorning.overlapDuration(worked).equals(worked.overlapDuration(fixedMorning)),
+      ).toBe(true);
+    });
+
     it('renvoie une durée nulle quand les plages ne se chevauchent pas', () => {
       const afternoon = TimeSlot.between(at(14), at(16));
 
