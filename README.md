@@ -1,5 +1,7 @@
 # Alterno
 
+[![CI](https://github.com/bsandoz79/Alterno/actions/workflows/ci.yml/badge.svg)](https://github.com/bsandoz79/Alterno/actions/workflows/ci.yml)
+
 Planificateur d'horaires variables pour alternants : simule une semaine (ou plus) pour atteindre un objectif d'heures ou une journée de récup, recalcule quand on s'écarte du plan, et affiche l'emploi du temps sur plusieurs semaines.
 
 > Projet personnel en cours de développement — V1 en construction.
