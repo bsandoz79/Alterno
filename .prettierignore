@@ -1,0 +1,8 @@
+# Générés ou gérés par des outils
+package-lock.json
+**/node_modules
+**/dist
+**/coverage
+
+# Documentation : mise en forme gérée à la main (tableaux)
+*.md
