@@ -1,0 +1,51 @@
+# Intégration continue : vérifie chaque pull request vers main (et main après merge).
+# Une PR ne peut être mergée que si ce workflow passe (règle « Protection main »).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Annule l'exécution précédente si un nouveau push arrive sur la même branche.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Principe du moindre privilège : la CI lit le code, elle ne modifie rien.
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js (avec cache npm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier le formatage
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Vérifier les types
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Contrôle de l'architecture
+        run: npm run check:architecture
