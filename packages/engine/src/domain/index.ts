@@ -8,5 +8,11 @@ export { TimeOfDay } from './time/time-of-day';
 export { TimeSlot } from './time/time-slot';
 export { WEEKDAYS, WEEKDAY_LABELS, type Weekday } from './rules/weekday';
 export { DaySchedule, type DayScheduleProps } from './rules/day-schedule';
-export { WorkRules, type WorkRulesProps, type WeekSchedule } from './rules/work-rules';
+export {
+  WorkRules,
+  type WorkRulesProps,
+  type WeekSchedule,
+  type LunchBreakPolicy,
+} from './rules/work-rules';
 export { laBrosseEtDupontRules } from './rules/presets/la-brosse-et-dupont';
+export { WorkedTimeCalculator, type WorkedDayInput } from './worked-time/worked-time-calculator';
