@@ -3,6 +3,14 @@ import type { Duration } from '../time/duration';
 import type { DaySchedule } from './day-schedule';
 import { WEEKDAY_LABELS, WEEKDAYS, type Weekday } from './weekday';
 
+/**
+ * Façon de déduire la pause déjeuner du temps travaillé :
+ * - `minimum-enforced` : la pause minimale est toujours déduite, même si la pause réelle est plus courte
+ *   (règle de La Brosse et Dupont : 45 min minimum) ;
+ * - `actual` : seule la pause réellement prise est déduite.
+ */
+export type LunchBreakPolicy = 'minimum-enforced' | 'actual';
+
 /** Horaires par jour : un jour absent est un jour non travaillé (week-end par exemple). */
 export type WeekSchedule = Readonly<Partial<Record<Weekday, DaySchedule>>>;
 
@@ -18,6 +26,8 @@ export interface WorkRulesProps {
   readonly fullDayRecovery: Duration;
   /** Valeur d'une demi-journée de récupération. */
   readonly halfDayRecovery: Duration;
+  /** Façon de déduire la pause déjeuner ; `minimum-enforced` si absente. */
+  readonly lunchBreakPolicy?: LunchBreakPolicy;
 }
 
 /**
@@ -94,6 +104,11 @@ export class WorkRules {
   /** Valeur d'une demi-journée de récupération. */
   get halfDayRecovery(): Duration {
     return this.props.halfDayRecovery;
+  }
+
+  /** Façon de déduire la pause déjeuner (par défaut, la pause minimale est toujours déduite). */
+  get lunchBreakPolicy(): LunchBreakPolicy {
+    return this.props.lunchBreakPolicy ?? 'minimum-enforced';
   }
 
   /** @returns Les jours travaillés, dans l'ordre de la semaine */

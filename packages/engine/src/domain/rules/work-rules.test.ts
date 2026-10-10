@@ -40,6 +40,10 @@ describe('WorkRules', () => {
       expect(rules.minimumLunchBreak.equals(Duration.ofMinutes(45))).toBe(true);
     });
 
+    it('déduit la pause minimale même si la pause réelle est plus courte (règle par défaut)', () => {
+      expect(rules.lunchBreakPolicy).toBe('minimum-enforced');
+    });
+
     it('finit la plage fixe de l’après-midi à 15h30 le vendredi', () => {
       expect(rules.scheduleFor('friday').afternoonCore.end.equals(TimeOfDay.parse('15:30'))).toBe(
         true,
