@@ -31,6 +31,7 @@ export { DepartureWindowRule } from './validation/rules/departure-window-rule';
 export { LunchBreakRule } from './validation/rules/lunch-break-rule';
 export type { DayPlan, Plan } from './planning/plan';
 export { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning/planning-habits';
+export type { DayPreferences, PlanningPreferences } from './planning/planning-preferences';
 export { ImpossiblePlanError } from './planning/impossible-plan-error';
 export { PlanGenerator } from './planning/plan-generator';
 export { RecoveryPlanner } from './planning/recovery-planner';
