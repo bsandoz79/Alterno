@@ -108,8 +108,10 @@ describe('PlanGenerator — objectif d’heures', () => {
     });
     it('allonge une pause habituelle trop courte jusqu’au minimum de 45 min', () => {
       const shortBreak = new PlanGenerator(rules, {
-        arrival: TimeOfDay.of(8, 0),
-        lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(12, 45)),
+        defaults: {
+          arrival: TimeOfDay.of(8, 0),
+          lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(12, 45)),
+        },
       });
       const plan = shortBreak.planForTotalHours(WEEK, h(41));
 
