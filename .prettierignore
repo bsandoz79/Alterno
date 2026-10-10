@@ -3,6 +3,8 @@ package-lock.json
 **/node_modules
 **/dist
 **/coverage
+**/.expo
+**/web-build
 
 # Documentation : mise en forme gérée à la main (tableaux)
 *.md

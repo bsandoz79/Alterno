@@ -3,6 +3,7 @@
   "private": true,
   "description": "Monorepo Alterno — planificateur d'horaires variables pour alternants",
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "scripts": {
