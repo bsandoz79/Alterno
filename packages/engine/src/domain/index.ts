@@ -43,3 +43,9 @@ export { LatePace } from './planning/pace/late-pace';
 export type { DeviationAlert, DeviationAlertKind } from './planning/deviation/deviation-alert';
 export type { DeviationOutcome } from './planning/deviation/deviation-outcome';
 export { DeviationReplanner } from './planning/deviation/deviation-replanner';
+export { parseBalance } from './counter/balance-parser';
+export {
+  CounterRecalibrator,
+  DEFAULT_RECALIBRATION_THRESHOLD,
+  type Recalibration,
+} from './counter/counter-recalibrator';
