@@ -9,6 +9,7 @@ import { TimeSlot } from '../time/time-slot';
 import { PlanValidator } from '../validation/plan-validator';
 import { WorkedTimeCalculator } from '../worked-time/worked-time-calculator';
 import { ImpossiblePlanError } from './impossible-plan-error';
+import { FastPace } from './pace/fast-pace';
 import type { Plan } from './plan';
 import { PlanGenerator } from './plan-generator';
 
@@ -113,6 +114,17 @@ describe('PlanGenerator — objectif d’heures', () => {
       const plan = shortBreak.planForTotalHours(WEEK, h(41));
 
       expect(plan.days[0]?.lunchBreak.format()).toBe('12h15 – 13h00');
+      expectConsistent(plan);
+    });
+  });
+
+  describe('choix du rythme', () => {
+    it('applique le rythme rapide : lundi 10h (7h30–18h15), mardi 8h, puis 7h', () => {
+      const plan = generator.planForTotalHours(WEEK, h(39), new FastPace());
+
+      expect(plan.days.map((day) => day.worked.format())).toEqual(['10h', '8h', '7h', '7h', '7h']);
+      expect(plan.days[0]?.arrival.format()).toBe('7h30');
+      expect(plan.days[0]?.departure.format()).toBe('18h15');
       expectConsistent(plan);
     });
   });
