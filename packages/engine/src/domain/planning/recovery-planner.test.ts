@@ -8,6 +8,7 @@ import type { Weekday } from '../rules/weekday';
 import { InvalidValueError } from '../shared/domain-error';
 import { Duration } from '../time/duration';
 import { ImpossiblePlanError } from './impossible-plan-error';
+import { LatePace } from './pace/late-pace';
 import type { Plan } from './plan';
 import { RecoveryPlanner } from './recovery-planner';
 
@@ -77,6 +78,22 @@ describe('RecoveryPlanner — récup à une date choisie', () => {
 
       expect(plan.days).toHaveLength(9);
       expect(plan.totalWorked.equals(h(70))).toBe(true);
+      expect(
+        counterAfterRecovery(HoursCounter.zero(), plan, 'full').equals(HoursCounter.zero()),
+      ).toBe(true);
+    });
+  });
+
+  describe('choix du rythme', () => {
+    it('au plus juste : les 7h à rattraper sont repoussées sur les derniers jours', () => {
+      const plan = planner.planForRecovery(
+        MONDAY_TO_THURSDAY,
+        HoursCounter.zero(),
+        'full',
+        new LatePace(),
+      );
+
+      expect(plan.days.map((day) => day.worked.format())).toEqual(['7h', '8h', '10h', '10h']);
       expect(
         counterAfterRecovery(HoursCounter.zero(), plan, 'full').equals(HoursCounter.zero()),
       ).toBe(true);

@@ -5,6 +5,8 @@ import type { Weekday } from '../rules/weekday';
 import type { WorkRules } from '../rules/work-rules';
 import { Duration } from '../time/duration';
 import { ImpossiblePlanError } from './impossible-plan-error';
+import type { PaceStrategy } from './pace/pace-strategy';
+import { SteadyPace } from './pace/steady-pace';
 import type { Plan } from './plan';
 import { PlanGenerator } from './plan-generator';
 import { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning-habits';
@@ -40,11 +42,17 @@ export class RecoveryPlanner {
    * @param days - Jours travaillés entre aujourd'hui et la veille de la récup, dans l'ordre
    * @param counter - Compteur actuel
    * @param kind - Journée ou demi-journée de récup
+   * @param pace - Rythme de répartition ; régulier par défaut
    * @returns Le plan qui amène le compteur exactement à la valeur de la récup (ou le garde au-dessus)
    * @throws {InvalidValueError} Si la période est vide ou contient un jour non travaillé
    * @throws {ImpossiblePlanError} Si la récup est hors d'atteinte même en journées maximales
    */
-  planForRecovery(days: readonly Weekday[], counter: HoursCounter, kind: RecoveryKind): Plan {
+  planForRecovery(
+    days: readonly Weekday[],
+    counter: HoursCounter,
+    kind: RecoveryKind,
+    pace: PaceStrategy = new SteadyPace(),
+  ): Plan {
     const shortfall = this.counter.recoveryValue(kind).minus(counter.balance);
     const toCatchUp = shortfall.isNegative() ? Duration.zero() : shortfall;
     const expected = days.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
@@ -58,6 +66,6 @@ export class RecoveryPlanner {
     if (days.length > 0 && target.isGreaterThan(maximum)) {
       throw ImpossiblePlanError.recoveryOutOfReach(RECOVERY_LABELS[kind], target.minus(maximum));
     }
-    return this.generator.planForTotalHours(days, target);
+    return this.generator.planForTotalHours(days, target, pace);
   }
 }
