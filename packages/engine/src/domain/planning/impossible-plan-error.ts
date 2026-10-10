@@ -37,4 +37,18 @@ export class ImpossiblePlanError extends DomainError {
       `Objectif de ${target.format()} trop bas pour cette période : minimum ${minimum.format()} (plages fixes).`,
     );
   }
+
+  /**
+   * Récupération hors d'atteinte : même en faisant des journées maximales d'ici là,
+   * le compteur n'aura pas assez d'heures à la date choisie.
+   *
+   * @param recoveryLabel - Libellé de la récupération (« une journée de récup »…)
+   * @param missing - Temps qui manquera au compteur
+   * @returns L'erreur, avec le temps manquant
+   */
+  static recoveryOutOfReach(recoveryLabel: string, missing: Duration): ImpossiblePlanError {
+    return new ImpossiblePlanError(
+      `Impossible de poser ${recoveryLabel} à cette date : même en journées maximales, il manque ${missing.format()}.`,
+    );
+  }
 }

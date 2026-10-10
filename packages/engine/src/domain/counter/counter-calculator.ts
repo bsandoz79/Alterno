@@ -2,14 +2,7 @@ import type { WorkRules } from '../rules/work-rules';
 import { Duration } from '../time/duration';
 import type { HoursCounter } from './hours-counter';
 import { InsufficientCounterError } from './insufficient-counter-error';
-
-/** Type de récupération : une journée entière ou une demi-journée. */
-export type RecoveryKind = 'full' | 'half';
-
-const RECOVERY_LABELS: Readonly<Record<RecoveryKind, string>> = {
-  full: 'une journée de récup',
-  half: 'une demi-journée de récup',
-};
+import { RECOVERY_LABELS, type RecoveryKind } from './recovery-kind';
 
 /**
  * Fait évoluer le compteur d'heures selon les règles de l'entreprise.
@@ -87,8 +80,13 @@ export class CounterCalculator {
     return this.applyWorkedDay(counter, worked);
   }
 
-  /** Valeur d'une récupération selon son type. */
-  private recoveryValue(kind: RecoveryKind): Duration {
+  /**
+   * Valeur d'une récupération selon son type, issue des règles (7h pour une journée, 3h30 pour une demi-journée).
+   *
+   * @param kind - Journée ou demi-journée
+   * @returns Le temps que la récupération prend au compteur
+   */
+  recoveryValue(kind: RecoveryKind): Duration {
     return kind === 'full' ? this.rules.fullDayRecovery : this.rules.halfDayRecovery;
   }
 
