@@ -34,3 +34,8 @@ export { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning/plannin
 export { ImpossiblePlanError } from './planning/impossible-plan-error';
 export { PlanGenerator } from './planning/plan-generator';
 export { RecoveryPlanner } from './planning/recovery-planner';
+export type { PaceStrategy } from './planning/pace/pace-strategy';
+export type { Workload, WorkloadBounds } from './planning/pace/workload';
+export { SteadyPace } from './planning/pace/steady-pace';
+export { FastPace } from './planning/pace/fast-pace';
+export { LatePace } from './planning/pace/late-pace';
