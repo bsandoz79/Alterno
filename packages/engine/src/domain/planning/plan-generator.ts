@@ -2,31 +2,46 @@ import type { Weekday } from '../rules/weekday';
 import type { WorkRules } from '../rules/work-rules';
 import { InvalidValueError } from '../shared/domain-error';
 import { Duration } from '../time/duration';
+import { DayConstraints } from './day-constraints';
 import { DayTimetableBuilder } from './day-timetable-builder';
 import type { PaceStrategy } from './pace/pace-strategy';
 import { SteadyPace } from './pace/steady-pace';
 import type { Plan } from './plan';
-import { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning-habits';
+import type { PlanningPreferences } from './planning-preferences';
 
 /**
  * Génère un plan d'horaires sur une période pour atteindre un objectif d'heures.
  *
  * Orchestre deux étapes indépendantes : la répartition du temps entre les journées
  * (le rythme choisi, `PaceStrategy`), puis la traduction de chaque durée en horaires (`DayTimetableBuilder`).
- * Les règles et les habitudes sont injectées : le générateur ne connaît aucune valeur en dur.
+ * Les règles et les préférences sont injectées : le générateur ne connaît aucune valeur en dur.
  */
 export class PlanGenerator {
+  private readonly constraints: DayConstraints;
   private readonly timetable: DayTimetableBuilder;
 
   /**
    * @param rules - Règles horaires de l'entreprise
-   * @param habits - Habitudes de l'utilisateur ; arrivée 8h00 et pause 12h15–13h00 si absentes
+   * @param preferences - Préférences de l'utilisateur ; habitudes par défaut si absentes
+   * @throws {InvalidValueError} Si une préférence sort des plages de l'entreprise
    */
-  constructor(
-    private readonly rules: WorkRules,
-    habits: PlanningHabits = DEFAULT_PLANNING_HABITS,
-  ) {
-    this.timetable = new DayTimetableBuilder(rules, habits);
+  constructor(rules: WorkRules, preferences: PlanningPreferences = {}) {
+    this.constraints = DayConstraints.create(rules, preferences);
+    this.timetable = new DayTimetableBuilder(rules, this.constraints);
+  }
+
+  /**
+   * Total maximal atteignable sur une période, préférences comprises (départs au plus tard, jours à 7h pile).
+   *
+   * @param days - Jours de la période
+   * @returns La somme des journées maximales
+   * @throws {InvalidValueError} Si un jour n'est pas travaillé
+   */
+  maximumTotal(days: readonly Weekday[]): Duration {
+    return days.reduce(
+      (sum, day) => sum.plus(this.constraints.boundsFor(day).maximum),
+      Duration.zero(),
+    );
   }
 
   /**
@@ -47,12 +62,7 @@ export class PlanGenerator {
     if (days.length === 0) {
       throw new InvalidValueError('La période doit contenir au moins un jour travaillé.');
     }
-    const bounds = days.map((day) => ({
-      day,
-      minimum: this.rules.minimumWorkedTime(day),
-      maximum: this.rules.maximumWorkedTime(day),
-      expected: this.rules.expectedDailyWork,
-    }));
+    const bounds = days.map((day) => ({ day, ...this.constraints.boundsFor(day) }));
 
     const planned = pace
       .distribute(target, bounds)

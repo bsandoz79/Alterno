@@ -9,7 +9,7 @@ import type { PaceStrategy } from './pace/pace-strategy';
 import { SteadyPace } from './pace/steady-pace';
 import type { Plan } from './plan';
 import { PlanGenerator } from './plan-generator';
-import { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning-habits';
+import type { PlanningPreferences } from './planning-preferences';
 
 /**
  * Planifie les jours qui précèdent une récupération pour que le compteur la couvre à la date choisie.
@@ -23,13 +23,14 @@ export class RecoveryPlanner {
 
   /**
    * @param rules - Règles horaires de l'entreprise
-   * @param habits - Habitudes de l'utilisateur ; arrivée 8h00 et pause 12h15–13h00 si absentes
+   * @param preferences - Préférences de l'utilisateur ; habitudes par défaut si absentes
+   * @throws {InvalidValueError} Si une préférence sort des plages de l'entreprise
    */
   constructor(
     private readonly rules: WorkRules,
-    habits: PlanningHabits = DEFAULT_PLANNING_HABITS,
+    preferences: PlanningPreferences = {},
   ) {
-    this.generator = new PlanGenerator(rules, habits);
+    this.generator = new PlanGenerator(rules, preferences);
     this.counter = new CounterCalculator(rules);
   }
 
@@ -58,10 +59,7 @@ export class RecoveryPlanner {
     const expected = days.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
     const target = expected.plus(toCatchUp);
 
-    const maximum = days.reduce(
-      (sum, day) => sum.plus(this.rules.maximumWorkedTime(day)),
-      Duration.zero(),
-    );
+    const maximum = this.generator.maximumTotal(days);
     // Contrôlé ici plutôt que dans le générateur pour parler de récup, pas d'« objectif de 36h ».
     if (days.length > 0 && target.isGreaterThan(maximum)) {
       throw ImpossiblePlanError.recoveryOutOfReach(RECOVERY_LABELS[kind], target.minus(maximum));

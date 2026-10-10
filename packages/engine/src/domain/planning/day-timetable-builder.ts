@@ -3,14 +3,15 @@ import type { WorkRules } from '../rules/work-rules';
 import type { Duration } from '../time/duration';
 import type { TimeOfDay } from '../time/time-of-day';
 import { TimeSlot } from '../time/time-slot';
+import type { DayConstraints } from './day-constraints';
 import type { DayPlan } from './plan';
-import type { PlanningHabits } from './planning-habits';
 
 /**
  * Transforme un temps de travail en horaires concrets (arrivée, pause, départ) pour un jour donné.
  *
- * Part des habitudes de l'utilisateur et ne s'en écarte que si les règles l'imposent :
- * 1. départ = arrivée habituelle + travail + pause, ramené dans la plage variable du soir ;
+ * Part des habitudes de l'utilisateur pour ce jour et ne s'en écarte que si les règles l'imposent :
+ * 1. départ = arrivée habituelle + travail + pause, ramené entre la fin de la plage fixe
+ *    et le départ au plus tard (règle ou préférence du jour) ;
  * 2. arrivée recalculée depuis ce départ, sans dépasser le début de la plage fixe du matin ;
  * 3. si la présence dépasse alors le besoin (journée courte), l'excédent allonge la pause,
  *    qui reste dans la plage de déjeuner.
@@ -18,11 +19,11 @@ import type { PlanningHabits } from './planning-habits';
 export class DayTimetableBuilder {
   /**
    * @param rules - Règles horaires de l'entreprise
-   * @param habits - Habitudes de l'utilisateur (arrivée, pause)
+   * @param constraints - Contraintes du jour : habitudes et départ au plus tard, préférences comprises
    */
   constructor(
     private readonly rules: WorkRules,
-    private readonly habits: PlanningHabits,
+    private readonly constraints: DayConstraints,
   ) {}
 
   /**
@@ -35,17 +36,19 @@ export class DayTimetableBuilder {
    */
   build(day: Weekday, worked: Duration): DayPlan {
     const schedule = this.rules.scheduleFor(day);
-    const habitualBreak = this.habits.lunchBreak.duration();
+    const habits = this.constraints.habitsFor(day);
+    const habitualBreak = habits.lunchBreak.duration();
     const minimumBreak = this.rules.minimumLunchBreak;
     // Une pause habituelle plus courte que le minimum de l'entreprise (45 min) est allongée jusqu'à ce minimum.
     const breakDuration = habitualBreak.isLessThan(minimumBreak) ? minimumBreak : habitualBreak;
     const presence = worked.plus(breakDuration);
 
-    // On ne peut partir ni avant la fin de la plage fixe (16h00), ni après la fin de la plage variable (18h15).
+    // On ne peut partir ni avant la fin de la plage fixe (16h00), ni après le départ au plus tard
+    // (fin de la plage variable, 18h15, ou plus tôt si l'utilisateur l'a choisi pour ce jour).
     const departure = clamp(
-      this.habits.arrival.plus(presence),
+      habits.arrival.plus(presence),
       schedule.earliestDeparture,
-      schedule.latestDeparture,
+      this.constraints.latestDepartureFor(day),
     );
     // Ni arriver après le début de la plage fixe du matin (9h00).
     const idealArrival = departure.plus(presence.negate());
@@ -57,7 +60,7 @@ export class DayTimetableBuilder {
     const lunchDuration = arrival.durationUntil(departure).minus(worked);
     const window = schedule.lunchWindow;
     const lunchStart = clamp(
-      this.habits.lunchBreak.start,
+      habits.lunchBreak.start,
       window.start,
       window.end.plus(lunchDuration.negate()),
     );
