@@ -16,3 +16,6 @@ export {
 } from './rules/work-rules';
 export { laBrosseEtDupontRules } from './rules/presets/la-brosse-et-dupont';
 export { WorkedTimeCalculator, type WorkedDayInput } from './worked-time/worked-time-calculator';
+export { HoursCounter } from './counter/hours-counter';
+export { InsufficientCounterError } from './counter/insufficient-counter-error';
+export { CounterCalculator, type RecoveryKind } from './counter/counter-calculator';
