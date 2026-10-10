@@ -31,6 +31,20 @@ export class PlanGenerator {
   }
 
   /**
+   * Total minimal imposé sur une période, préférences comprises (plages fixes, jours à 7h pile).
+   *
+   * @param days - Jours de la période
+   * @returns La somme des journées minimales
+   * @throws {InvalidValueError} Si un jour n'est pas travaillé
+   */
+  minimumTotal(days: readonly Weekday[]): Duration {
+    return days.reduce(
+      (sum, day) => sum.plus(this.constraints.boundsFor(day).minimum),
+      Duration.zero(),
+    );
+  }
+
+  /**
    * Total maximal atteignable sur une période, préférences comprises (départs au plus tard, jours à 7h pile).
    *
    * @param days - Jours de la période
