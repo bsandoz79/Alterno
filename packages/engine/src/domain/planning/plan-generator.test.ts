@@ -4,6 +4,8 @@ import { laBrosseEtDupontRules } from '../rules/presets/la-brosse-et-dupont';
 import type { Weekday } from '../rules/weekday';
 import { InvalidValueError } from '../shared/domain-error';
 import { Duration } from '../time/duration';
+import { TimeOfDay } from '../time/time-of-day';
+import { TimeSlot } from '../time/time-slot';
 import { PlanValidator } from '../validation/plan-validator';
 import { WorkedTimeCalculator } from '../worked-time/worked-time-calculator';
 import { ImpossiblePlanError } from './impossible-plan-error';
@@ -101,6 +103,16 @@ describe('PlanGenerator — objectif d’heures', () => {
       expect(monday?.arrival.format()).toBe('9h00');
       expect(monday?.lunchBreak.format()).toBe('11h45 – 13h45');
       expect(monday?.departure.format()).toBe('16h00');
+      expectConsistent(plan);
+    });
+    it('allonge une pause habituelle trop courte jusqu’au minimum de 45 min', () => {
+      const shortBreak = new PlanGenerator(rules, {
+        arrival: TimeOfDay.of(8, 0),
+        lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(12, 45)),
+      });
+      const plan = shortBreak.planForTotalHours(WEEK, h(41));
+
+      expect(plan.days[0]?.lunchBreak.format()).toBe('12h15 – 13h00');
       expectConsistent(plan);
     });
   });
