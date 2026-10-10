@@ -19,3 +19,12 @@ export { WorkedTimeCalculator, type WorkedDayInput } from './worked-time/worked-
 export { HoursCounter } from './counter/hours-counter';
 export { InsufficientCounterError } from './counter/insufficient-counter-error';
 export { CounterCalculator, type RecoveryKind } from './counter/counter-calculator';
+export type { DayContext, RuleViolation, ScheduleRule } from './validation/schedule-rule';
+export {
+  PlanValidator,
+  DEFAULT_SCHEDULE_RULES,
+  type ValidationResult,
+} from './validation/plan-validator';
+export { ArrivalWindowRule } from './validation/rules/arrival-window-rule';
+export { DepartureWindowRule } from './validation/rules/departure-window-rule';
+export { LunchBreakRule } from './validation/rules/lunch-break-rule';
