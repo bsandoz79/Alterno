@@ -40,3 +40,6 @@ export type { Workload, WorkloadBounds } from './planning/pace/workload';
 export { SteadyPace } from './planning/pace/steady-pace';
 export { FastPace } from './planning/pace/fast-pace';
 export { LatePace } from './planning/pace/late-pace';
+export type { DeviationAlert, DeviationAlertKind } from './planning/deviation/deviation-alert';
+export type { DeviationOutcome } from './planning/deviation/deviation-outcome';
+export { DeviationReplanner } from './planning/deviation/deviation-replanner';
