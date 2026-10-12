@@ -46,22 +46,33 @@ export function useAnnualCalendar(): AnnualCalendarState {
   );
 
   const attach = useCallback(async () => {
-    const picked = await pickDocument();
-    if (picked === null) {
-      return;
+    try {
+      const picked = await pickDocument();
+      if (picked === null) {
+        return;
+      }
+      const refusal = checkAttachment(picked);
+      if (refusal !== null) {
+        setMessage({ kind: 'error', text: refusal });
+        return;
+      }
+      setCalendar(await annualCalendar.attach(picked, systemClock.today()));
+      setMessage({ kind: 'success', text: 'Calendrier joint : il reste consultable ici.' });
+    } catch (error) {
+      // Erreur du système (sélecteur, copie du fichier) : affichée plutôt que perdue.
+      setMessage({ kind: 'error', text: `Impossible de joindre le fichier : ${describe(error)}` });
     }
-    const refusal = checkAttachment(picked);
-    if (refusal !== null) {
-      setMessage({ kind: 'error', text: refusal });
-      return;
-    }
-    setCalendar(await annualCalendar.attach(picked, systemClock.today()));
-    setMessage({ kind: 'success', text: 'Calendrier joint : il reste consultable ici.' });
   }, [annualCalendar]);
 
   const open = useCallback(async () => {
-    if (calendar !== null && calendar !== undefined) {
+    if (calendar === null || calendar === undefined) {
+      return;
+    }
+    try {
       await openDocument(calendar);
+    } catch (error) {
+      // Par exemple : aucune app du téléphone ne sait ouvrir ce type de fichier.
+      setMessage({ kind: 'error', text: `Impossible d’ouvrir le fichier : ${describe(error)}` });
     }
   }, [calendar]);
 
@@ -72,4 +83,9 @@ export function useAnnualCalendar(): AnnualCalendarState {
   }, [annualCalendar]);
 
   return { calendar, message, attach, open, remove };
+}
+
+/** Message lisible d'une erreur inattendue (le texte technique aide à diagnostiquer). */
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
