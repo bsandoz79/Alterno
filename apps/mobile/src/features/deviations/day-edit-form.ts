@@ -25,9 +25,11 @@ export interface DayEditForm {
   readonly pace: PaceName;
 }
 
-type TimeFieldName = Exclude<keyof DayEditForm, 'pace'>;
+/** Champ horaire du formulaire. */
+export type TimeFieldName = Exclude<keyof DayEditForm, 'pace'>;
 
-const FIELD_LABELS: Readonly<Record<TimeFieldName, string>> = {
+/** Libellés des heures, dans le formulaire et les messages d'erreur. */
+export const FIELD_LABELS: Readonly<Record<TimeFieldName, string>> = {
   arrival: 'Arrivée',
   lunchStart: 'Début de pause',
   lunchEnd: 'Fin de pause',
