@@ -13,7 +13,9 @@ src/
   index.ts       # Point d'entrée public
 ```
 
-Les tests sont à côté du code : `duration.ts` → `duration.test.ts`.
+Les tests sont à côté du code : `duration.ts` → `duration.test.ts`. Couverture visée : 100 %.
+
+Cas d'usage exposés (`src/application`) : `SimulatePlan` (simuler et comparer les rythmes), `ValidatePlan` (enregistrer le plan en cours), `DeclareDeviation` (modifier un jour et recalculer la suite).
 
 ## Commandes
 

@@ -4,7 +4,15 @@
 
 Planificateur d'horaires variables pour alternants : simule une semaine (ou plus) pour atteindre un objectif d'heures ou une journée de récup, recalcule quand on s'écarte du plan, et affiche l'emploi du temps sur plusieurs semaines.
 
-> Projet personnel en cours de développement — V1 en construction.
+> Projet personnel en cours de développement — V1 en construction (fonctionne en local, sans serveur).
+
+## Ce que fait l'app aujourd'hui
+
+- **Aujourd'hui** : heure de départ prévue en grand, reste de la semaine, bouton « Signaler un changement » (arrivé plus tard, parti plus tôt, pause plus longue).
+- **Simulation** : période (cette semaine / semaine prochaine, 1 à 4 semaines), objectif d'heures ou récup, comparaison des rythmes rapide / régulier / au plus juste, validation du plan.
+- **Planning** : grille semaine façon EDT, vue mois, détail et modification d'un jour avec recalcul de la suite.
+- **Compteur** : solde d'heures, règles horaires et préférences par jour paramétrables.
+- **Alternance** : semaines d'école (exclues des simulations), calendrier annuel joint (PDF ou image).
 
 ## Structure du monorepo
 
@@ -38,4 +46,14 @@ feat(engine): calcule l'écart journalier au compteur [ALT-12]
 
 ## Démarrer
 
-Ouvrir `alterno.code-workspace` dans VS Code. Les commandes de chaque partie seront ajoutées au fil des jalons.
+Prérequis : Node.js 24 et npm. Ouvrir `alterno.code-workspace` dans VS Code.
+
+```
+npm install            # depuis la racine, à refaire après chaque ajout de dépendance
+npm test               # tests du moteur et de l'app
+cd apps/mobile && npx expo start   # QR code pour Expo Go (Android), touche w pour le web
+```
+
+Avant de pousser, la CI rejoue : `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run check:architecture`.
+
+Les choix techniques importants sont expliqués dans [docs/adr](docs/adr/README.md).
