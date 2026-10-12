@@ -25,6 +25,11 @@ const MIGRATIONS: readonly string[] = [
      id INTEGER PRIMARY KEY CHECK (id = 1),
      data TEXT NOT NULL
    );`,
+  // Version 3 : préférences de planification (habitudes et préférences par jour, en JSON).
+  `CREATE TABLE planning_preferences (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     data TEXT NOT NULL
+   );`,
 ];
 
 /**
