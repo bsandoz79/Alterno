@@ -1,6 +1,7 @@
 import { laBrosseEtDupontSettings } from '@alterno/engine';
 import { useCallback, useEffect, useState } from 'react';
 
+import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import {
@@ -12,17 +13,11 @@ import {
   type WorkRulesForm,
 } from '../work-rules-form';
 
-/** Message affiché sous le formulaire. */
-export interface SettingsMessage {
-  readonly kind: 'success' | 'error' | 'info';
-  readonly text: string;
-}
-
 /** État et actions de l'écran des règles horaires. */
 export interface WorkRulesSettingsState {
   /** Contenu du formulaire, `null` pendant le chargement. */
   readonly form: WorkRulesForm | null;
-  readonly message: SettingsMessage | null;
+  readonly message: FormMessage | null;
   readonly updateDayTime: (group: DayGroup, key: keyof DayTimesForm, value: string) => void;
   readonly updateDuration: (key: DurationField, value: string) => void;
   readonly save: () => Promise<void>;
@@ -38,7 +33,7 @@ export interface WorkRulesSettingsState {
 export function useWorkRulesSettings(): WorkRulesSettingsState {
   const { workRules } = useRepositories();
   const [form, setForm] = useState<WorkRulesForm | null>(null);
-  const [message, setMessage] = useState<SettingsMessage | null>(null);
+  const [message, setMessage] = useState<FormMessage | null>(null);
 
   useEffect(() => {
     // Évite de modifier l'état d'un écran déjà quitté si le chargement finit après.
