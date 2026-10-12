@@ -6,10 +6,15 @@ export {
   SimulatePlan,
   type ComparisonRequest,
   type PaceComparison,
-  type PaceName,
   type SimulatedDay,
   type Simulation,
   type SimulationObjective,
   type SimulationRequest,
 } from './simulate-plan';
+export {
+  DeclareDeviation,
+  type DatedDeviationOutcome,
+  type DeviationRequest,
+} from './declare-deviation';
+export { paceStrategy, type PaceName } from './pace-name';
 export { ValidatePlan } from './validate-plan';

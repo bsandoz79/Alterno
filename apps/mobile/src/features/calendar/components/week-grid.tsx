@@ -1,5 +1,6 @@
 import type { CalendarDate } from '@alterno/engine';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatShortDate } from '@/shared/format/format-date';
 import { COLORS } from '@/shared/theme/colors';
@@ -26,6 +27,7 @@ interface WeekGridProps {
  * @returns La grille
  */
 export function WeekGrid({ week, today }: WeekGridProps) {
+  const router = useRouter();
   const hours = gridHours(week);
   const hourCount = hours.end - hours.start;
   const height = hourCount * HOUR_HEIGHT;
@@ -59,7 +61,17 @@ export function WeekGrid({ week, today }: WeekGridProps) {
           ))}
         </View>
         {week.columns.map(({ date, day }) => (
-          <View key={date.toIsoString()} style={styles.column}>
+          // Appui sur un jour planifié : ouvre son détail pour le modifier.
+          <Pressable
+            key={date.toIsoString()}
+            style={({ pressed }) => [styles.column, pressed && styles.columnPressed]}
+            disabled={day === null}
+            accessibilityRole="button"
+            accessibilityLabel={`Détail du ${formatShortDate(date)}`}
+            onPress={() => {
+              router.push({ pathname: '/jour/[date]', params: { date: date.toIsoString() } });
+            }}
+          >
             {Array.from({ length: hourCount }, (_, index) => (
               <View key={index} style={[styles.hourLine, { top: index * HOUR_HEIGHT }]} />
             ))}
@@ -89,7 +101,7 @@ export function WeekGrid({ week, today }: WeekGridProps) {
                 </View>
               ))
             )}
-          </View>
+          </Pressable>
         ))}
       </View>
 
@@ -147,6 +159,9 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     position: 'relative',
+  },
+  columnPressed: {
+    opacity: 0.7,
   },
   hourLine: {
     position: 'absolute',
