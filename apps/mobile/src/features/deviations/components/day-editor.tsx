@@ -1,4 +1,5 @@
 import type { PaceName } from '@alterno/engine';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MessageBox } from '@/shared/components/message-box';
@@ -8,7 +9,9 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
+import { FIELD_LABELS } from '../day-edit-form';
 import { useDayEdit, type DayEditParams } from '../hooks/use-day-edit';
+import { CHANGE_KINDS, changeFields, type ChangeKind } from '../report-change';
 import { RecalculationPreview } from './recalculation-preview';
 
 const PACE_OPTIONS: readonly { readonly value: PaceName; readonly label: string }[] = [
@@ -17,48 +20,51 @@ const PACE_OPTIONS: readonly { readonly value: PaceName; readonly label: string 
   { value: 'late', label: 'Au plus juste' },
 ];
 
+/** Propriétés de l'éditeur : celles du hook, plus le changement signalé depuis l'accueil. */
+interface DayEditorProps extends DayEditParams {
+  /** Changement signalé (une seule heure à saisir), ou `null` pour modifier toute la journée. */
+  readonly change: ChangeKind | null;
+}
+
 /**
  * Formulaire « Modifier ce jour » : horaires réels pré-remplis avec le plan, rythme du rattrapage,
  * aperçu du recalcul à chaque saisie, puis enregistrement.
+ * Ouvert depuis « Signaler un changement », il n'affiche que l'heure concernée (saisie rapide),
+ * avec un lien pour corriger les autres heures si besoin.
  *
- * @param props - Données chargées, jour modifié et action après enregistrement
+ * @param props - Données chargées, jour modifié, changement signalé et action après enregistrement
  * @returns L'éditeur
  */
-export function DayEditor(props: DayEditParams) {
-  const { form, update, preview, save, message } = useDayEdit(props);
+export function DayEditor({ change, ...params }: DayEditorProps) {
+  const { form, update, preview, save, message } = useDayEdit(params);
+  const [showAll, setShowAll] = useState(false);
+  const fields = changeFields(showAll ? null : change);
+  const question = CHANGE_KINDS.find((choice) => choice.kind === change)?.question;
 
   return (
     <>
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Ce qui a changé (ou va changer)</Text>
-        <TimeField
-          label="Arrivée"
-          value={form.arrival}
-          onChange={(arrival) => {
-            update({ arrival });
-          }}
-        />
-        <TimeField
-          label="Début de pause"
-          value={form.lunchStart}
-          onChange={(lunchStart) => {
-            update({ lunchStart });
-          }}
-        />
-        <TimeField
-          label="Fin de pause"
-          value={form.lunchEnd}
-          onChange={(lunchEnd) => {
-            update({ lunchEnd });
-          }}
-        />
-        <TimeField
-          label="Départ"
-          value={form.departure}
-          onChange={(departure) => {
-            update({ departure });
-          }}
-        />
+        <Text style={styles.cardLabel}>{question ?? 'Ce qui a changé (ou va changer)'}</Text>
+        {fields.map((field) => (
+          <TimeField
+            key={field}
+            label={FIELD_LABELS[field]}
+            value={form[field]}
+            onChange={(value) => {
+              update({ [field]: value });
+            }}
+          />
+        ))}
+        {fields.length < 4 ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setShowAll(true);
+            }}
+          >
+            <Text style={styles.moreLink}>Modifier les autres horaires</Text>
+          </Pressable>
+        ) : null}
         <Text style={styles.cardLabel}>Rattrapage sur les jours suivants</Text>
         <SegmentedControl
           accessibilityLabel="Rythme du rattrapage"
@@ -93,6 +99,11 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     padding: SPACING.lg,
     gap: SPACING.md,
+  },
+  moreLink: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.primary,
   },
   cardLabel: {
     fontFamily: FONTS.semiBold,

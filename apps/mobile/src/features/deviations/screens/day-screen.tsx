@@ -11,6 +11,7 @@ import { DayEditor } from '../components/day-editor';
 import { PlannedDayCard } from '../components/planned-day-card';
 import { parseDateParam } from '../date-param';
 import { useDayContext } from '../hooks/use-day-context';
+import { parseChangeKind } from '../report-change';
 
 const OVERLINE = 'Détail du jour';
 
@@ -23,6 +24,8 @@ const OVERLINE = 'Détail du jour';
 export function DayScreen() {
   const params = useLocalSearchParams();
   const date = parseDateParam(params.date);
+  // Ouvert depuis « Signaler un changement » de l'accueil : une seule heure à saisir, retour à l'accueil.
+  const change = parseChangeKind(params.change);
   const { context, reload } = useDayContext();
 
   if (date === null) {
@@ -48,14 +51,15 @@ export function DayScreen() {
       <PlannedDayCard day={day.plan} />
       {/* La clé repart d'un formulaire neuf quand on ouvre un autre jour (l'écran reste monté entre deux visites). */}
       <DayEditor
-        key={date.toIsoString()}
+        key={`${date.toIsoString()}-${change ?? 'all'}`}
+        change={change}
         context={{ ...context, plan }}
         date={date}
         planned={day.plan}
         onSaved={reload}
       />
-      <Link href="/semaine" style={styles.link}>
-        Retour au planning
+      <Link href={change === null ? '/semaine' : '/'} style={styles.link}>
+        {change === null ? 'Retour au planning' : 'Retour à l’accueil'}
       </Link>
     </ScreenContainer>
   );
