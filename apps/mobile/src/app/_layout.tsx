@@ -57,6 +57,8 @@ export default function RootLayout() {
         <Tabs.Screen name="semaine" options={{ title: 'Semaine' }} />
         <Tabs.Screen name="simulation" options={{ title: 'Simulation' }} />
         <Tabs.Screen name="compteur" options={{ title: 'Compteur' }} />
+        {/* Écran de réglages : accessible depuis le compteur, sans onglet dédié. */}
+        <Tabs.Screen name="reglages" options={{ href: null, title: 'Réglages' }} />
       </Tabs>
     </RepositoriesProvider>
   );
