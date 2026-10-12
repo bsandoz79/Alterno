@@ -7,7 +7,16 @@ import tseslint from 'typescript-eslint';
  * Les dossiers générés par Expo et les fichiers de configuration JS sont exclus.
  */
 export default defineConfig(
-  { ignores: ['.expo/**', 'dist/**', 'web-build/**', 'eslint.config.mjs', 'expo-env.d.ts'] },
+  {
+    ignores: [
+      '.expo/**',
+      'dist/**',
+      'web-build/**',
+      'coverage/**',
+      'eslint.config.mjs',
+      'expo-env.d.ts',
+    ],
+  },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
