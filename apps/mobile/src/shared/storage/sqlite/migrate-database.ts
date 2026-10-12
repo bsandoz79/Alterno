@@ -20,6 +20,11 @@ const MIGRATIONS: readonly string[] = [
      departure_minutes INTEGER NOT NULL,
      worked_minutes INTEGER NOT NULL
    );`,
+  // Version 2 : réglages des règles horaires (une seule ligne, en JSON : ils se lisent et s'écrivent d'un bloc).
+  `CREATE TABLE work_rules_settings (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     data TEXT NOT NULL
+   );`,
 ];
 
 /**
@@ -29,14 +34,18 @@ const MIGRATIONS: readonly string[] = [
  * au démarrage, seules les migrations plus récentes que cette version sont jouées.
  *
  * @param db - Base à mettre à jour
+ * @param targetVersion - Version à atteindre ; la plus récente par défaut (une autre valeur sert aux tests de mise à jour)
  */
-export async function migrateDatabase(db: SqlDatabase): Promise<void> {
+export async function migrateDatabase(
+  db: SqlDatabase,
+  targetVersion: number = MIGRATIONS.length,
+): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
 
   for (const [index, migration] of MIGRATIONS.entries()) {
     const version = index + 1;
-    if (version > current) {
+    if (version > current && version <= targetVersion) {
       await db.withTransactionAsync(async () => {
         await db.execAsync(migration);
         // PRAGMA n'accepte pas de paramètre lié ; la valeur est un entier calculé ici, pas une saisie.
