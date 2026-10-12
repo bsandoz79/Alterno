@@ -14,7 +14,12 @@ export {
   type WeekSchedule,
   type LunchBreakPolicy,
 } from './rules/work-rules';
-export { laBrosseEtDupontRules } from './rules/presets/la-brosse-et-dupont';
+export {
+  laBrosseEtDupontRules,
+  laBrosseEtDupontSettings,
+} from './rules/presets/la-brosse-et-dupont';
+export { buildWorkRules, type DayTimes, type WorkRulesSettings } from './rules/work-rules-settings';
+export { parseClockTime } from './time/parse-clock-time';
 export { WorkedTimeCalculator, type WorkedDayInput } from './worked-time/worked-time-calculator';
 export { HoursCounter } from './counter/hours-counter';
 export { InsufficientCounterError } from './counter/insufficient-counter-error';
@@ -51,3 +56,4 @@ export {
 } from './counter/counter-recalibrator';
 export type { CounterRepository } from './ports/counter-repository';
 export type { PlanRepository } from './ports/plan-repository';
+export type { WorkRulesSettingsRepository } from './ports/work-rules-settings-repository';
