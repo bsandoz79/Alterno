@@ -41,6 +41,12 @@ export function todayStatus(
   if (schoolWeeks.contains(today)) {
     return { kind: 'school' };
   }
+  // Aujourd'hui avant le premier jour du plan : ce n'est pas un jour « sans travail »,
+  // c'est un jour qui n'a pas été simulé (ex. plan validé pour la semaine prochaine).
+  const [first] = plan.days;
+  if (first !== undefined && today.isBefore(first.date)) {
+    return { kind: 'before-plan', first };
+  }
   return {
     kind: 'off',
     next: plan.days.find((candidate) => today.isBefore(candidate.date)) ?? null,
