@@ -6,8 +6,8 @@ import {
   type DatedPlan,
 } from '@alterno/engine';
 
-const DAYS_SHOWN = 5;
-const DAYS_PER_WEEK = 7;
+import { WORKDAYS_SHOWN, monthWeekMondays } from '@/shared/calendar/month-weeks';
+
 /** Écart entre le lundi et le jeudi d'une même semaine. */
 const MONDAY_TO_THURSDAY = 3;
 
@@ -42,25 +42,17 @@ export interface MonthView {
  * @returns Le mois, ligne par ligne, avec son total
  */
 export function buildMonth(plan: DatedPlan, month: YearMonth): MonthView {
-  const weeks: MonthRow[] = [];
-  const lastDay = month.lastDay();
-  for (
-    let monday = month.firstDay().startOfWeek();
-    !lastDay.isBefore(monday);
-    monday = monday.plusDays(DAYS_PER_WEEK)
-  ) {
-    const cells = Array.from({ length: DAYS_SHOWN }, (_, index) => {
+  const weeks = monthWeekMondays(month).map((monday) => ({
+    monday,
+    cells: Array.from({ length: WORKDAYS_SHOWN }, (_, index) => {
       const date = monday.plusDays(index);
       return {
         date,
         inMonth: month.contains(date),
         day: plan.days.find((day) => day.date.equals(date)) ?? null,
       };
-    });
-    if (cells.some((cell) => cell.inMonth)) {
-      weeks.push({ monday, cells });
-    }
-  }
+    }),
+  }));
   const total = weeks
     .flatMap((week) => week.cells)
     .reduce(
