@@ -7,7 +7,7 @@ import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { SettingsSection } from '../components/settings-section';
-import { TimeField } from '../components/time-field';
+import { TimeField } from '@/shared/components/time-field';
 import { useWorkRulesSettings, type SettingsMessage } from '../hooks/use-work-rules-settings';
 import {
   DAY_GROUP_LABELS,
