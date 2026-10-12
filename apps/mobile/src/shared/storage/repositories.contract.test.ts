@@ -12,6 +12,8 @@ import {
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
+import type { PickedDocument } from './annual-calendar-store';
+import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
@@ -19,11 +21,13 @@ import { BrowserSchoolWeeksRepository } from './browser/browser-school-weeks-rep
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
+import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
 import { SqliteSchoolWeeksRepository } from './sqlite/sqlite-school-weeks-repository';
 import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
+import { createMemoryDocumentFiles } from './testing/memory-document-files';
 import { createMemoryStorage } from './testing/memory-storage';
 import { createNodeSqlDatabase } from './testing/node-sql-database';
 
@@ -43,6 +47,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         workRules: new SqliteWorkRulesSettingsRepository(db),
         preferences: new SqlitePlanningPreferencesRepository(db),
         schoolWeeks: new SqliteSchoolWeeksRepository(db),
+        annualCalendar: new SqliteAnnualCalendarStore(db, createMemoryDocumentFiles()),
       };
     },
   ],
@@ -56,6 +61,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         workRules: new BrowserWorkRulesSettingsRepository(storage),
         preferences: new BrowserPlanningPreferencesRepository(storage),
         schoolWeeks: new BrowserSchoolWeeksRepository(storage),
+        annualCalendar: new BrowserAnnualCalendarStore(storage),
       });
     },
   ],
@@ -220,6 +226,55 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await schoolWeeks.save(SchoolWeeks.of(datesFrom(['2026-11-02'])));
 
       expect(isoMondays(await schoolWeeks.load())).toEqual(['2026-11-02']);
+    });
+  });
+  describe('calendrier annuel joint', () => {
+    const today = CalendarDate.fromIsoString('2026-10-12');
+    const pdf: PickedDocument = {
+      uri: 'file:///cache/calendrier-epsi.pdf',
+      name: 'Calendrier EPSI 2026-2027.pdf',
+      mimeType: 'application/pdf',
+      size: 10_128,
+      dataUrl: 'data:application/pdf;base64,JVBERi0=',
+    };
+
+    it('ne renvoie aucun calendrier tant que rien n’est joint', async () => {
+      const { annualCalendar } = await create();
+
+      expect(await annualCalendar.load()).toBeNull();
+    });
+
+    it('retrouve le calendrier joint : nom, type, taille, date d’ajout et adresse lisible', async () => {
+      const { annualCalendar } = await create();
+      const attached = await annualCalendar.attach(pdf, today);
+
+      expect(await annualCalendar.load()).toEqual(attached);
+      expect(attached).toMatchObject({
+        name: 'Calendrier EPSI 2026-2027.pdf',
+        mimeType: 'application/pdf',
+        size: 10_128,
+        addedOn: '2026-10-12',
+      });
+      expect(attached.uri).not.toBe('');
+    });
+
+    it('remplace le calendrier précédent', async () => {
+      const { annualCalendar } = await create();
+      await annualCalendar.attach(pdf, today);
+      await annualCalendar.attach(
+        { ...pdf, name: 'photo.png', mimeType: 'image/png', dataUrl: 'data:image/png;base64,iVBO' },
+        today,
+      );
+
+      expect((await annualCalendar.load())?.name).toBe('photo.png');
+    });
+
+    it('supprime le calendrier joint', async () => {
+      const { annualCalendar } = await create();
+      await annualCalendar.attach(pdf, today);
+      await annualCalendar.remove();
+
+      expect(await annualCalendar.load()).toBeNull();
     });
   });
 });

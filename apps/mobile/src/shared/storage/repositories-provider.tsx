@@ -2,9 +2,11 @@ import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useMemo, type ReactNode } from 'react';
 
 import type { Repositories } from './repositories';
+import { expoDocumentFiles } from './files/expo-document-files';
 import { RepositoriesContext } from './repositories-context';
 import { fromExpoDatabase } from './sqlite/expo-sql-database';
 import { migrateDatabase } from './sqlite/migrate-database';
+import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
@@ -42,6 +44,7 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
       workRules: new SqliteWorkRulesSettingsRepository(sql),
       preferences: new SqlitePlanningPreferencesRepository(sql),
       schoolWeeks: new SqliteSchoolWeeksRepository(sql),
+      annualCalendar: new SqliteAnnualCalendarStore(sql, expoDocumentFiles),
     };
   }, [db]);
   return <RepositoriesContext value={repositories}>{children}</RepositoriesContext>;

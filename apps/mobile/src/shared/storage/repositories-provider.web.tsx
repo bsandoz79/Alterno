@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 
+import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
@@ -23,6 +24,7 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
       workRules: new BrowserWorkRulesSettingsRepository(window.localStorage),
       preferences: new BrowserPlanningPreferencesRepository(window.localStorage),
       schoolWeeks: new BrowserSchoolWeeksRepository(window.localStorage),
+      annualCalendar: new BrowserAnnualCalendarStore(window.localStorage),
     }),
     [],
   );

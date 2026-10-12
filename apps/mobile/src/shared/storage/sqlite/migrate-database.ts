@@ -47,6 +47,15 @@ const MIGRATIONS: readonly string[] = [
   `CREATE TABLE school_week (
      monday TEXT PRIMARY KEY
    );`,
+  // Version 6 : calendrier annuel joint (une seule ligne : ses informations et l'adresse de sa copie).
+  `CREATE TABLE annual_calendar (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     name TEXT NOT NULL,
+     mime_type TEXT NOT NULL,
+     size_bytes INTEGER NOT NULL,
+     added_on TEXT NOT NULL,
+     uri TEXT NOT NULL
+   );`,
 ];
 
 /**
