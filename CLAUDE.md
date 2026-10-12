@@ -107,7 +107,7 @@ export function computeDayBalance(worked: Duration, expected: Duration): Duratio
 - **TDD sur le moteur** : écrire le test d'abord, puis le code minimal, puis refactorer.
 - Chaque règle métier a au moins un test nominal et un test de cas limite (vendredi, pause > 45 min, journée max, objectif impossible).
 - Nommage des tests en français et descriptif : `it("ajoute le surplus au compteur quand la journée dépasse 7h")`.
-- Outils : Vitest (engine), Jest via jest-expo (mobile), PHPUnit (api), Maestro (e2e mobile, plus tard).
+- Outils : Vitest (engine et mobile, voir `docs/adr/0001`), PHPUnit (api), Maestro (e2e mobile, plus tard).
 - Tests à côté du code : `duration.ts` → `duration.test.ts`. Imports explicites depuis `vitest` (pas de globals).
 - Ne jamais supprimer ou affaiblir un test pour faire passer la CI.
 
@@ -173,6 +173,7 @@ Chaque fin de tâche contient, dans cet ordre :
 - Coder hors du ticket en cours.
 - Désactiver une règle de lint, de typage ou d'architecture.
 - Inventer une API ou une option de lib : vérifier la doc, sinon le dire.
+- Prendre une décision d'architecture (stockage, dépendance structurante, format de données) sans l'écrire dans un ADR (`docs/adr`).
 
 ## 13. Commandes (à compléter au fil du projet)
 
@@ -189,7 +190,8 @@ cd packages/engine && npm test
 cd packages/engine && npm run test:watch
 
 # Mobile
-cd apps/mobile && npx expo start
+cd apps/mobile && npx expo start      # Expo Go (QR code) ou w pour le web
+cd apps/mobile && npm test
 
 # API
 cd apps/api && symfony serve
