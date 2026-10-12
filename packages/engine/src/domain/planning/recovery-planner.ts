@@ -35,6 +35,19 @@ export class RecoveryPlanner {
   }
 
   /**
+   * Heures à faire en plus d'ici la récup : valeur de la récup moins le compteur, jamais négatif
+   * (un surplus déjà au compteur n'est pas « rendu »).
+   *
+   * @param counter - Compteur actuel
+   * @param kind - Journée ou demi-journée de récup
+   * @returns Le temps à rattraper avant la récup
+   */
+  hoursToCatchUp(counter: HoursCounter, kind: RecoveryKind): Duration {
+    const shortfall = this.counter.recoveryValue(kind).minus(counter.balance);
+    return shortfall.isNegative() ? Duration.zero() : shortfall;
+  }
+
+  /**
    * Plan des jours travaillés avant la récupération.
    *
    * Le surplus déjà au compteur est conservé : s'il couvre la récup, les journées restent à 7h
@@ -54,8 +67,7 @@ export class RecoveryPlanner {
     kind: RecoveryKind,
     pace: PaceStrategy = new SteadyPace(),
   ): Plan {
-    const shortfall = this.counter.recoveryValue(kind).minus(counter.balance);
-    const toCatchUp = shortfall.isNegative() ? Duration.zero() : shortfall;
+    const toCatchUp = this.hoursToCatchUp(counter, kind);
     const expected = days.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
     const target = expected.plus(toCatchUp);
 

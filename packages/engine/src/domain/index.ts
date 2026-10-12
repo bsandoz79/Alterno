@@ -57,3 +57,10 @@ export {
 export type { CounterRepository } from './ports/counter-repository';
 export type { PlanRepository } from './ports/plan-repository';
 export type { WorkRulesSettingsRepository } from './ports/work-rules-settings-repository';
+export { CalendarDate } from './calendar/calendar-date';
+export {
+  planningPeriodDays,
+  type PeriodStart,
+  type PlanningPeriodRequest,
+} from './calendar/planning-period';
+export type { Clock } from './ports/clock';
