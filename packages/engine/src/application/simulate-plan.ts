@@ -1,10 +1,6 @@
 import type { CalendarDate } from '../domain/calendar/calendar-date';
 import type { HoursCounter } from '../domain/counter/hours-counter';
 import type { RecoveryKind } from '../domain/counter/recovery-kind';
-import { FastPace } from '../domain/planning/pace/fast-pace';
-import { LatePace } from '../domain/planning/pace/late-pace';
-import type { PaceStrategy } from '../domain/planning/pace/pace-strategy';
-import { SteadyPace } from '../domain/planning/pace/steady-pace';
 import type { DatedDay, DatedPlan } from '../domain/planning/dated-plan';
 import type { Plan } from '../domain/planning/plan';
 import { PlanGenerator } from '../domain/planning/plan-generator';
@@ -13,15 +9,7 @@ import { RecoveryPlanner } from '../domain/planning/recovery-planner';
 import type { WorkRules } from '../domain/rules/work-rules';
 import { InvalidValueError } from '../domain/shared/domain-error';
 import type { Duration } from '../domain/time/duration';
-
-/** Nom d'un rythme, tel que choisi à l'écran. */
-export type PaceName = 'fast' | 'steady' | 'late';
-
-const PACES: Readonly<Record<PaceName, PaceStrategy>> = {
-  fast: new FastPace(),
-  steady: new SteadyPace(),
-  late: new LatePace(),
-};
+import { paceStrategy, type PaceName } from './pace-name';
 
 /** Ce que l'utilisateur veut atteindre : un total d'heures, ou une récup à une date. */
 export type SimulationObjective =
@@ -77,7 +65,7 @@ export class SimulatePlan {
    */
   execute(request: SimulationRequest): Simulation {
     const { objective, counter } = request;
-    const pace = PACES[request.pace];
+    const pace = paceStrategy(request.pace);
 
     // Pour une récup, seuls les jours qui la précèdent sont à planifier.
     const dates =
