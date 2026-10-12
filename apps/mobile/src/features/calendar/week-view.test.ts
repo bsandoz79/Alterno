@@ -2,13 +2,14 @@ import {
   CalendarDate,
   Duration,
   HoursCounter,
+  SchoolWeeks,
   SimulatePlan,
   laBrosseEtDupontRules,
   type DatedPlan,
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
-import { dayBlocks, gridHours, selectWeek, weekAt } from './week-view';
+import { dayBlocks, dayKind, gridHours, selectWeek, weekAt } from './week-view';
 
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
 const simulate = new SimulatePlan(laBrosseEtDupontRules());
@@ -113,5 +114,27 @@ describe('dayBlocks — blocs d’une journée dans la grille', () => {
     expect(blocks[0]?.height).toBeCloseTo(4.25 / 9);
     expect(blocks[1]).toMatchObject({ label: '12h15 – 13h00' });
     expect(blocks[1]?.top).toBeCloseTo(4.25 / 9);
+  });
+});
+
+describe('dayKind — ce qu’affiche la case d’un jour', () => {
+  const schoolWeeks = SchoolWeeks.of([date('2026-11-02')]);
+
+  it('affiche le travail prévu quand le jour est planifié', () => {
+    const monday = weekAt(twoWeeks, date('2026-10-19')).columns[0];
+
+    expect(monday && dayKind(monday, schoolWeeks)).toBe('work');
+  });
+
+  it('affiche « école » pour un jour sans plan d’une semaine d’école', () => {
+    const monday = weekAt(twoWeeks, date('2026-11-02')).columns[0];
+
+    expect(monday && dayKind(monday, schoolWeeks)).toBe('school');
+  });
+
+  it('affiche « récup » pour un autre jour sans plan', () => {
+    const monday = weekAt(twoWeeks, date('2026-11-09')).columns[0];
+
+    expect(monday && dayKind(monday, schoolWeeks)).toBe('off');
   });
 });

@@ -1,8 +1,10 @@
+import { SchoolWeeks } from '@alterno/engine';
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
@@ -19,6 +21,7 @@ const TITLE = 'Mon planning';
  */
 export function WeekScreen() {
   const plan = useCurrentPlan();
+  const { schoolWeeks } = useSchoolWeeks();
   const today = systemClock.today();
 
   if (plan === undefined) {
@@ -35,6 +38,9 @@ export function WeekScreen() {
           <Link href="/simulation" style={styles.link}>
             Aller à la simulation
           </Link>
+          <Link href="/ecole" style={styles.link}>
+            Marquer mes semaines d’école
+          </Link>
         </View>
       </ScreenContainer>
     );
@@ -44,7 +50,15 @@ export function WeekScreen() {
   const planKey = plan.days.map((day) => day.date.toIsoString()).join();
   return (
     <ScreenContainer title={TITLE}>
-      <PlanCalendar key={planKey} plan={plan} today={today} />
+      <PlanCalendar
+        key={planKey}
+        plan={plan}
+        today={today}
+        schoolWeeks={schoolWeeks ?? SchoolWeeks.none()}
+      />
+      <Link href="/ecole" style={styles.secondaryLink}>
+        Marquer mes semaines d’école
+      </Link>
     </ScreenContainer>
   );
 }
@@ -71,5 +85,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 15,
     color: COLORS.primary,
+  },
+  secondaryLink: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.primary,
+    textAlign: 'center',
   },
 });

@@ -4,6 +4,7 @@ import {
   type DatedDay,
   type DatedPlan,
   type DayPlan,
+  type SchoolWeeks,
   type TimeOfDay,
 } from '@alterno/engine';
 
@@ -122,4 +123,25 @@ export function dayBlocks(day: DayPlan, hours: GridHours): readonly DayBlock[] {
     block('lunch', day.lunchBreak.start, day.lunchBreak.end),
     block('work', day.lunchBreak.end, day.departure),
   ];
+}
+
+/**
+ * Ce qu'affiche la case d'un jour :
+ * - `work` : le jour est planifié ;
+ * - `school` : pas de plan, et la semaine est marquée « école » ;
+ * - `off` : pas de plan un jour d'entreprise (récup).
+ * Le plan l'emporte sur l'école : un plan validé avant le marquage reste visible tant qu'il n'est pas refait.
+ *
+ * @param column - Date et journée planifiée éventuelle
+ * @param schoolWeeks - Semaines d'école marquées
+ * @returns Le type de case
+ */
+export function dayKind(
+  column: Pick<WeekColumn, 'date' | 'day'>,
+  schoolWeeks: SchoolWeeks,
+): 'work' | 'school' | 'off' {
+  if (column.day !== null) {
+    return 'work';
+  }
+  return schoolWeeks.contains(column.date) ? 'school' : 'off';
 }
