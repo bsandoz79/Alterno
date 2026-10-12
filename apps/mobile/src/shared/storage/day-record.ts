@@ -1,6 +1,5 @@
 import {
   Duration,
-  TimeOfDay,
   TimeSlot,
   WEEKDAYS,
   type DayPlan,
@@ -8,7 +7,7 @@ import {
   type Weekday,
 } from '@alterno/engine';
 
-const MINUTES_PER_HOUR = 60;
+import { timeAt } from './time-record';
 
 /**
  * Journée planifiée sous forme de données brutes, prête à être stockée (table SQLite ou JSON).
@@ -59,14 +58,6 @@ export function fromDayRecords(records: readonly DayRecord[]): Plan {
     days,
     totalWorked: days.reduce((sum, day) => sum.plus(day.worked), Duration.zero()),
   };
-}
-
-/** Heure à partir de minutes depuis minuit. */
-function timeAt(minutesSinceMidnight: number): TimeOfDay {
-  return TimeOfDay.of(
-    Math.floor(minutesSinceMidnight / MINUTES_PER_HOUR),
-    minutesSinceMidnight % MINUTES_PER_HOUR,
-  );
 }
 
 /** Vérifie qu'une valeur enregistrée est bien un jour de la semaine connu du moteur. */
