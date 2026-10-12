@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
+import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { RepositoriesContext } from './repositories-context';
 
@@ -17,6 +18,7 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
     () => ({
       plans: new BrowserPlanRepository(window.localStorage),
       counter: new BrowserCounterRepository(window.localStorage),
+      workRules: new BrowserWorkRulesSettingsRepository(window.localStorage),
     }),
     [],
   );

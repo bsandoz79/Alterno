@@ -7,6 +7,7 @@ import { fromExpoDatabase } from './sqlite/expo-sql-database';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
+import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
 
 const DATABASE_NAME = 'alterno.db';
 
@@ -33,7 +34,11 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
   const db = useSQLiteContext();
   const repositories = useMemo<Repositories>(() => {
     const sql = fromExpoDatabase(db);
-    return { plans: new SqlitePlanRepository(sql), counter: new SqliteCounterRepository(sql) };
+    return {
+      plans: new SqlitePlanRepository(sql),
+      counter: new SqliteCounterRepository(sql),
+      workRules: new SqliteWorkRulesSettingsRepository(sql),
+    };
   }, [db]);
   return <RepositoriesContext value={repositories}>{children}</RepositoriesContext>;
 }
