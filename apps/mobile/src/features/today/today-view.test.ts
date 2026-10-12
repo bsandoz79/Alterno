@@ -50,6 +50,13 @@ describe('todayStatus — ce qu’affiche l’accueil', () => {
     expect(status.kind).toBe('school');
   });
 
+  it('avant le début du plan : l’indique au lieu de dire « rien de prévu »', () => {
+    const status = todayStatus(plan, noSchool, date('2026-10-12'));
+
+    expect(status.kind).toBe('before-plan');
+    expect(status.kind === 'before-plan' && status.first.date.toIsoString()).toBe('2026-10-19');
+  });
+
   it('jour sans plan (récup, week-end) : annonce le prochain jour planifié', () => {
     const status = todayStatus(plan, noSchool, date('2026-10-23'));
 

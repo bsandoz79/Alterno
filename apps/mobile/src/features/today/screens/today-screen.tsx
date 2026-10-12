@@ -52,6 +52,15 @@ export function TodayScreen() {
             Aller à la simulation
           </Link>
         </Notice>
+      ) : status.kind === 'before-plan' ? (
+        <Notice title="Pas de plan pour aujourd’hui">
+          <Text style={styles.text}>
+            {`Ton plan commence le ${formatShortDate(status.first.date)}. Pour avoir ton heure de départ dès aujourd’hui, simule « Cette semaine ».`}
+          </Text>
+          <Link href="/simulation" style={styles.link}>
+            Aller à la simulation
+          </Link>
+        </Notice>
       ) : status.kind === 'school' ? (
         <Notice title="Journée d’école">
           <Text style={styles.text}>Pas d’horaire en entreprise aujourd’hui. Bon cours !</Text>

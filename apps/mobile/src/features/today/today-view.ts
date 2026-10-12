@@ -7,12 +7,14 @@ const DAYS_PER_WEEK = 7;
  * - `no-plan` : aucun plan validé, on invite à simuler ;
  * - `work` : aujourd'hui est planifié (départ en grand, bouton « Signaler un changement ») ;
  * - `school` : journée d'école ;
- * - `off` : pas de plan aujourd'hui (récup, week-end, hors période), avec le prochain jour planifié.
+ * - `before-plan` : le plan validé commence plus tard (aujourd'hui n'a pas été simulé) ;
+ * - `off` : pas de plan aujourd'hui (récup, week-end, plan terminé), avec le prochain jour planifié.
  */
 export type TodayStatus =
   | { readonly kind: 'no-plan' }
   | { readonly kind: 'work'; readonly day: DatedDay }
   | { readonly kind: 'school' }
+  | { readonly kind: 'before-plan'; readonly first: DatedDay }
   | { readonly kind: 'off'; readonly next: DatedDay | null };
 
 /**
