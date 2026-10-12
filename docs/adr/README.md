@@ -1,4 +1,14 @@
 # Architecture Decision Records
 
-Une page courte par décision importante : contexte, décision, conséquences.
-Nommage : `0001-titre-court.md`.
+Une page courte par décision importante : contexte, décision, alternatives, conséquences.
+Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée : son statut passe à « remplacée par 00xx ».
+
+| N° | Décision |
+| --- | --- |
+| [0001](0001-vitest-pour-tous-les-tests-typescript.md) | Vitest pour tous les tests TypeScript |
+| [0002](0002-stockage-local-un-port-deux-adaptateurs.md) | Stockage local : un port, deux adaptateurs (SQLite / navigateur) |
+| [0003](0003-migrations-sqlite-numerotees.md) | Migrations SQLite numérotées, jamais modifiées |
+| [0004](0004-plan-en-cours-date.md) | Un seul plan en cours, daté |
+| [0005](0005-rythme-choisi-au-recalcul.md) | Rythme choisi à chaque recalcul |
+| [0006](0006-semaines-d-ecole.md) | Semaines d'école stockées en lundis |
+| [0007](0007-calendrier-annuel-joint.md) | Calendrier annuel joint : port côté app, copie via `content://` |
