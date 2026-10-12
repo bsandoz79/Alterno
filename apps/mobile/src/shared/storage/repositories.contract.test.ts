@@ -3,6 +3,7 @@ import {
   HoursCounter,
   PlanGenerator,
   TimeOfDay,
+  TimeSlot,
   laBrosseEtDupontRules,
   laBrosseEtDupontSettings,
   type Plan,
@@ -12,11 +13,13 @@ import { describe, expect, it } from 'vitest';
 
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
+import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
+import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
 import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
 import { createMemoryStorage } from './testing/memory-storage';
 import { createNodeSqlDatabase } from './testing/node-sql-database';
@@ -35,6 +38,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         plans: new SqlitePlanRepository(db),
         counter: new SqliteCounterRepository(db),
         workRules: new SqliteWorkRulesSettingsRepository(db),
+        preferences: new SqlitePlanningPreferencesRepository(db),
       };
     },
   ],
@@ -46,6 +50,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         plans: new BrowserPlanRepository(storage),
         counter: new BrowserCounterRepository(storage),
         workRules: new BrowserWorkRulesSettingsRepository(storage),
+        preferences: new BrowserPlanningPreferencesRepository(storage),
       });
     },
   ],
@@ -141,6 +146,39 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await workRules.save(settings);
 
       expect(await workRules.load()).toEqual(settings);
+    });
+  });
+  describe('préférences par jour', () => {
+    it('renvoie des préférences vides tant que rien n’est enregistré (habitudes par défaut)', async () => {
+      const { preferences } = await create();
+
+      expect(await preferences.load()).toEqual({});
+    });
+
+    it('retrouve les préférences à l’identique', async () => {
+      const { preferences } = await create();
+      const saved = {
+        defaults: {
+          arrival: TimeOfDay.of(8, 15),
+          lunchBreak: TimeSlot.between(TimeOfDay.of(12, 0), TimeOfDay.of(12, 45)),
+        },
+        days: {
+          monday: { arrival: TimeOfDay.of(8, 30) },
+          wednesday: { latestDeparture: TimeOfDay.of(17, 0), exactlyExpected: true },
+          friday: { lunchBreak: TimeSlot.between(TimeOfDay.of(12, 0), TimeOfDay.of(12, 45)) },
+        },
+      };
+      await preferences.save(saved);
+
+      expect(await preferences.load()).toEqual(saved);
+    });
+
+    it('remplace les préférences précédentes', async () => {
+      const { preferences } = await create();
+      await preferences.save({ days: { monday: { arrival: TimeOfDay.of(8, 30) } } });
+      await preferences.save({ days: { tuesday: { exactlyExpected: true } } });
+
+      expect(await preferences.load()).toEqual({ days: { tuesday: { exactlyExpected: true } } });
     });
   });
 });
