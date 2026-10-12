@@ -49,3 +49,5 @@ export {
   DEFAULT_RECALIBRATION_THRESHOLD,
   type Recalibration,
 } from './counter/counter-recalibrator';
+export type { CounterRepository } from './ports/counter-repository';
+export type { PlanRepository } from './ports/plan-repository';

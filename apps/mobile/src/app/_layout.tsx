@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { useAppFonts } from '@/shared/hooks/use-app-fonts';
+import { RepositoriesProvider } from '@/shared/storage/repositories-provider';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 
@@ -12,7 +13,8 @@ import { FONTS } from '@/shared/theme/fonts';
 void SplashScreen.preventAutoHideAsync();
 
 /**
- * Navigation principale : quatre onglets, comme sur les maquettes (charte L4).
+ * Navigation principale : quatre onglets, comme sur les maquettes (charte L4),
+ * à l'intérieur du fournisseur de données (base locale ouverte et migrée avant l'affichage).
  * Expo Router associe chaque fichier de `src/app/` à une route ; ce fichier définit leur navigateur.
  *
  * @returns La barre d'onglets et l'écran courant
@@ -31,7 +33,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <RepositoriesProvider>
       <StatusBar style="dark" />
       <Tabs
         screenOptions={{
@@ -56,6 +58,6 @@ export default function RootLayout() {
         <Tabs.Screen name="simulation" options={{ title: 'Simulation' }} />
         <Tabs.Screen name="compteur" options={{ title: 'Compteur' }} />
       </Tabs>
-    </>
+    </RepositoriesProvider>
   );
 }
