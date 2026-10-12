@@ -65,6 +65,9 @@ export function SchoolWeeksScreen() {
           ))}
         </View>
       )}
+      <Link href="/calendrier-annuel" style={styles.link}>
+        Mon calendrier annuel (PDF ou image)
+      </Link>
       <Link href="/semaine" style={styles.link}>
         Voir mon planning
       </Link>
