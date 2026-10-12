@@ -11,6 +11,7 @@ import {
   type Duration,
   type PlanningPreferences,
   type PaceComparison,
+  type SchoolWeeks,
   type Simulation,
   type WorkRules,
 } from '@alterno/engine';
@@ -27,11 +28,12 @@ import {
   type SimulationForm,
 } from '../simulation-form';
 
-/** Données chargées à l'ouverture de l'écran : règles (réglages ou preset), préférences et compteur. */
+/** Données chargées à l'ouverture de l'écran : règles (réglages ou preset), préférences, compteur et semaines d'école. */
 interface SimulationContext {
   readonly rules: WorkRules;
   readonly preferences: PlanningPreferences;
   readonly counter: HoursCounter;
+  readonly schoolWeeks: SchoolWeeks;
 }
 
 /** Résultat affiché sous le formulaire. */
@@ -64,13 +66,13 @@ export interface SimulationState {
 
 /**
  * Relie l'écran Simulation au cas d'usage `SimulatePlan` : charge les règles enregistrées (ou le preset),
- * les préférences et le compteur, puis recalcule le plan à chaque changement du formulaire.
+ * les préférences, le compteur et les semaines d'école, puis recalcule le plan à chaque changement du formulaire.
  *
  * @param clock - Horloge (l'horloge système par défaut ; une horloge fixe en test)
  * @returns L'état de l'écran
  */
 export function useSimulation(clock: Clock = systemClock): SimulationState {
-  const { workRules, preferences, counter, plans } = useRepositories();
+  const { workRules, preferences, counter, plans, schoolWeeks } = useRepositories();
   const [context, setContext] = useState<SimulationContext | null>(null);
   const [form, setForm] = useState<SimulationForm>(DEFAULT_SIMULATION_FORM);
   const [message, setMessage] = useState<FormMessage | null>(null);
@@ -79,21 +81,25 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      void Promise.all([workRules.load(), preferences.load(), counter.load()]).then(
-        ([settings, savedPreferences, balance]) => {
-          if (active) {
-            setContext({
-              rules: buildWorkRules(settings ?? laBrosseEtDupontSettings()),
-              preferences: savedPreferences,
-              counter: balance,
-            });
-          }
-        },
-      );
+      void Promise.all([
+        workRules.load(),
+        preferences.load(),
+        counter.load(),
+        schoolWeeks.load(),
+      ]).then(([settings, savedPreferences, balance, markedWeeks]) => {
+        if (active) {
+          setContext({
+            rules: buildWorkRules(settings ?? laBrosseEtDupontSettings()),
+            preferences: savedPreferences,
+            counter: balance,
+            schoolWeeks: markedWeeks,
+          });
+        }
+      });
       return () => {
         active = false;
       };
-    }, [workRules, preferences, counter]),
+    }, [workRules, preferences, counter, schoolWeeks]),
   );
 
   const computed = useMemo(() => {
@@ -106,6 +112,8 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
         start: form.start,
         weeks: form.weeks,
         rules: context.rules,
+        // Les jours d'école sont exclus : on ne planifie que les jours en entreprise.
+        schoolWeeks: context.schoolWeeks,
       });
       const recoveryChoices = days.slice(1);
       // Un jour choisi qui n'est plus dans la période (période modifiée) est oublié.

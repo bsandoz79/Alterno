@@ -43,6 +43,10 @@ const MIGRATIONS: readonly string[] = [
      departure_minutes INTEGER NOT NULL,
      worked_minutes INTEGER NOT NULL
    );`,
+  // Version 5 : semaines d'école, une ligne par semaine (son lundi, au format AAAA-MM-JJ).
+  `CREATE TABLE school_week (
+     monday TEXT PRIMARY KEY
+   );`,
 ];
 
 /**

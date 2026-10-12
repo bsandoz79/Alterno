@@ -1,6 +1,7 @@
 import type { WorkRules } from '../rules/work-rules';
 import { InvalidValueError } from '../shared/domain-error';
 import type { CalendarDate } from './calendar-date';
+import type { SchoolWeeks } from './school-weeks';
 
 const DAYS_PER_WEEK = 7;
 
@@ -19,18 +20,23 @@ export interface PlanningPeriodRequest {
   /** Nombre de semaines : 1, 2, ou 4 pour « 1 mois ». */
   readonly weeks: number;
   readonly rules: WorkRules;
+  /** Semaines d'école à exclure ; aucune si absent. */
+  readonly schoolWeeks?: SchoolWeeks;
 }
 
 /**
  * Jours travaillés d'une période de simulation, dans l'ordre.
  *
- * @param request - Date du jour, début, nombre de semaines et règles (pour savoir quels jours sont travaillés)
- * @returns Les dates travaillées de la période
- * @throws {InvalidValueError} Si la durée est inférieure à une semaine, ou si aucun jour n'est travaillé
- *   (« cette semaine » demandé un samedi)
+ * Les jours d'une semaine d'école sont exclus : on n'y planifie pas d'horaire en entreprise.
+ *
+ * @param request - Date du jour, début, nombre de semaines, règles (pour savoir quels jours sont travaillés)
+ *   et semaines d'école
+ * @returns Les dates travaillées en entreprise sur la période
+ * @throws {InvalidValueError} Si la durée est inférieure à une semaine, si aucun jour n'est travaillé
+ *   (« cette semaine » demandé un samedi) ou si la période ne contient que des jours d'école
  */
 export function planningPeriodDays(request: PlanningPeriodRequest): readonly CalendarDate[] {
-  const { today, start, weeks, rules } = request;
+  const { today, start, weeks, rules, schoolWeeks } = request;
   if (!Number.isInteger(weeks) || weeks < 1) {
     throw new InvalidValueError('La période doit durer au moins une semaine.');
   }
@@ -50,5 +56,12 @@ export function planningPeriodDays(request: PlanningPeriodRequest): readonly Cal
       'Plus aucun jour travaillé cette semaine : choisis « semaine prochaine ».',
     );
   }
-  return days;
+  const atWork =
+    schoolWeeks === undefined ? days : days.filter((date) => !schoolWeeks.contains(date));
+  if (atWork.length === 0) {
+    throw new InvalidValueError(
+      'Que des jours d’école sur cette période : choisis une période plus longue.',
+    );
+  }
+  return atWork;
 }

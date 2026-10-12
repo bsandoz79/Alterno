@@ -1,6 +1,7 @@
-import type { CalendarDate, DatedPlan, Duration } from '@alterno/engine';
+import type { CalendarDate, DatedPlan, Duration, SchoolWeeks } from '@alterno/engine';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { PeriodNavigator } from '@/shared/components/period-navigator';
 import { SegmentedControl } from '@/shared/components/segmented-control';
 import { formatLongDate, formatMonth } from '@/shared/format/format-date';
 import { COLORS } from '@/shared/theme/colors';
@@ -9,23 +10,23 @@ import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { useCalendarNavigation, type CalendarMode } from '../hooks/use-calendar-navigation';
 import { MonthGrid } from './month-grid';
-import { PeriodNavigator } from './period-navigator';
 import { WeekGrid } from './week-grid';
 
 /** Propriétés du calendrier du plan. */
 interface PlanCalendarProps {
   readonly plan: DatedPlan;
   readonly today: CalendarDate;
+  readonly schoolWeeks: SchoolWeeks;
 }
 
 /**
  * Calendrier du plan validé : choix semaine / mois, flèches pour se déplacer, grille et total.
  * Séparé de l'écran pour que le hook de navigation ne s'exécute qu'une fois le plan chargé.
  *
- * @param props - Plan validé et date du jour
+ * @param props - Plan validé, date du jour et semaines d'école
  * @returns Le calendrier
  */
-export function PlanCalendar({ plan, today }: PlanCalendarProps) {
+export function PlanCalendar({ plan, today, schoolWeeks }: PlanCalendarProps) {
   const navigation = useCalendarNavigation(plan, today);
   const { week, month } = navigation;
   const previousWeek = navigation.weekNavigation.previous;
@@ -65,7 +66,7 @@ export function PlanCalendar({ plan, today }: PlanCalendarProps) {
                   }
             }
           />
-          <WeekGrid week={week} today={today} />
+          <WeekGrid week={week} today={today} schoolWeeks={schoolWeeks} />
           <TotalRow label="Total prévu sur la semaine" total={week.total} />
         </>
       ) : (
@@ -88,7 +89,12 @@ export function PlanCalendar({ plan, today }: PlanCalendarProps) {
                   }
             }
           />
-          <MonthGrid month={month} today={today} onSelectDay={navigation.showWeek} />
+          <MonthGrid
+            month={month}
+            today={today}
+            onSelectDay={navigation.showWeek}
+            schoolWeeks={schoolWeeks}
+          />
           <TotalRow label="Total prévu sur le mois" total={month.total} />
         </>
       )}

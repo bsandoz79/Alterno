@@ -60,6 +60,7 @@ export default function RootLayout() {
         {/* Écrans secondaires : ouverts depuis un autre écran, sans onglet dédié. */}
         <Tabs.Screen name="reglages" options={{ href: null, title: 'Réglages' }} />
         <Tabs.Screen name="preferences" options={{ href: null, title: 'Préférences' }} />
+        <Tabs.Screen name="ecole" options={{ href: null, title: 'Semaines d’école' }} />
         <Tabs.Screen name="jour/[date]" options={{ href: null, title: 'Détail du jour' }} />
       </Tabs>
     </RepositoriesProvider>

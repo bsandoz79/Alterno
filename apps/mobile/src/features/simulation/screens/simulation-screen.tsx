@@ -157,6 +157,9 @@ export function SimulationScreen() {
       <Link href="/preferences" style={styles.preferencesLink}>
         Ajuster mes préférences par jour
       </Link>
+      <Link href="/ecole" style={styles.preferencesLink}>
+        Marquer mes semaines d’école
+      </Link>
 
       <Text style={styles.sectionTitle}>Plan proposé</Text>
       {outcome === null ? null : outcome.ok ? (

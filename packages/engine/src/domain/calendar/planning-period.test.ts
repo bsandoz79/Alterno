@@ -4,6 +4,7 @@ import { laBrosseEtDupontRules } from '../rules/presets/la-brosse-et-dupont';
 import { InvalidValueError } from '../shared/domain-error';
 import { CalendarDate } from './calendar-date';
 import { planningPeriodDays } from './planning-period';
+import { SchoolWeeks } from './school-weeks';
 
 const rules = laBrosseEtDupontRules();
 const wednesday = CalendarDate.fromIsoString('2026-10-14');
@@ -53,5 +54,34 @@ describe('planningPeriodDays — jours travaillés d’une période de simulatio
     expect(() =>
       planningPeriodDays({ today: wednesday, start: 'next-week', weeks: 0, rules }),
     ).toThrow(InvalidValueError);
+  });
+
+  describe('semaines d’école', () => {
+    it('exclut les jours d’une semaine d’école de la période', () => {
+      const schoolWeeks = SchoolWeeks.of([CalendarDate.fromIsoString('2026-10-26')]);
+      const days = planningPeriodDays({
+        today: wednesday,
+        start: 'next-week',
+        weeks: 2,
+        rules,
+        schoolWeeks,
+      });
+
+      expect(isoDays(days)).toEqual([
+        '2026-10-19',
+        '2026-10-20',
+        '2026-10-21',
+        '2026-10-22',
+        '2026-10-23',
+      ]);
+    });
+
+    it('refuse une période qui ne contient que des semaines d’école', () => {
+      const schoolWeeks = SchoolWeeks.of([CalendarDate.fromIsoString('2026-10-19')]);
+
+      expect(() =>
+        planningPeriodDays({ today: wednesday, start: 'next-week', weeks: 1, rules, schoolWeeks }),
+      ).toThrow('Que des jours d’école sur cette période : choisis une période plus longue.');
+    });
   });
 });

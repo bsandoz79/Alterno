@@ -8,6 +8,7 @@ import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
+import { SqliteSchoolWeeksRepository } from './sqlite/sqlite-school-weeks-repository';
 import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
 
 const DATABASE_NAME = 'alterno.db';
@@ -40,6 +41,7 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
       counter: new SqliteCounterRepository(sql),
       workRules: new SqliteWorkRulesSettingsRepository(sql),
       preferences: new SqlitePlanningPreferencesRepository(sql),
+      schoolWeeks: new SqliteSchoolWeeksRepository(sql),
     };
   }, [db]);
   return <RepositoriesContext value={repositories}>{children}</RepositoriesContext>;

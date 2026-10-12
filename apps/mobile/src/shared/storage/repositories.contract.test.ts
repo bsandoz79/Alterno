@@ -2,6 +2,7 @@ import {
   CalendarDate,
   Duration,
   HoursCounter,
+  SchoolWeeks,
   SimulatePlan,
   TimeOfDay,
   TimeSlot,
@@ -14,12 +15,14 @@ import { describe, expect, it } from 'vitest';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
+import { BrowserSchoolWeeksRepository } from './browser/browser-school-weeks-repository';
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
+import { SqliteSchoolWeeksRepository } from './sqlite/sqlite-school-weeks-repository';
 import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
 import { createMemoryStorage } from './testing/memory-storage';
 import { createNodeSqlDatabase } from './testing/node-sql-database';
@@ -39,6 +42,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         counter: new SqliteCounterRepository(db),
         workRules: new SqliteWorkRulesSettingsRepository(db),
         preferences: new SqlitePlanningPreferencesRepository(db),
+        schoolWeeks: new SqliteSchoolWeeksRepository(db),
       };
     },
   ],
@@ -51,6 +55,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         counter: new BrowserCounterRepository(storage),
         workRules: new BrowserWorkRulesSettingsRepository(storage),
         preferences: new BrowserPlanningPreferencesRepository(storage),
+        schoolWeeks: new BrowserSchoolWeeksRepository(storage),
       });
     },
   ],
@@ -190,6 +195,31 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await preferences.save({ days: { tuesday: { exactlyExpected: true } } });
 
       expect(await preferences.load()).toEqual({ days: { tuesday: { exactlyExpected: true } } });
+    });
+  });
+  describe('semaines d’école', () => {
+    const isoMondays = (weeks: SchoolWeeks): string[] =>
+      weeks.mondays().map((monday) => monday.toIsoString());
+
+    it('ne renvoie aucune semaine tant que rien n’est enregistré', async () => {
+      const { schoolWeeks } = await create();
+
+      expect(isoMondays(await schoolWeeks.load())).toEqual([]);
+    });
+
+    it('retrouve les semaines enregistrées', async () => {
+      const { schoolWeeks } = await create();
+      await schoolWeeks.save(SchoolWeeks.of(datesFrom(['2026-11-02', '2026-10-19'])));
+
+      expect(isoMondays(await schoolWeeks.load())).toEqual(['2026-10-19', '2026-11-02']);
+    });
+
+    it('remplace les semaines précédentes (une semaine démarquée disparaît)', async () => {
+      const { schoolWeeks } = await create();
+      await schoolWeeks.save(SchoolWeeks.of(datesFrom(['2026-10-19', '2026-11-02'])));
+      await schoolWeeks.save(SchoolWeeks.of(datesFrom(['2026-11-02'])));
+
+      expect(isoMondays(await schoolWeeks.load())).toEqual(['2026-11-02']);
     });
   });
 });

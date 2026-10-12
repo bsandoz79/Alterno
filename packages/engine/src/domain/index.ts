@@ -59,6 +59,8 @@ export type { PlanRepository } from './ports/plan-repository';
 export type { WorkRulesSettingsRepository } from './ports/work-rules-settings-repository';
 export { CalendarDate } from './calendar/calendar-date';
 export { YearMonth } from './calendar/year-month';
+export { SchoolWeeks } from './calendar/school-weeks';
+export type { SchoolWeeksRepository } from './ports/school-weeks-repository';
 export {
   planningPeriodDays,
   type PeriodStart,

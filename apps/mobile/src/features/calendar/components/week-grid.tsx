@@ -1,4 +1,4 @@
-import type { CalendarDate } from '@alterno/engine';
+import type { CalendarDate, SchoolWeeks } from '@alterno/engine';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,9 +7,10 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { dayBlocks, gridHours, type WeekView } from '../week-view';
+import { dayBlocks, dayKind, gridHours, type WeekView } from '../week-view';
 
 const HOUR_HEIGHT = 46;
+
 const RULER_WIDTH = 34;
 
 /** Propriétés de la grille de la semaine. */
@@ -17,6 +18,8 @@ interface WeekGridProps {
   readonly week: WeekView;
   /** Date du jour, mise en évidence dans l'en-tête. */
   readonly today: CalendarDate;
+  /** Semaines d'école, affichées à la place des jours sans plan. */
+  readonly schoolWeeks: SchoolWeeks;
 }
 
 /**
@@ -26,7 +29,7 @@ interface WeekGridProps {
  * @param props - Semaine à afficher et date du jour
  * @returns La grille
  */
-export function WeekGrid({ week, today }: WeekGridProps) {
+export function WeekGrid({ week, today, schoolWeeks }: WeekGridProps) {
   const router = useRouter();
   const hours = gridHours(week);
   const hourCount = hours.end - hours.start;
@@ -76,7 +79,13 @@ export function WeekGrid({ week, today }: WeekGridProps) {
               <View key={index} style={[styles.hourLine, { top: index * HOUR_HEIGHT }]} />
             ))}
             {day === null ? (
-              <Text style={styles.emptyDay}>—</Text>
+              dayKind({ date, day }, schoolWeeks) === 'school' ? (
+                <View style={[styles.block, styles.schoolBlock, { top: 0, height }]}>
+                  <Text style={styles.schoolText}>École</Text>
+                </View>
+              ) : (
+                <Text style={styles.emptyDay}>—</Text>
+              )
             ) : (
               dayBlocks(day.plan, hours).map((block) => (
                 <View
@@ -109,7 +118,11 @@ export function WeekGrid({ week, today }: WeekGridProps) {
         <View style={{ width: RULER_WIDTH }} />
         {week.columns.map(({ date, day }) => (
           <Text key={date.toIsoString()} style={styles.footerText}>
-            {day === null ? 'récup' : day.plan.worked.format()}
+            {day !== null
+              ? day.plan.worked.format()
+              : dayKind({ date, day }, schoolWeeks) === 'school'
+                ? 'école'
+                : 'récup'}
           </Text>
         ))}
       </View>
@@ -183,6 +196,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     paddingVertical: 2,
     overflow: 'hidden',
+  },
+  schoolBlock: {
+    backgroundColor: COLORS.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  schoolText: {
+    fontFamily: FONTS.extraBold,
+    fontSize: 12,
+    color: COLORS.surface,
   },
   workBlock: {
     backgroundColor: COLORS.primary,
