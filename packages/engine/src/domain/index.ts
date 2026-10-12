@@ -58,6 +58,7 @@ export type { CounterRepository } from './ports/counter-repository';
 export type { PlanRepository } from './ports/plan-repository';
 export type { WorkRulesSettingsRepository } from './ports/work-rules-settings-repository';
 export { CalendarDate } from './calendar/calendar-date';
+export { YearMonth } from './calendar/year-month';
 export {
   planningPeriodDays,
   type PeriodStart,
