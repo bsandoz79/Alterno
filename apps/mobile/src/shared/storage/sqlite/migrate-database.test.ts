@@ -28,7 +28,17 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(3);
+    expect(version?.user_version).toBe(4);
+  });
+
+  it('enregistre la date de chaque journée du plan (version 4)', async () => {
+    const db = createNodeSqlDatabase();
+    await migrateDatabase(db);
+    const columns = (
+      await db.getAllAsync<{ name: string }>("SELECT name FROM pragma_table_info('plan_day')")
+    ).map((column) => column.name);
+
+    expect(columns).toContain('date');
   });
 
   it('met à jour une base en version 1 sans perdre ses données', async () => {

@@ -5,7 +5,8 @@ import { FastPace } from '../domain/planning/pace/fast-pace';
 import { LatePace } from '../domain/planning/pace/late-pace';
 import type { PaceStrategy } from '../domain/planning/pace/pace-strategy';
 import { SteadyPace } from '../domain/planning/pace/steady-pace';
-import type { DayPlan, Plan } from '../domain/planning/plan';
+import type { DatedDay, DatedPlan } from '../domain/planning/dated-plan';
+import type { Plan } from '../domain/planning/plan';
 import { PlanGenerator } from '../domain/planning/plan-generator';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
 import { RecoveryPlanner } from '../domain/planning/recovery-planner';
@@ -38,16 +39,16 @@ export interface SimulationRequest {
 }
 
 /** Journée simulée : sa date et ses horaires. */
-export interface SimulatedDay {
-  readonly date: CalendarDate;
-  readonly plan: DayPlan;
-}
+export type SimulatedDay = DatedDay;
 
-/** Résultat d'une simulation. */
-export interface Simulation {
-  readonly days: readonly SimulatedDay[];
-  readonly totalWorked: Duration;
-}
+/** Résultat d'une simulation : un plan daté, prêt à être validé. */
+export type Simulation = DatedPlan;
+
+/** Demande de comparaison : la même demande, pour tous les rythmes. */
+export type ComparisonRequest = Omit<SimulationRequest, 'pace'>;
+
+/** Simulation de chaque rythme pour le même objectif. */
+export type PaceComparison = Readonly<Record<PaceName, Simulation>>;
 
 /**
  * Cas d'usage « Simuler un plan » : traduit le choix de l'écran (période datée, objectif, rythme)
@@ -101,6 +102,23 @@ export class SimulatePlan {
         return dayPlan === undefined ? [] : [{ date, plan: dayPlan }];
       }),
       totalWorked: plan.totalWorked,
+    };
+  }
+
+  /**
+   * Simule le même objectif avec chacun des trois rythmes, pour les comparer avant de choisir.
+   * La faisabilité ne dépend pas du rythme : soit les trois réussissent, soit la même erreur est levée.
+   *
+   * @param request - Période, objectif et compteur
+   * @returns La simulation de chaque rythme
+   * @throws {InvalidValueError} Si la récup tombe le premier jour de la période
+   * @throws {ImpossiblePlanError} Si l'objectif est hors d'atteinte
+   */
+  compare(request: ComparisonRequest): PaceComparison {
+    return {
+      fast: this.execute({ ...request, pace: 'fast' }),
+      steady: this.execute({ ...request, pace: 'steady' }),
+      late: this.execute({ ...request, pace: 'late' }),
     };
   }
 

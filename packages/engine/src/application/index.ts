@@ -4,9 +4,12 @@
  */
 export {
   SimulatePlan,
+  type ComparisonRequest,
+  type PaceComparison,
   type PaceName,
   type SimulatedDay,
   type Simulation,
   type SimulationObjective,
   type SimulationRequest,
 } from './simulate-plan';
+export { ValidatePlan } from './validate-plan';

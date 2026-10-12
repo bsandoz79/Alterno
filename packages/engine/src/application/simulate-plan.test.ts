@@ -47,6 +47,20 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
     ]);
   });
 
+  it('compare les trois rythmes pour le même objectif', () => {
+    const comparison = simulate.compare({
+      days: nextWeek,
+      objective: { kind: 'hours', target: Duration.ofHours(39) },
+      counter: HoursCounter.zero(),
+    });
+    const workedOf = (pace: 'fast' | 'steady' | 'late'): string[] =>
+      comparison[pace].days.map((day) => day.plan.worked.format());
+
+    expect(workedOf('fast')).toEqual(['10h', '8h', '7h', '7h', '7h']);
+    expect(workedOf('steady')).toEqual(['7h48', '7h48', '7h48', '7h48', '7h48']);
+    expect(workedOf('late')).toEqual(['7h', '7h', '7h', '8h45', '9h15']);
+  });
+
   it('objectif récup : planifie les jours avant la récup en tenant compte du compteur', () => {
     const simulation = simulate.execute({
       days: nextWeek,
