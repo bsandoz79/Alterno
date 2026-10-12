@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { MessageBox } from '@/shared/components/message-box';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { SegmentedControl } from '@/shared/components/segmented-control';
 import { TimeField } from '@/shared/components/time-field';
@@ -12,8 +13,12 @@ import { PaceOption } from '../components/pace-option';
 import { PlanPreview } from '../components/plan-preview';
 import { RecoveryDayPicker } from '../components/recovery-day-picker';
 import { useSimulation } from '../hooks/use-simulation';
+import { paceShapes } from '../pace-shapes';
 
-/** Rythmes proposés, avec la forme de leur effort sur la semaine (maquette Simulation). */
+/**
+ * Rythmes proposés. La forme sert tant qu'aucun plan n'est calculable (objectif impossible…) ;
+ * sinon chaque carte affiche le vrai graphique de son rythme.
+ */
 const PACES = [
   {
     value: 'fast',
@@ -42,7 +47,9 @@ const PACES = [
  * @returns L'écran
  */
 export function SimulationScreen() {
-  const { context, form, update, recoveryChoices, hoursToCatchUp, outcome } = useSimulation();
+  const { context, form, update, recoveryChoices, hoursToCatchUp, outcome, validate, message } =
+    useSimulation();
+  const shapes = outcome?.ok === true ? paceShapes(outcome.comparison) : null;
 
   return (
     <ScreenContainer title="Que veux-tu atteindre ?" overline="Nouvelle simulation">
@@ -139,7 +146,7 @@ export function SimulationScreen() {
           key={pace.value}
           title={pace.title}
           description={pace.description}
-          shape={pace.shape}
+          shape={shapes?.[pace.value] ?? pace.shape}
           selected={form.pace === pace.value}
           onSelect={() => {
             update({ pace: pace.value });
@@ -153,7 +160,17 @@ export function SimulationScreen() {
 
       <Text style={styles.sectionTitle}>Plan proposé</Text>
       {outcome === null ? null : outcome.ok ? (
-        <PlanPreview simulation={outcome.simulation} />
+        <>
+          <PlanPreview simulation={outcome.simulation} />
+          {message === null ? null : <MessageBox message={message} />}
+          <Pressable
+            style={styles.validateButton}
+            accessibilityRole="button"
+            onPress={() => void validate()}
+          >
+            <Text style={styles.validateLabel}>Valider ce plan</Text>
+          </Pressable>
+        </>
       ) : (
         <View style={styles.error} accessibilityLiveRegion="polite">
           <Text style={styles.errorText}>{outcome.error}</Text>
@@ -204,6 +221,18 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 16,
     color: COLORS.text,
+  },
+  validateButton: {
+    height: 58,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  validateLabel: {
+    fontFamily: FONTS.extraBold,
+    fontSize: 17,
+    color: COLORS.surface,
   },
   error: {
     backgroundColor: COLORS.warningBackground,

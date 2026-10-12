@@ -2,6 +2,7 @@ import {
   DomainError,
   HoursCounter,
   SimulatePlan,
+  ValidatePlan,
   buildWorkRules,
   laBrosseEtDupontSettings,
   planningPeriodDays,
@@ -9,6 +10,7 @@ import {
   type Clock,
   type Duration,
   type PlanningPreferences,
+  type PaceComparison,
   type Simulation,
   type WorkRules,
 } from '@alterno/engine';
@@ -16,6 +18,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 
 import { systemClock } from '@/shared/clock/system-clock';
+import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import {
@@ -33,7 +36,13 @@ interface SimulationContext {
 
 /** Résultat affiché sous le formulaire. */
 export type SimulationOutcome =
-  | { readonly ok: true; readonly simulation: Simulation }
+  | {
+      readonly ok: true;
+      /** Simulation du rythme choisi. */
+      readonly simulation: Simulation;
+      /** Simulation de chaque rythme, pour les comparer. */
+      readonly comparison: PaceComparison;
+    }
   | { readonly ok: false; readonly error: string };
 
 /** État et actions de l'écran Simulation. */
@@ -47,6 +56,10 @@ export interface SimulationState {
   /** Heures à faire en plus avant la récup choisie. */
   readonly hoursToCatchUp: Duration | null;
   readonly outcome: SimulationOutcome | null;
+  /** Valide la simulation affichée : elle devient le plan en cours. */
+  readonly validate: () => Promise<void>;
+  /** Message affiché après la validation. */
+  readonly message: FormMessage | null;
 }
 
 /**
@@ -57,9 +70,10 @@ export interface SimulationState {
  * @returns L'état de l'écran
  */
 export function useSimulation(clock: Clock = systemClock): SimulationState {
-  const { workRules, preferences, counter } = useRepositories();
+  const { workRules, preferences, counter, plans } = useRepositories();
   const [context, setContext] = useState<SimulationContext | null>(null);
   const [form, setForm] = useState<SimulationForm>(DEFAULT_SIMULATION_FORM);
+  const [message, setMessage] = useState<FormMessage | null>(null);
 
   // Rechargé à chaque retour sur l'écran : les règles ou les préférences ont pu changer entre-temps.
   useFocusEffect(
@@ -101,9 +115,14 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
       // Des préférences devenues incompatibles (règles modifiées depuis) lèvent une erreur affichée.
       const simulatePlan = new SimulatePlan(context.rules, context.preferences);
       const request = toSimulationRequest({ ...form, recoveryDate }, days, context.counter);
-      const outcome: SimulationOutcome = request.ok
-        ? { ok: true, simulation: simulatePlan.execute(request.request) }
-        : request;
+      let outcome: SimulationOutcome;
+      if (request.ok) {
+        // Les trois rythmes sont calculés d'un coup : les cartes affichent leur vrai graphique.
+        const comparison = simulatePlan.compare(request.request);
+        outcome = { ok: true, comparison, simulation: comparison[form.pace] };
+      } else {
+        outcome = request;
+      }
       return {
         recoveryChoices,
         hoursToCatchUp: simulatePlan.hoursToCatchUp(context.counter, form.recoveryKind),
@@ -122,12 +141,24 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
     }
   }, [context, form, clock]);
 
+  const { outcome } = computed;
+  const validate = useCallback(async () => {
+    if (outcome?.ok !== true) {
+      return;
+    }
+    await new ValidatePlan(plans).execute(outcome.simulation);
+    setMessage({ kind: 'success', text: 'Plan validé : c’est maintenant ton plan en cours.' });
+  }, [outcome, plans]);
+
   return {
     context,
     form,
     update: (changes) => {
       setForm((current) => ({ ...current, ...changes }));
+      setMessage(null);
     },
+    validate,
+    message,
     ...computed,
   };
 }

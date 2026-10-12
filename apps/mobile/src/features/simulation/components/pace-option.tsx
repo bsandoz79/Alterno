@@ -15,14 +15,21 @@ interface PaceOptionProps {
 }
 
 const BAR_MAX_HEIGHT = 34;
+const CHART_WIDTH = 64;
+const BAR_GAP = 3;
 
 /**
- * Carte de choix d'un rythme, avec un mini-graphique de l'effort de la semaine (maquette Simulation).
+ * Carte de choix d'un rythme, avec un mini-graphique de l'effort jour après jour (maquette Simulation).
+ * La largeur des barres s'adapte au nombre de jours : le graphique garde la même taille sur 1 semaine ou 1 mois.
  *
  * @param props - Titre, description, forme du graphique et sélection
  * @returns La carte
  */
 export function PaceOption({ title, description, shape, selected, onSelect }: PaceOptionProps) {
+  const barWidth = Math.max(
+    2,
+    Math.floor((CHART_WIDTH - BAR_GAP * (shape.length - 1)) / shape.length),
+  );
   return (
     <Pressable
       style={[styles.card, selected && styles.cardSelected]}
@@ -44,7 +51,7 @@ export function PaceOption({ title, description, shape, selected, onSelect }: Pa
             key={index}
             style={[
               styles.bar,
-              { height: Math.max(6, height * BAR_MAX_HEIGHT) },
+              { width: barWidth, height: Math.max(4, height * BAR_MAX_HEIGHT) },
               selected && styles.barSelected,
             ]}
           />
@@ -86,12 +93,12 @@ const styles = StyleSheet.create({
   bars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 4,
+    gap: BAR_GAP,
+    width: CHART_WIDTH,
     height: BAR_MAX_HEIGHT,
   },
   bar: {
-    width: 8,
-    borderRadius: 3,
+    borderRadius: 2,
     backgroundColor: COLORS.border,
   },
   barSelected: {
