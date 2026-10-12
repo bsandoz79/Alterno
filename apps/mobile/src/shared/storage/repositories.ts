@@ -2,6 +2,7 @@ import type {
   CounterRepository,
   PlanRepository,
   PlanningPreferencesRepository,
+  SchoolWeeksRepository,
   WorkRulesSettingsRepository,
 } from '@alterno/engine';
 
@@ -15,4 +16,6 @@ export interface Repositories {
   readonly workRules: WorkRulesSettingsRepository;
   /** Habitudes et préférences par jour. */
   readonly preferences: PlanningPreferencesRepository;
+  /** Semaines d'école marquées. */
+  readonly schoolWeeks: SchoolWeeksRepository;
 }

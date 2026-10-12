@@ -3,6 +3,7 @@ import { useMemo, type ReactNode } from 'react';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
+import { BrowserSchoolWeeksRepository } from './browser/browser-school-weeks-repository';
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { RepositoriesContext } from './repositories-context';
@@ -21,6 +22,7 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
       counter: new BrowserCounterRepository(window.localStorage),
       workRules: new BrowserWorkRulesSettingsRepository(window.localStorage),
       preferences: new BrowserPlanningPreferencesRepository(window.localStorage),
+      schoolWeeks: new BrowserSchoolWeeksRepository(window.localStorage),
     }),
     [],
   );
