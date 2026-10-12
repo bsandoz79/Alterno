@@ -8,10 +8,12 @@ import {
   type CalendarDate,
   type Clock,
   type Duration,
+  type PlanningPreferences,
   type Simulation,
   type WorkRules,
 } from '@alterno/engine';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { useRepositories } from '@/shared/storage/repositories-context';
@@ -22,9 +24,10 @@ import {
   type SimulationForm,
 } from '../simulation-form';
 
-/** Données chargées une fois : règles (réglages ou preset) et compteur. */
+/** Données chargées à l'ouverture de l'écran : règles (réglages ou preset), préférences et compteur. */
 interface SimulationContext {
   readonly rules: WorkRules;
+  readonly preferences: PlanningPreferences;
   readonly counter: HoursCounter;
 }
 
@@ -47,31 +50,37 @@ export interface SimulationState {
 }
 
 /**
- * Relie l'écran Simulation au cas d'usage `SimulatePlan` : charge les règles enregistrées (ou le preset)
- * et le compteur, puis recalcule le plan à chaque changement du formulaire.
+ * Relie l'écran Simulation au cas d'usage `SimulatePlan` : charge les règles enregistrées (ou le preset),
+ * les préférences et le compteur, puis recalcule le plan à chaque changement du formulaire.
  *
  * @param clock - Horloge (l'horloge système par défaut ; une horloge fixe en test)
  * @returns L'état de l'écran
  */
 export function useSimulation(clock: Clock = systemClock): SimulationState {
-  const { workRules, counter } = useRepositories();
+  const { workRules, preferences, counter } = useRepositories();
   const [context, setContext] = useState<SimulationContext | null>(null);
   const [form, setForm] = useState<SimulationForm>(DEFAULT_SIMULATION_FORM);
 
-  useEffect(() => {
-    let active = true;
-    void Promise.all([workRules.load(), counter.load()]).then(([settings, balance]) => {
-      if (active) {
-        setContext({
-          rules: buildWorkRules(settings ?? laBrosseEtDupontSettings()),
-          counter: balance,
-        });
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [workRules, counter]);
+  // Rechargé à chaque retour sur l'écran : les règles ou les préférences ont pu changer entre-temps.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void Promise.all([workRules.load(), preferences.load(), counter.load()]).then(
+        ([settings, savedPreferences, balance]) => {
+          if (active) {
+            setContext({
+              rules: buildWorkRules(settings ?? laBrosseEtDupontSettings()),
+              preferences: savedPreferences,
+              counter: balance,
+            });
+          }
+        },
+      );
+      return () => {
+        active = false;
+      };
+    }, [workRules, preferences, counter]),
+  );
 
   const computed = useMemo(() => {
     if (context === null) {
@@ -89,7 +98,8 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
       const recoveryDate = recoveryChoices.some((day) => day.toIsoString() === form.recoveryDate)
         ? form.recoveryDate
         : null;
-      const simulatePlan = new SimulatePlan(context.rules);
+      // Des préférences devenues incompatibles (règles modifiées depuis) lèvent une erreur affichée.
+      const simulatePlan = new SimulatePlan(context.rules, context.preferences);
       const request = toSimulationRequest({ ...form, recoveryDate }, days, context.counter);
       const outcome: SimulationOutcome = request.ok
         ? { ok: true, simulation: simulatePlan.execute(request.request) }

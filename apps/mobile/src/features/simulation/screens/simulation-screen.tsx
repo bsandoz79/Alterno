@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenContainer } from '@/shared/components/screen-container';
@@ -146,6 +147,10 @@ export function SimulationScreen() {
         />
       ))}
 
+      <Link href="/preferences" style={styles.preferencesLink}>
+        Ajuster mes préférences par jour
+      </Link>
+
       <Text style={styles.sectionTitle}>Plan proposé</Text>
       {outcome === null ? null : outcome.ok ? (
         <PlanPreview simulation={outcome.simulation} />
@@ -188,6 +193,12 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 14,
     color: COLORS.text,
+  },
+  preferencesLink: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.primary,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontFamily: FONTS.extraBold,
