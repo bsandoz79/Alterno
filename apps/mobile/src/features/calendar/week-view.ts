@@ -57,6 +57,19 @@ export function selectWeek(plan: DatedPlan, today: CalendarDate): WeekView {
     mondays.at(-1) ??
     thisMonday;
 
+  return weekAt(plan, monday);
+}
+
+/**
+ * Semaine du plan contenant la date donnée (utilisée par la navigation semaine par semaine).
+ * Une semaine hors du plan est renvoyée vide, avec un total nul.
+ *
+ * @param plan - Plan en cours (validé)
+ * @param anyDay - N'importe quel jour de la semaine voulue
+ * @returns La semaine, du lundi au vendredi
+ */
+export function weekAt(plan: DatedPlan, anyDay: CalendarDate): WeekView {
+  const monday = anyDay.startOfWeek();
   const columns = Array.from({ length: DAYS_SHOWN }, (_, index) => {
     const date = monday.plusDays(index);
     return { date, day: plan.days.find((day) => day.date.equals(date)) ?? null };
