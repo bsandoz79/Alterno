@@ -8,7 +8,7 @@ import {
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
-import { dayBlocks, gridHours, selectWeek } from './week-view';
+import { dayBlocks, gridHours, selectWeek, weekAt } from './week-view';
 
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
 const simulate = new SimulatePlan(laBrosseEtDupontRules());
@@ -66,6 +66,22 @@ describe('selectWeek — semaine affichée dans la grille', () => {
 
     expect(friday?.date.toIsoString()).toBe('2026-10-23');
     expect(friday?.day).toBeNull();
+  });
+});
+
+describe('weekAt — semaine choisie par la navigation', () => {
+  it('affiche la semaine demandée, même si on lui donne un autre jour que le lundi', () => {
+    const week = weekAt(twoWeeks, date('2026-10-21'));
+
+    expect(week.monday.toIsoString()).toBe('2026-10-19');
+    expect(week.total.format()).toBe('41h');
+  });
+
+  it('renvoie une semaine vide (total nul) hors du plan', () => {
+    const week = weekAt(twoWeeks, date('2026-11-02'));
+
+    expect(week.columns.every((column) => column.day === null)).toBe(true);
+    expect(week.total.format()).toBe('0h');
   });
 });
 

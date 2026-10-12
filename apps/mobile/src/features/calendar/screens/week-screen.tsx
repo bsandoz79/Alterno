@@ -3,17 +3,17 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { ScreenContainer } from '@/shared/components/screen-container';
-import { formatLongDate } from '@/shared/format/format-date';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { WeekGrid } from '../components/week-grid';
+import { PlanCalendar } from '../components/plan-calendar';
 import { useCurrentPlan } from '../hooks/use-current-plan';
-import { selectWeek } from '../week-view';
+
+const TITLE = 'Mon planning';
 
 /**
- * Écran « Semaine » : le plan validé, en grille façon emploi du temps EPSI, avec le total de la semaine.
+ * Écran « Semaine » : le plan validé, semaine par semaine (grille façon EDT EPSI) ou mois par mois.
  *
  * @returns L'écran
  */
@@ -22,11 +22,11 @@ export function WeekScreen() {
   const today = systemClock.today();
 
   if (plan === undefined) {
-    return <ScreenContainer title="Ma semaine" />;
+    return <ScreenContainer title={TITLE} />;
   }
   if (plan === null) {
     return (
-      <ScreenContainer title="Ma semaine">
+      <ScreenContainer title={TITLE}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Aucun plan validé</Text>
           <Text style={styles.cardText}>
@@ -40,17 +40,11 @@ export function WeekScreen() {
     );
   }
 
-  const week = selectWeek(plan, today);
+  // La clé change quand un autre plan est validé : la navigation repart alors de la semaine du jour.
+  const planKey = plan.days.map((day) => day.date.toIsoString()).join();
   return (
-    <ScreenContainer
-      title="Ma semaine"
-      overline={`Semaine du ${formatLongDate(week.monday).toLowerCase()}`}
-    >
-      <WeekGrid week={week} today={today} />
-      <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>Total prévu sur la semaine</Text>
-        <Text style={styles.totalValue}>{week.total.format()}</Text>
-      </View>
+    <ScreenContainer title={TITLE}>
+      <PlanCalendar key={planKey} plan={plan} today={today} />
     </ScreenContainer>
   );
 }
@@ -77,22 +71,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 15,
     color: COLORS.primary,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.lg,
-  },
-  totalLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 15,
-    color: COLORS.textMuted,
-  },
-  totalValue: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 17,
-    color: COLORS.text,
   },
 });
