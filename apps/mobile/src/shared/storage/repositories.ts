@@ -6,6 +6,8 @@ import type {
   WorkRulesSettingsRepository,
 } from '@alterno/engine';
 
+import type { AnnualCalendarStore } from './annual-calendar-store';
+
 /** Ensemble des dépôts de données dont l'app a besoin, quelle que soit la plateforme. */
 export interface Repositories {
   /** Plan en cours. */
@@ -18,4 +20,6 @@ export interface Repositories {
   readonly preferences: PlanningPreferencesRepository;
   /** Semaines d'école marquées. */
   readonly schoolWeeks: SchoolWeeksRepository;
+  /** Calendrier annuel joint (facultatif). */
+  readonly annualCalendar: AnnualCalendarStore;
 }

@@ -21,9 +21,10 @@ export default defineConfig({
         'src/**/testing/**',
         // Hooks React : la logique testable est extraite dans des fonctions pures (ex. work-rules-form).
         'src/**/hooks/**',
-        // Colle React et pont vers expo-sqlite : vérifiés en lançant l'app, pas en test unitaire.
+        // Colle React et ponts vers expo-sqlite / expo-file-system : vérifiés en lançant l'app, pas en test unitaire.
         'src/**/repositories-context.ts',
         'src/**/expo-sql-database.ts',
+        'src/**/expo-document-files.ts',
       ],
     },
   },
