@@ -30,6 +30,19 @@ const MIGRATIONS: readonly string[] = [
      id INTEGER PRIMARY KEY CHECK (id = 1),
      data TEXT NOT NULL
    );`,
+  // Version 4 : le plan en cours porte la date de chaque journée.
+  // La table est recréée plutôt que modifiée : aucune version publiée n'y a jamais écrit
+  // (la validation d'un plan arrive avec cette version), il n'y a donc aucune donnée à reprendre.
+  `DROP TABLE plan_day;
+   CREATE TABLE plan_day (
+     position INTEGER PRIMARY KEY,
+     date TEXT NOT NULL,
+     arrival_minutes INTEGER NOT NULL,
+     lunch_start_minutes INTEGER NOT NULL,
+     lunch_end_minutes INTEGER NOT NULL,
+     departure_minutes INTEGER NOT NULL,
+     worked_minutes INTEGER NOT NULL
+   );`,
 ];
 
 /**
