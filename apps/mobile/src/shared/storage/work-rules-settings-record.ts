@@ -1,6 +1,6 @@
-import { Duration, TimeOfDay, type DayTimes, type WorkRulesSettings } from '@alterno/engine';
+import { Duration, type DayTimes, type WorkRulesSettings } from '@alterno/engine';
 
-const MINUTES_PER_HOUR = 60;
+import { timeAt } from './time-record';
 
 /** Six heures d'un groupe de jours, en minutes depuis minuit. */
 interface DayTimesRecord {
@@ -76,12 +76,4 @@ function fromDayTimesRecord(record: DayTimesRecord): DayTimes {
     coreEnd: timeAt(record.coreEnd),
     latestDeparture: timeAt(record.latestDeparture),
   };
-}
-
-/** Heure à partir de minutes depuis minuit. */
-function timeAt(minutesSinceMidnight: number): TimeOfDay {
-  return TimeOfDay.of(
-    Math.floor(minutesSinceMidnight / MINUTES_PER_HOUR),
-    minutesSinceMidnight % MINUTES_PER_HOUR,
-  );
 }

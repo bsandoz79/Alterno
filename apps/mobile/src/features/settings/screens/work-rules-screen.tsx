@@ -1,14 +1,15 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
+import { MessageBox } from '@/shared/components/message-box';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { SettingsSection } from '@/shared/components/settings-section';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { SettingsSection } from '../components/settings-section';
 import { TimeField } from '@/shared/components/time-field';
-import { useWorkRulesSettings, type SettingsMessage } from '../hooks/use-work-rules-settings';
+import { useWorkRulesSettings } from '../hooks/use-work-rules-settings';
 import {
   DAY_GROUP_LABELS,
   DAY_TIME_FIELDS,
@@ -84,21 +85,6 @@ export function WorkRulesScreen() {
   );
 }
 
-/** Message de résultat : vert si enregistré, ambre si erreur ou information. */
-function MessageBox({ message }: { readonly message: SettingsMessage }) {
-  const isSuccess = message.kind === 'success';
-  return (
-    <View
-      style={[styles.message, isSuccess ? styles.messageSuccess : styles.messageWarning]}
-      accessibilityLiveRegion="polite"
-    >
-      <Text style={isSuccess ? styles.messageSuccessText : styles.messageWarningText}>
-        {message.text}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   back: {
     fontFamily: FONTS.bold,
@@ -130,25 +116,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.primary,
     textAlign: 'center',
-  },
-  message: {
-    borderRadius: RADIUS.card,
-    padding: SPACING.md,
-  },
-  messageSuccess: {
-    backgroundColor: COLORS.surface,
-  },
-  messageWarning: {
-    backgroundColor: COLORS.warningBackground,
-  },
-  messageSuccessText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: COLORS.positive,
-  },
-  messageWarningText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: COLORS.warningText,
   },
 });

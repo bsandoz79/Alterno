@@ -1,6 +1,7 @@
 import type {
   CounterRepository,
   PlanRepository,
+  PlanningPreferencesRepository,
   WorkRulesSettingsRepository,
 } from '@alterno/engine';
 
@@ -12,4 +13,6 @@ export interface Repositories {
   readonly counter: CounterRepository;
   /** Réglages des règles horaires. */
   readonly workRules: WorkRulesSettingsRepository;
+  /** Habitudes et préférences par jour. */
+  readonly preferences: PlanningPreferencesRepository;
 }

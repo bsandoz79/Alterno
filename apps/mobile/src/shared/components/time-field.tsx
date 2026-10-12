@@ -9,6 +9,8 @@ interface TimeFieldProps {
   readonly label: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
+  /** Texte grisé affiché quand le champ est vide (ex. la valeur par défaut). */
+  readonly placeholder?: string;
 }
 
 /**
@@ -18,7 +20,7 @@ interface TimeFieldProps {
  * @param props - Libellé, valeur et action de modification
  * @returns Le champ
  */
-export function TimeField({ label, value, onChange }: TimeFieldProps) {
+export function TimeField({ label, value, onChange, placeholder }: TimeFieldProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
@@ -26,6 +28,8 @@ export function TimeField({ label, value, onChange }: TimeFieldProps) {
         style={styles.input}
         value={value}
         onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
         accessibilityLabel={label}
         autoCapitalize="none"
         autoCorrect={false}

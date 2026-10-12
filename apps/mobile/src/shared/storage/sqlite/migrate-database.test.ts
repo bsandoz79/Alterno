@@ -11,11 +11,16 @@ const tablesOf = async (db: ReturnType<typeof createNodeSqlDatabase>): Promise<s
   ).map((row) => row.name);
 
 describe('migrateDatabase — schéma de la base locale', () => {
-  it('crée les tables du compteur, du plan et des réglages sur une base neuve', async () => {
+  it('crée les tables du compteur, du plan, des réglages et des préférences sur une base neuve', async () => {
     const db = createNodeSqlDatabase();
     await migrateDatabase(db);
 
-    expect(await tablesOf(db)).toEqual(['counter', 'plan_day', 'work_rules_settings']);
+    expect(await tablesOf(db)).toEqual([
+      'counter',
+      'plan_day',
+      'planning_preferences',
+      'work_rules_settings',
+    ]);
   });
 
   it('enregistre la version du schéma pour ne pas rejouer les migrations', async () => {
@@ -23,7 +28,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(2);
+    expect(version?.user_version).toBe(3);
   });
 
   it('met à jour une base en version 1 sans perdre ses données', async () => {

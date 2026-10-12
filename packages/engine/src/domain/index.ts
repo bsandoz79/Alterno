@@ -64,3 +64,5 @@ export {
   type PlanningPeriodRequest,
 } from './calendar/planning-period';
 export type { Clock } from './ports/clock';
+export { validatePlanningPreferences } from './planning/validate-planning-preferences';
+export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
