@@ -1,13 +1,13 @@
 import {
+  CalendarDate,
   Duration,
   HoursCounter,
-  PlanGenerator,
+  SimulatePlan,
   TimeOfDay,
   TimeSlot,
   laBrosseEtDupontRules,
   laBrosseEtDupontSettings,
-  type Plan,
-  type Weekday,
+  type DatedPlan,
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
@@ -56,17 +56,28 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
   ],
 ];
 
-const generator = new PlanGenerator(laBrosseEtDupontRules());
-const WEEK: readonly Weekday[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+const simulate = new SimulatePlan(laBrosseEtDupontRules());
+const datesFrom = (isoDates: readonly string[]): CalendarDate[] =>
+  isoDates.map((iso) => CalendarDate.fromIsoString(iso));
+const WEEK = datesFrom(['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23']);
+
+/** Plan daté obtenu par simulation, comme celui que l'utilisateur valide. */
+const planFor = (days: readonly CalendarDate[], hours: number): DatedPlan =>
+  simulate.execute({
+    days,
+    objective: { kind: 'hours', target: Duration.ofHours(hours) },
+    pace: 'steady',
+    counter: HoursCounter.zero(),
+  });
 
 /** Résumé lisible d'un plan, pour comparer un plan enregistré et un plan relu. */
-const describePlan = (plan: Plan | null): string[] =>
+const describePlan = (plan: DatedPlan | null): string[] =>
   plan === null
     ? []
     : [
         ...plan.days.map(
-          (day) =>
-            `${day.day} ${day.arrival.format()} ${day.lunchBreak.format()} ${day.departure.format()} ${day.worked.format()}`,
+          ({ date, plan: day }) =>
+            `${date.toIsoString()} ${day.day} ${day.arrival.format()} ${day.lunchBreak.format()} ${day.departure.format()} ${day.worked.format()}`,
         ),
         `total ${plan.totalWorked.format()}`,
       ];
@@ -102,9 +113,9 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       expect(await plans.loadCurrent()).toBeNull();
     });
 
-    it('retrouve un plan à l’identique : jours, horaires, pauses et temps travaillé', async () => {
+    it('retrouve un plan à l’identique : dates, jours, horaires, pauses et temps travaillé', async () => {
       const { plans } = await create();
-      const plan = generator.planForTotalHours(WEEK, Duration.ofHours(41));
+      const plan = planFor(WEEK, 41);
       await plans.saveCurrent(plan);
 
       expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(plan));
@@ -112,8 +123,8 @@ describe.each(implementations)('Stockage %s', (_, create) => {
 
     it('remplace entièrement le plan précédent', async () => {
       const { plans } = await create();
-      await plans.saveCurrent(generator.planForTotalHours(WEEK, Duration.ofHours(41)));
-      const shorter = generator.planForTotalHours(['monday', 'tuesday'], Duration.ofHours(15));
+      await plans.saveCurrent(planFor(WEEK, 41));
+      const shorter = planFor(WEEK.slice(0, 2), 15);
       await plans.saveCurrent(shorter);
 
       expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(shorter));
