@@ -2,7 +2,9 @@ import {
   Duration,
   HoursCounter,
   PlanGenerator,
+  TimeOfDay,
   laBrosseEtDupontRules,
+  laBrosseEtDupontSettings,
   type Plan,
   type Weekday,
 } from '@alterno/engine';
@@ -10,10 +12,12 @@ import { describe, expect, it } from 'vitest';
 
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
+import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
+import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
 import { createMemoryStorage } from './testing/memory-storage';
 import { createNodeSqlDatabase } from './testing/node-sql-database';
 
@@ -27,7 +31,11 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
     async () => {
       const db = createNodeSqlDatabase();
       await migrateDatabase(db);
-      return { plans: new SqlitePlanRepository(db), counter: new SqliteCounterRepository(db) };
+      return {
+        plans: new SqlitePlanRepository(db),
+        counter: new SqliteCounterRepository(db),
+        workRules: new SqliteWorkRulesSettingsRepository(db),
+      };
     },
   ],
   [
@@ -37,6 +45,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
       return Promise.resolve({
         plans: new BrowserPlanRepository(storage),
         counter: new BrowserCounterRepository(storage),
+        workRules: new BrowserWorkRulesSettingsRepository(storage),
       });
     },
   ],
@@ -103,6 +112,35 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await plans.saveCurrent(shorter);
 
       expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(shorter));
+    });
+  });
+  describe('réglages des règles horaires', () => {
+    it('ne renvoie aucun réglage tant que rien n’est enregistré (le preset s’appliquera)', async () => {
+      const { workRules } = await create();
+
+      expect(await workRules.load()).toBeNull();
+    });
+
+    it('retrouve les réglages à l’identique', async () => {
+      const { workRules } = await create();
+      const settings = laBrosseEtDupontSettings();
+      const custom = {
+        ...settings,
+        friday: { ...settings.friday, latestDeparture: TimeOfDay.of(17, 0) },
+        halfDayRecovery: Duration.ofHours(3, 45),
+      };
+      await workRules.save(custom);
+
+      expect(await workRules.load()).toEqual(custom);
+    });
+
+    it('remplace les réglages précédents', async () => {
+      const { workRules } = await create();
+      const settings = laBrosseEtDupontSettings();
+      await workRules.save({ ...settings, expectedDailyWork: Duration.ofHours(8) });
+      await workRules.save(settings);
+
+      expect(await workRules.load()).toEqual(settings);
     });
   });
 });

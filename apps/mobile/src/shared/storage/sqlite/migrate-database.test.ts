@@ -11,11 +11,11 @@ const tablesOf = async (db: ReturnType<typeof createNodeSqlDatabase>): Promise<s
   ).map((row) => row.name);
 
 describe('migrateDatabase — schéma de la base locale', () => {
-  it('crée les tables du compteur et du plan sur une base neuve', async () => {
+  it('crée les tables du compteur, du plan et des réglages sur une base neuve', async () => {
     const db = createNodeSqlDatabase();
     await migrateDatabase(db);
 
-    expect(await tablesOf(db)).toEqual(['counter', 'plan_day']);
+    expect(await tablesOf(db)).toEqual(['counter', 'plan_day', 'work_rules_settings']);
   });
 
   it('enregistre la version du schéma pour ne pas rejouer les migrations', async () => {
@@ -23,7 +23,20 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(1);
+    expect(version?.user_version).toBe(2);
+  });
+
+  it('met à jour une base en version 1 sans perdre ses données', async () => {
+    const db = createNodeSqlDatabase();
+    await migrateDatabase(db, 1);
+    await db.runAsync('INSERT INTO counter (id, balance_minutes) VALUES (1, ?)', [30]);
+    await migrateDatabase(db);
+    const row = await db.getFirstAsync<{ balance_minutes: number }>(
+      'SELECT balance_minutes FROM counter',
+    );
+
+    expect(row?.balance_minutes).toBe(30);
+    expect(await tablesOf(db)).toContain('work_rules_settings');
   });
 
   it('ne touche pas aux données d’une base déjà à jour', async () => {
