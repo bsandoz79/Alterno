@@ -69,4 +69,5 @@ export {
 export type { Clock } from './ports/clock';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';
 export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
-export type { DatedDay, DatedPlan } from './planning/dated-plan';
+export type { DatedDay, DatedPlan, PlannedRecovery } from './planning/dated-plan';
+export { BalanceForecaster, type BalanceForecast } from './planning/balance-forecaster';
