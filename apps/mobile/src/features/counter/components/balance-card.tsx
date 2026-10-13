@@ -5,32 +5,37 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
+import type { BalanceStatus } from '../balance-status';
+
+/** Propriétés de la carte du solde. */
+interface BalanceCardProps {
+  readonly counter: HoursCounter;
+  readonly status: BalanceStatus;
+}
+
 /**
  * Carte du solde : vert quand le compteur est créditeur (heures d'avance), rouge quand il est
- * débiteur (heures à rattraper), neutre à l'équilibre.
+ * débiteur (heures à rattraper), neutre à l'équilibre. Au-delà du découvert autorisé,
+ * l'explication passe en alerte.
  *
- * @param props - Compteur actuel
+ * @param props - Compteur actuel et son état
  * @returns La carte
  */
-export function BalanceCard({ counter }: { readonly counter: HoursCounter }) {
-  const negative = counter.balance.isNegative();
-  const even = counter.balance.isZero();
+export function BalanceCard({ counter, status }: BalanceCardProps) {
+  const { tone, hint } = status;
   return (
     <View style={styles.card}>
       <Text style={styles.label}>Solde du compteur</Text>
       <Text
-        style={[styles.balance, even ? styles.even : negative ? styles.negative : styles.positive]}
+        style={[
+          styles.balance,
+          tone === 'even' ? styles.even : tone === 'ahead' ? styles.positive : styles.negative,
+        ]}
         accessibilityRole="header"
       >
         {counter.format()}
       </Text>
-      <Text style={styles.hint}>
-        {even
-          ? 'Compteur à l’équilibre'
-          : negative
-            ? 'Heures à rattraper'
-            : 'Heures d’avance, utilisables pour une récup'}
-      </Text>
+      <Text style={[styles.hint, tone === 'beyond-deficit' && styles.alert]}>{hint}</Text>
     </View>
   );
 }
@@ -65,5 +70,12 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 14,
     color: COLORS.textMuted,
+  },
+  alert: {
+    fontFamily: FONTS.semiBold,
+    color: COLORS.warningText,
+    backgroundColor: COLORS.warningBackground,
+    borderRadius: RADIUS.input,
+    padding: SPACING.sm,
   },
 });

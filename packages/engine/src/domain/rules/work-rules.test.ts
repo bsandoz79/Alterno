@@ -121,6 +121,31 @@ describe('WorkRules', () => {
       ).toThrow(InvalidValueError);
     });
 
+    it('n’autorise aucun découvert quand il n’est pas précisé', () => {
+      const rules = WorkRules.create({
+        week: { monday: standardDay },
+        minimumLunchBreak: Duration.ofMinutes(45),
+        expectedDailyWork: Duration.ofHours(7),
+        fullDayRecovery: Duration.ofHours(7),
+        halfDayRecovery: Duration.ofHours(3, 30),
+      });
+
+      expect(rules.maximumDeficit.isZero()).toBe(true);
+    });
+
+    it('refuse un découvert négatif', () => {
+      expect(() =>
+        WorkRules.create({
+          week: { monday: standardDay },
+          minimumLunchBreak: Duration.ofMinutes(45),
+          expectedDailyWork: Duration.ofHours(7),
+          fullDayRecovery: Duration.ofHours(7),
+          halfDayRecovery: Duration.ofHours(3, 30),
+          maximumDeficit: Duration.ofHours(-1),
+        }),
+      ).toThrow(/découvert/);
+    });
+
     it('refuse une semaine sans aucun jour travaillé', () => {
       expect(() =>
         WorkRules.create({

@@ -50,6 +50,15 @@ describe('buildWorkRules — règles construites depuis les réglages', () => {
     expect(rules.expectedDailyWork.format()).toBe('7h30');
   });
 
+  it('prend en compte le découvert réglé, y compris aucun découvert', () => {
+    expect(
+      buildWorkRules({ ...preset, maximumDeficit: Duration.ofHours(2) }).maximumDeficit.format(),
+    ).toBe('2h');
+    expect(
+      buildWorkRules({ ...preset, maximumDeficit: Duration.zero() }).maximumDeficit.isZero(),
+    ).toBe(true);
+  });
+
   it('refuse des heures dans le désordre en nommant le groupe concerné', () => {
     const shuffled: WorkRulesSettings = {
       ...preset,

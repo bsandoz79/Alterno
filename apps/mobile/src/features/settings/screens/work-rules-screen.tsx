@@ -23,7 +23,7 @@ const DAY_GROUPS: readonly DayGroup[] = ['mondayToThursday', 'friday'];
 
 /**
  * Écran « Règles horaires » : plages du lundi au jeudi et du vendredi, pause minimale, temps attendu,
- * valeur des récups. Le preset La Brosse et Dupont s'applique tant que rien n'est enregistré.
+ * valeur des récups et découvert autorisé. Le preset La Brosse et Dupont s'applique tant que rien n'est enregistré.
  *
  * @returns L'écran
  */

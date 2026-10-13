@@ -18,13 +18,13 @@ import { useCounter } from '../hooks/use-counter';
  * @returns L'écran
  */
 export function CounterScreen() {
-  const { counter, input, setInput, preview, recalibrate, message } = useCounter();
+  const { counter, status, input, setInput, preview, recalibrate, message } = useCounter();
 
   return (
     <ScreenContainer title="Mon compteur">
-      {counter === null ? null : (
+      {counter === null || status === null ? null : (
         <>
-          <BalanceCard counter={counter} />
+          <BalanceCard counter={counter} status={status} />
           <RecalibrateCard
             input={input}
             onChange={setInput}
@@ -37,7 +37,9 @@ export function CounterScreen() {
       <Link href="/reglages" style={styles.settingsLink} accessibilityRole="button">
         <Text style={styles.settingsTitle}>Règles horaires</Text>
         {'\n'}
-        <Text style={styles.settingsHint}>Plages, pause minimale, temps attendu et récups</Text>
+        <Text style={styles.settingsHint}>
+          Plages, pause minimale, temps attendu, récups et découvert
+        </Text>
       </Link>
     </ScreenContainer>
   );

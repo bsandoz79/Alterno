@@ -3,7 +3,7 @@ import type { Duration } from '../time/duration';
 
 /**
  * Levée quand on veut poser une récupération sans avoir assez d'heures au compteur
- * (règle de l'entreprise : 7h cumulées pour une journée, 3h30 pour une demi-journée).
+ * (règle de l'entreprise : la récup ne doit pas faire passer le compteur sous le découvert autorisé, −4h).
  */
 export class InsufficientCounterError extends DomainError {
   /**

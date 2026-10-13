@@ -14,7 +14,11 @@ export type DayTimesForm = Readonly<Record<keyof DayTimes, string>>;
 
 /** Champs de durée du formulaire. */
 export type DurationField =
-  'minimumLunchBreak' | 'expectedDailyWork' | 'fullDayRecovery' | 'halfDayRecovery';
+  | 'minimumLunchBreak'
+  | 'expectedDailyWork'
+  | 'fullDayRecovery'
+  | 'halfDayRecovery'
+  | 'maximumDeficit';
 
 /** Groupes de jours du formulaire. */
 export type DayGroup = 'mondayToThursday' | 'friday';
@@ -62,6 +66,7 @@ export const DURATION_LABELS: Readonly<Record<DurationField, string>> = {
   expectedDailyWork: 'Temps attendu par jour',
   fullDayRecovery: 'Journée de récup',
   halfDayRecovery: 'Demi-journée de récup',
+  maximumDeficit: 'Découvert autorisé',
 };
 
 /** Champs de durée, dans l'ordre d'affichage. */
@@ -70,6 +75,7 @@ export const DURATION_FIELDS: readonly DurationField[] = [
   'expectedDailyWork',
   'fullDayRecovery',
   'halfDayRecovery',
+  'maximumDeficit',
 ];
 
 /**
@@ -86,6 +92,7 @@ export function toWorkRulesForm(settings: WorkRulesSettings): WorkRulesForm {
     expectedDailyWork: settings.expectedDailyWork.format(),
     fullDayRecovery: settings.fullDayRecovery.format(),
     halfDayRecovery: settings.halfDayRecovery.format(),
+    maximumDeficit: settings.maximumDeficit.format(),
   };
 }
 
@@ -104,6 +111,7 @@ export function parseWorkRulesForm(form: WorkRulesForm): WorkRulesFormResult {
       expectedDailyWork: parseDuration(form, 'expectedDailyWork'),
       fullDayRecovery: parseDuration(form, 'fullDayRecovery'),
       halfDayRecovery: parseDuration(form, 'halfDayRecovery'),
+      maximumDeficit: parseDuration(form, 'maximumDeficit'),
     };
     // Les règles métier (ordre des heures, pause minimale…) sont vérifiées par le moteur, pas ici.
     buildWorkRules(settings);

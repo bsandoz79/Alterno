@@ -87,6 +87,43 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
     );
   });
 
+  describe('jours proposés pour la récup', () => {
+    it('propose chaque jour sauf le premier, avec ce qu’il manque pour les jours impossibles', () => {
+      // Avec -2h : mardi impossible (lundi à 10h ne donne que 3h sur les 5h nécessaires avec le découvert).
+      const choices = simulate.recoveryChoices(
+        nextWeek,
+        HoursCounter.of(Duration.ofHours(-2)),
+        'full',
+      );
+
+      expect(
+        choices.map(({ date, outlook }) => [
+          date.toIsoString(),
+          outlook.reachable ? 'possible' : `manque ${outlook.missing.format()}`,
+        ]),
+      ).toEqual([
+        ['2026-10-20', 'manque 2h'],
+        ['2026-10-21', 'possible'],
+        ['2026-10-22', 'possible'],
+        ['2026-10-23', 'possible'],
+      ]);
+    });
+
+    it('indique le découvert restant après une récup proche', () => {
+      const [tuesday] = simulate.recoveryChoices(nextWeek, HoursCounter.zero(), 'full');
+
+      expect(tuesday?.outlook).toEqual({
+        reachable: true,
+        catchUp: Duration.ofHours(3),
+        deficitAfter: Duration.ofHours(4),
+      });
+    });
+
+    it('ne propose rien sur une période d’un seul jour', () => {
+      expect(simulate.recoveryChoices([friday], HoursCounter.zero(), 'full')).toEqual([]);
+    });
+  });
+
   it('refuse une récup le premier jour de la période (aucun jour pour la préparer)', () => {
     expect(() =>
       simulate.execute({

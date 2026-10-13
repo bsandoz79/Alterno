@@ -47,8 +47,17 @@ const PACES = [
  * @returns L'écran
  */
 export function SimulationScreen() {
-  const { context, form, update, recoveryChoices, hoursToCatchUp, outcome, validate, message } =
-    useSimulation();
+  const {
+    context,
+    form,
+    update,
+    recoveryChoices,
+    hoursToCatchUp,
+    deficitNotice,
+    outcome,
+    validate,
+    message,
+  } = useSimulation();
   const shapes = outcome?.ok === true ? paceShapes(outcome.comparison) : null;
 
   return (
@@ -135,6 +144,9 @@ export function SimulationScreen() {
                 </Text>
                 <Text style={styles.catchUpValue}>{hoursToCatchUp.format({ signed: true })}</Text>
               </View>
+            )}
+            {deficitNotice === null ? null : (
+              <MessageBox message={{ kind: 'info', text: deficitNotice }} />
             )}
           </>
         )}

@@ -1,4 +1,9 @@
-import { Duration, type DayTimes, type WorkRulesSettings } from '@alterno/engine';
+import {
+  Duration,
+  laBrosseEtDupontSettings,
+  type DayTimes,
+  type WorkRulesSettings,
+} from '@alterno/engine';
 
 import { timeAt } from './time-record';
 
@@ -20,6 +25,8 @@ export interface WorkRulesSettingsRecord {
   readonly expectedDailyWork: number;
   readonly fullDayRecovery: number;
   readonly halfDayRecovery: number;
+  /** Absent des réglages enregistrés avant l'ajout du découvert (ALT-43). */
+  readonly maximumDeficit?: number;
 }
 
 /**
@@ -36,6 +43,7 @@ export function toWorkRulesSettingsRecord(settings: WorkRulesSettings): WorkRule
     expectedDailyWork: settings.expectedDailyWork.toMinutes(),
     fullDayRecovery: settings.fullDayRecovery.toMinutes(),
     halfDayRecovery: settings.halfDayRecovery.toMinutes(),
+    maximumDeficit: settings.maximumDeficit.toMinutes(),
   };
 }
 
@@ -53,6 +61,12 @@ export function fromWorkRulesSettingsRecord(record: WorkRulesSettingsRecord): Wo
     expectedDailyWork: Duration.ofMinutes(record.expectedDailyWork),
     fullDayRecovery: Duration.ofMinutes(record.fullDayRecovery),
     halfDayRecovery: Duration.ofMinutes(record.halfDayRecovery),
+    // Réglages enregistrés avant l'existence du découvert : on reprend celui du preset
+    // plutôt que zéro, pour que la règle de l'entreprise s'applique sans avoir à tout ressaisir.
+    maximumDeficit:
+      record.maximumDeficit === undefined
+        ? laBrosseEtDupontSettings().maximumDeficit
+        : Duration.ofMinutes(record.maximumDeficit),
   };
 }
 
