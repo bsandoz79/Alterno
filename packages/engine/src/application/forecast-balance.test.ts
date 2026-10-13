@@ -8,12 +8,16 @@ import type { CounterRepository } from '../domain/ports/counter-repository';
 import type { PlanRepository } from '../domain/ports/plan-repository';
 import { laBrosseEtDupontRules } from '../domain/rules/presets/la-brosse-et-dupont';
 import { Duration } from '../domain/time/duration';
+import { TimeOfDay } from '../domain/time/time-of-day';
 import { ForecastBalance } from './forecast-balance';
 import { SimulatePlan } from './simulate-plan';
 
 const rules = laBrosseEtDupontRules();
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
-const clockAt = (iso: string): Clock => ({ today: () => date(iso) });
+const clockAt = (iso: string): Clock => ({
+  today: () => date(iso),
+  currentTime: () => TimeOfDay.of(9, 0),
+});
 const counterAt = (hours: number): CounterRepository => ({
   load: () => Promise.resolve(HoursCounter.of(Duration.ofHours(hours))),
   save: () => Promise.resolve(),

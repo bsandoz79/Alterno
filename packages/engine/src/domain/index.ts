@@ -67,6 +67,14 @@ export {
   type PlanningPeriodRequest,
 } from './calendar/planning-period';
 export type { Clock } from './ports/clock';
+export type { Notifier } from './ports/notifier';
+export type { ReminderSettingsRepository } from './ports/reminder-settings-repository';
+export { ReminderSettings } from './reminders/reminder-settings';
+export {
+  DepartureReminderPlanner,
+  type DepartureReminder,
+  type Moment,
+} from './reminders/departure-reminder-planner';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';
 export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
 export type { DatedDay, DatedPlan, PlannedRecovery } from './planning/dated-plan';
