@@ -11,6 +11,7 @@ import {
   type Duration,
   type PlanningPreferences,
   type PaceComparison,
+  type RecoveryChoice,
   type SchoolWeeks,
   type Simulation,
   type WorkRules,
@@ -22,6 +23,7 @@ import { systemClock } from '@/shared/clock/system-clock';
 import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
+import { deficitNotice, selectableRecoveryDate } from '../recovery-choices';
 import {
   DEFAULT_SIMULATION_FORM,
   toSimulationRequest,
@@ -53,10 +55,12 @@ export interface SimulationState {
   readonly context: SimulationContext | null;
   readonly form: SimulationForm;
   readonly update: (changes: Partial<SimulationForm>) => void;
-  /** Jours où la récup peut être posée (jours de la période, sauf le premier). */
-  readonly recoveryChoices: readonly CalendarDate[];
-  /** Heures à faire en plus avant la récup choisie. */
+  /** Jours proposés pour la récup (jours de la période, sauf le premier), possibles ou non. */
+  readonly recoveryChoices: readonly RecoveryChoice[];
+  /** Heures à faire en plus avant la récup pour finir à zéro. */
   readonly hoursToCatchUp: Duration | null;
+  /** Avertissement si la récup choisie puise dans le découvert. */
+  readonly deficitNotice: string | null;
   readonly outcome: SimulationOutcome | null;
   /** Valide la simulation affichée : elle devient le plan en cours. */
   readonly validate: () => Promise<void>;
@@ -103,11 +107,14 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
   );
 
   const computed = useMemo(() => {
+    const empty = { recoveryChoices: [], hoursToCatchUp: null, deficitNotice: null };
     if (context === null) {
-      return { recoveryChoices: [], hoursToCatchUp: null, outcome: null };
+      return { ...empty, outcome: null };
     }
+    let days: readonly CalendarDate[];
+    let simulatePlan: SimulatePlan;
     try {
-      const days = planningPeriodDays({
+      days = planningPeriodDays({
         today: clock.today(),
         start: form.start,
         weeks: form.weeks,
@@ -115,37 +122,35 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
         // Les jours d'école sont exclus : on ne planifie que les jours en entreprise.
         schoolWeeks: context.schoolWeeks,
       });
-      const recoveryChoices = days.slice(1);
-      // Un jour choisi qui n'est plus dans la période (période modifiée) est oublié.
-      const recoveryDate = recoveryChoices.some((day) => day.toIsoString() === form.recoveryDate)
-        ? form.recoveryDate
-        : null;
       // Des préférences devenues incompatibles (règles modifiées depuis) lèvent une erreur affichée.
-      const simulatePlan = new SimulatePlan(context.rules, context.preferences);
-      const request = toSimulationRequest({ ...form, recoveryDate }, days, context.counter);
-      let outcome: SimulationOutcome;
-      if (request.ok) {
-        // Les trois rythmes sont calculés d'un coup : les cartes affichent leur vrai graphique.
-        const comparison = simulatePlan.compare(request.request);
-        outcome = { ok: true, comparison, simulation: comparison[form.pace] };
-      } else {
-        outcome = request;
-      }
-      return {
-        recoveryChoices,
-        hoursToCatchUp: simulatePlan.hoursToCatchUp(context.counter, form.recoveryKind),
-        outcome,
-      };
+      simulatePlan = new SimulatePlan(context.rules, context.preferences);
     } catch (error) {
-      // Erreurs métier (objectif impossible, période vide…) : affichées telles quelles.
-      if (error instanceof DomainError) {
-        return {
-          recoveryChoices: [],
-          hoursToCatchUp: null,
-          outcome: { ok: false, error: error.message } as const,
-        };
-      }
-      throw error;
+      return { ...empty, outcome: domainErrorOutcome(error) };
+    }
+
+    // Calculés à part de la simulation : une récup impossible ne doit pas faire disparaître les jours.
+    const recoveryChoices = simulatePlan.recoveryChoices(days, context.counter, form.recoveryKind);
+    const recoveryDate = selectableRecoveryDate(recoveryChoices, form.recoveryDate);
+    const recovery = {
+      recoveryChoices,
+      hoursToCatchUp: simulatePlan.hoursToCatchUp(context.counter, form.recoveryKind),
+      deficitNotice: deficitNotice(recoveryChoices, recoveryDate),
+    };
+    const request = toSimulationRequest({ ...form, recoveryDate }, days, context.counter);
+    if (!request.ok) {
+      return { ...recovery, outcome: request };
+    }
+    try {
+      // Les trois rythmes sont calculés d'un coup : les cartes affichent leur vrai graphique.
+      const comparison = simulatePlan.compare(request.request);
+      const outcome: SimulationOutcome = {
+        ok: true,
+        comparison,
+        simulation: comparison[form.pace],
+      };
+      return { ...recovery, outcome };
+    } catch (error) {
+      return { ...recovery, outcome: domainErrorOutcome(error) };
     }
   }, [context, form, clock]);
 
@@ -169,4 +174,18 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
     message,
     ...computed,
   };
+}
+
+/**
+ * Erreur métier (objectif impossible, période vide…) transformée en message affiché tel quel.
+ *
+ * @param error - Erreur levée par le moteur
+ * @returns Le résultat en erreur
+ * @throws L'erreur elle-même si ce n'est pas une erreur métier (bug à ne pas masquer)
+ */
+function domainErrorOutcome(error: unknown): SimulationOutcome {
+  if (error instanceof DomainError) {
+    return { ok: false, error: error.message };
+  }
+  throw error;
 }
