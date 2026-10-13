@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.bsandoz.alterno",
       "adaptiveIcon": {
         "backgroundColor": "#FBF6EE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -22,10 +23,34 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-font", "expo-sqlite"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#C81F2A"
+        }
+      ]
+    ],
     "scheme": "alterno",
     "experiments": {
       "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "80eb7349-0ff7-44a6-81ed-49aa54d24d7e"
+      }
+    },
+    "owner": "bsandoz",
+    "updates": {
+      "url": "https://u.expo.dev/80eb7349-0ff7-44a6-81ed-49aa54d24d7e"
     }
   }
 }

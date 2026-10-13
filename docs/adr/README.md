@@ -13,3 +13,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0006](0006-semaines-d-ecole.md) | Semaines d'école stockées en lundis |
 | [0007](0007-calendrier-annuel-joint.md) | Calendrier annuel joint : port côté app, copie via `content://` |
 | [0008](0008-rappels-de-depart-notifications-locales.md) | Rappels de départ : notifications locales, reprogrammées par décorateur |
+| [0009](0009-apk-eas-build-et-eas-update.md) | Android : APK interne avec EAS Build, mises à jour avec EAS Update |
