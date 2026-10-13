@@ -4,6 +4,7 @@ import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-st
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
+import { BrowserReminderSettingsRepository } from './browser/browser-reminder-settings-repository';
 import { BrowserSchoolWeeksRepository } from './browser/browser-school-weeks-repository';
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
 import type { Repositories } from './repositories';
@@ -25,6 +26,8 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
       preferences: new BrowserPlanningPreferencesRepository(window.localStorage),
       schoolWeeks: new BrowserSchoolWeeksRepository(window.localStorage),
       annualCalendar: new BrowserAnnualCalendarStore(window.localStorage),
+      // Le réglage est gardé sur le web, mais aucun rappel n'y est programmé (pas de notifications).
+      reminders: new BrowserReminderSettingsRepository(window.localStorage),
     }),
     [],
   );
