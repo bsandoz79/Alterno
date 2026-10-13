@@ -132,4 +132,22 @@ describe('DeclareDeviation — modifier un jour du plan et recalculer la suite',
       }),
     ).toThrow(InvalidValueError);
   });
+
+  it('conserve la récup prévue par le plan', () => {
+    const withRecovery = new SimulatePlan(rules).execute({
+      days: ['2026-10-19', '2026-10-20', '2026-10-21'].map(date),
+      objective: { kind: 'recovery', date: date('2026-10-21'), recovery: 'full' },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+    const outcome = declare.execute({
+      plan: withRecovery,
+      date: date('2026-10-19'),
+      actual: { ...firstDayOf(withRecovery).plan, departure: at('17:00') },
+      pace: 'steady',
+    });
+
+    expect(outcome.plan.recovery?.date.toIsoString()).toBe('2026-10-21');
+    expect(outcome.plan.recovery?.kind).toBe('full');
+  });
 });
