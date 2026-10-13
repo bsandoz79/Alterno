@@ -39,7 +39,7 @@ export { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning/plannin
 export type { DayPreferences, PlanningPreferences } from './planning/planning-preferences';
 export { ImpossiblePlanError } from './planning/impossible-plan-error';
 export { PlanGenerator } from './planning/plan-generator';
-export { RecoveryPlanner } from './planning/recovery-planner';
+export { RecoveryPlanner, type RecoveryOutlook } from './planning/recovery-planner';
 export type { PaceStrategy } from './planning/pace/pace-strategy';
 export type { Workload, WorkloadBounds } from './planning/pace/workload';
 export { SteadyPace } from './planning/pace/steady-pace';

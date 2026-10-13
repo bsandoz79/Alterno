@@ -12,6 +12,15 @@ import { PlanGenerator } from './plan-generator';
 import type { PlanningPreferences } from './planning-preferences';
 
 /**
+ * Faisabilité d'une récup à une date :
+ * - possible : heures à rattraper avant, et découvert qui restera après la récup (zéro si tout est rattrapé) ;
+ * - impossible : heures qui manquent, même en journées maximales et en utilisant tout le découvert.
+ */
+export type RecoveryOutlook =
+  | { readonly reachable: true; readonly catchUp: Duration; readonly deficitAfter: Duration }
+  | { readonly reachable: false; readonly missing: Duration };
+
+/**
  * Planifie les jours qui précèdent une récupération pour que le compteur la couvre à la date choisie.
  *
  * Ramène la question à un objectif d'heures : 7h par jour, plus ce qui manque au compteur pour la récup.
@@ -35,31 +44,58 @@ export class RecoveryPlanner {
   }
 
   /**
-   * Heures à faire en plus d'ici la récup : valeur de la récup moins le compteur, jamais négatif
-   * (un surplus déjà au compteur n'est pas « rendu »).
+   * Heures à faire en plus d'ici la récup pour finir à zéro, sans découvert :
+   * valeur de la récup moins le compteur, jamais négatif (un surplus déjà au compteur n'est pas « rendu »).
    *
    * @param counter - Compteur actuel
    * @param kind - Journée ou demi-journée de récup
    * @returns Le temps à rattraper avant la récup
    */
   hoursToCatchUp(counter: HoursCounter, kind: RecoveryKind): Duration {
-    const shortfall = this.counter.recoveryValue(kind).minus(counter.balance);
-    return shortfall.isNegative() ? Duration.zero() : shortfall;
+    return nonNegative(this.counter.recoveryValue(kind).minus(counter.balance));
+  }
+
+  /**
+   * Dit si la récup est possible après ces jours, et à quel prix.
+   *
+   * Le découvert n'est utilisé qu'en dernier recours : s'il y a le temps, tout est rattrapé avant
+   * (compteur à zéro après la récup) ; sinon les jours sont faits au maximum et le reste est pris
+   * sur le découvert autorisé (4h), à rattraper ensuite.
+   *
+   * @param days - Jours travaillés avant la récup, dans l'ordre
+   * @param counter - Compteur actuel
+   * @param kind - Journée ou demi-journée de récup
+   * @returns Les heures à rattraper et le découvert restant, ou ce qui manque si la récup est impossible
+   * @throws {InvalidValueError} Si un jour n'est pas travaillé
+   */
+  recoveryOutlook(
+    days: readonly Weekday[],
+    counter: HoursCounter,
+    kind: RecoveryKind,
+  ): RecoveryOutlook {
+    const withoutDeficit = this.hoursToCatchUp(counter, kind);
+    const minimum = nonNegative(withoutDeficit.minus(this.rules.maximumDeficit));
+    const capacity = this.generator.maximumTotal(days).minus(this.expectedTotal(days));
+    if (capacity.isLessThan(minimum)) {
+      return { reachable: false, missing: minimum.minus(capacity) };
+    }
+    const catchUp = capacity.isLessThan(withoutDeficit) ? capacity : withoutDeficit;
+    return { reachable: true, catchUp, deficitAfter: withoutDeficit.minus(catchUp) };
   }
 
   /**
    * Plan des jours travaillés avant la récupération.
    *
    * Le surplus déjà au compteur est conservé : s'il couvre la récup, les journées restent à 7h
-   * au lieu de puiser dedans.
+   * au lieu de puiser dedans. Le découvert n'est utilisé que si la récup est trop proche pour tout rattraper.
    *
    * @param days - Jours travaillés entre aujourd'hui et la veille de la récup, dans l'ordre
    * @param counter - Compteur actuel
    * @param kind - Journée ou demi-journée de récup
    * @param pace - Rythme de répartition ; régulier par défaut
-   * @returns Le plan qui amène le compteur exactement à la valeur de la récup (ou le garde au-dessus)
+   * @returns Le plan qui amène le compteur à la valeur de la récup (ou le plus près possible, dans le découvert)
    * @throws {InvalidValueError} Si la période est vide ou contient un jour non travaillé
-   * @throws {ImpossiblePlanError} Si la récup est hors d'atteinte même en journées maximales
+   * @throws {ImpossiblePlanError} Si la récup est hors d'atteinte même en journées maximales et avec le découvert
    */
   planForRecovery(
     days: readonly Weekday[],
@@ -67,15 +103,23 @@ export class RecoveryPlanner {
     kind: RecoveryKind,
     pace: PaceStrategy = new SteadyPace(),
   ): Plan {
-    const toCatchUp = this.hoursToCatchUp(counter, kind);
-    const expected = days.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
-    const target = expected.plus(toCatchUp);
-
-    const maximum = this.generator.maximumTotal(days);
+    const outlook = this.recoveryOutlook(days, counter, kind);
     // Contrôlé ici plutôt que dans le générateur pour parler de récup, pas d'« objectif de 36h ».
-    if (days.length > 0 && target.isGreaterThan(maximum)) {
-      throw ImpossiblePlanError.recoveryOutOfReach(RECOVERY_LABELS[kind], target.minus(maximum));
+    // Une période vide est laissée au générateur, qui la refuse avec son propre message.
+    if (!outlook.reachable && days.length > 0) {
+      throw ImpossiblePlanError.recoveryOutOfReach(RECOVERY_LABELS[kind], outlook.missing);
     }
-    return this.generator.planForTotalHours(days, target, pace);
+    const catchUp = outlook.reachable ? outlook.catchUp : Duration.zero();
+    return this.generator.planForTotalHours(days, this.expectedTotal(days).plus(catchUp), pace);
   }
+
+  /** Temps attendu sur ces jours (7h chacun), avant tout rattrapage. */
+  private expectedTotal(days: readonly Weekday[]): Duration {
+    return days.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
+  }
+}
+
+/** La durée, ou zéro si elle est négative. */
+function nonNegative(duration: Duration): Duration {
+  return duration.isNegative() ? Duration.zero() : duration;
 }

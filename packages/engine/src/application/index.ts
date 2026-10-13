@@ -6,6 +6,7 @@ export {
   SimulatePlan,
   type ComparisonRequest,
   type PaceComparison,
+  type RecoveryChoice,
   type SimulatedDay,
   type Simulation,
   type SimulationObjective,

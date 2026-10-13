@@ -84,8 +84,9 @@ describe('Préférences par jour', () => {
     it('s’applique aussi à une récup : le maximum avant la récup tient compte du plafond', () => {
       const planner = new RecoveryPlanner(rules, wednesdayBefore5pm);
       const days: readonly Weekday[] = ['monday', 'tuesday', 'wednesday', 'thursday'];
-      // 4 × 7h + 13h à rattraper = 41h, pour 38h45 possibles avec le mercredi plafonné.
-      const tooMuch = (): Plan => planner.planForRecovery(days, HoursCounter.of(h(-6)), 'full');
+      // Avec -10h : 17h à rattraper, dont 4h de découvert, soit 4 × 7h + 13h = 41h,
+      // pour 38h45 possibles avec le mercredi plafonné.
+      const tooMuch = (): Plan => planner.planForRecovery(days, HoursCounter.of(h(-10)), 'full');
 
       expect(tooMuch).toThrow(ImpossiblePlanError);
       expect(tooMuch).toThrow(/il manque 2h15/);

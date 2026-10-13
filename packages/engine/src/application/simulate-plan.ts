@@ -5,7 +5,7 @@ import type { DatedDay, DatedPlan } from '../domain/planning/dated-plan';
 import type { Plan } from '../domain/planning/plan';
 import { PlanGenerator } from '../domain/planning/plan-generator';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
-import { RecoveryPlanner } from '../domain/planning/recovery-planner';
+import { RecoveryPlanner, type RecoveryOutlook } from '../domain/planning/recovery-planner';
 import type { WorkRules } from '../domain/rules/work-rules';
 import { InvalidValueError } from '../domain/shared/domain-error';
 import type { Duration } from '../domain/time/duration';
@@ -34,6 +34,12 @@ export type Simulation = DatedPlan;
 
 /** Demande de comparaison : la même demande, pour tous les rythmes. */
 export type ComparisonRequest = Omit<SimulationRequest, 'pace'>;
+
+/** Jour où la récup peut être demandée, avec sa faisabilité (possible, ou ce qui manque). */
+export interface RecoveryChoice {
+  readonly date: CalendarDate;
+  readonly outlook: RecoveryOutlook;
+}
 
 /** Simulation de chaque rythme pour le même objectif. */
 export type PaceComparison = Readonly<Record<PaceName, Simulation>>;
@@ -111,11 +117,31 @@ export class SimulatePlan {
   }
 
   /**
+   * Jours où poser la récup, chacun avec sa faisabilité : l'écran barre les jours impossibles
+   * au lieu de les cacher, pour dire combien d'heures il manque.
+   *
+   * @param days - Jours travaillés de la période, dans l'ordre
+   * @param counter - Compteur actuel
+   * @param recovery - Journée ou demi-journée
+   * @returns Chaque jour sauf le premier (il faut au moins un jour pour préparer la récup)
+   */
+  recoveryChoices(
+    days: readonly CalendarDate[],
+    counter: HoursCounter,
+    recovery: RecoveryKind,
+  ): readonly RecoveryChoice[] {
+    return days.slice(1).map((date) => {
+      const before = days.filter((day) => day.isBefore(date)).map((day) => day.weekday());
+      return { date, outlook: this.recoveryPlanner.recoveryOutlook(before, counter, recovery) };
+    });
+  }
+
+  /**
    * Heures à faire en plus avant une récup, pour l'afficher (« à faire avant : +4h45 »).
    *
    * @param counter - Compteur actuel
    * @param recovery - Journée ou demi-journée
-   * @returns Le temps à rattraper, jamais négatif
+   * @returns Le temps à rattraper pour finir à zéro (sans découvert), jamais négatif
    */
   hoursToCatchUp(counter: HoursCounter, recovery: RecoveryKind): Duration {
     return this.recoveryPlanner.hoursToCatchUp(counter, recovery);
