@@ -1,5 +1,5 @@
 import { InvalidValueError } from '../shared/domain-error';
-import type { Duration } from '../time/duration';
+import { Duration } from '../time/duration';
 import type { DaySchedule } from './day-schedule';
 import { WEEKDAY_LABELS, WEEKDAYS, type Weekday } from './weekday';
 
@@ -28,6 +28,11 @@ export interface WorkRulesProps {
   readonly halfDayRecovery: Duration;
   /** Façon de déduire la pause déjeuner ; `minimum-enforced` si absente. */
   readonly lunchBreakPolicy?: LunchBreakPolicy;
+  /**
+   * Découvert autorisé : jusqu'où le compteur peut descendre sous zéro (4h chez La Brosse et Dupont).
+   * Aucun découvert si absent.
+   */
+  readonly maximumDeficit?: Duration;
 }
 
 /**
@@ -45,7 +50,8 @@ export class WorkRules {
    * @param props - Paramètres des règles
    * @returns Les règles horaires
    * @throws {InvalidValueError} Si aucun jour n'est travaillé, si une durée n'est pas strictement positive,
-   *   si la pause minimale dépasse la plage de déjeuner ou si le temps attendu est inatteignable un jour donné
+   *   si le découvert est négatif, si la pause minimale dépasse la plage de déjeuner
+   *   ou si le temps attendu est inatteignable un jour donné
    */
   static create(props: WorkRulesProps): WorkRules {
     const durations: readonly [string, Duration][] = [
@@ -58,6 +64,11 @@ export class WorkRules {
       if (duration.isNegative() || duration.isZero()) {
         throw new InvalidValueError(`${label} doit être strictement positive.`);
       }
+    }
+
+    // Zéro est accepté : c'est une entreprise qui n'autorise aucun découvert.
+    if (props.maximumDeficit?.isNegative() === true) {
+      throw new InvalidValueError('Le découvert autorisé ne peut pas être négatif.');
     }
 
     // Jours travaillés avec leurs horaires : construit en une passe pour ne jamais manipuler d'horaire absent.
@@ -104,6 +115,14 @@ export class WorkRules {
   /** Valeur d'une demi-journée de récupération. */
   get halfDayRecovery(): Duration {
     return this.props.halfDayRecovery;
+  }
+
+  /**
+   * Découvert autorisé : une récup peut être posée tant que le compteur ne descend pas
+   * plus bas que ce découvert ; les heures manquantes se rattrapent ensuite.
+   */
+  get maximumDeficit(): Duration {
+    return this.props.maximumDeficit ?? Duration.zero();
   }
 
   /** Façon de déduire la pause déjeuner (par défaut, la pause minimale est toujours déduite). */

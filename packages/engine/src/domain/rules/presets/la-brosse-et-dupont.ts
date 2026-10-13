@@ -11,6 +11,7 @@ const at = (value: string): TimeOfDay => TimeOfDay.parse(value);
  * - Plage variable 7h30–9h00, plage fixe 9h00–11h45, déjeuner 11h45–13h45 (45 min de pause minimum)
  * - Plage fixe 13h45–16h00 (15h30 le vendredi), plage variable 16h00–18h15 (15h30–17h30 le vendredi)
  * - 7h attendues par jour ; une récupération vaut 7h, une demi-journée 3h30
+ * - Découvert de 4h autorisé : une journée de récup peut être posée dès 3h au compteur
  *
  * @returns Les réglages du preset, à afficher ou à modifier dans l'app
  */
@@ -37,6 +38,7 @@ export function laBrosseEtDupontSettings(): WorkRulesSettings {
     expectedDailyWork: Duration.ofHours(7),
     fullDayRecovery: Duration.ofHours(7),
     halfDayRecovery: Duration.ofHours(3, 30),
+    maximumDeficit: Duration.ofHours(4),
   };
 }
 

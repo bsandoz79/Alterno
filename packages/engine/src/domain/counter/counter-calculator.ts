@@ -9,7 +9,7 @@ import { RECOVERY_LABELS, type RecoveryKind } from './recovery-kind';
  *
  * Le système attend un temps fixe par jour (7h) : le surplus alimente le compteur, le manque y est pris.
  * Une récupération n'est pas un mouvement à part : c'est une journée (ou demi-journée) moins travaillée,
- * autorisée seulement si le compteur couvre la valeur de la récupération.
+ * autorisée tant que le compteur ne descend pas sous le découvert autorisé (−4h chez La Brosse et Dupont).
  */
 export class CounterCalculator {
   /**
@@ -51,13 +51,35 @@ export class CounterCalculator {
 
   /**
    * Indique si le compteur permet de poser une récupération.
+   * Le découvert autorisé est utilisable : avec 4h de découvert, une journée (7h) se pose dès 3h au compteur.
    *
    * @param counter - Compteur actuel
    * @param kind - Journée ou demi-journée
-   * @returns `true` si le solde atteint la valeur de la récupération (7h ou 3h30)
+   * @returns `true` si le solde atteint la valeur de la récupération moins le découvert autorisé
    */
   canTakeRecovery(counter: HoursCounter, kind: RecoveryKind): boolean {
-    return !counter.balance.isLessThan(this.recoveryValue(kind));
+    return !counter.balance.isLessThan(this.minimumBalanceFor(kind));
+  }
+
+  /**
+   * Solde minimal pour poser une récupération : sa valeur moins le découvert autorisé
+   * (7h − 4h = 3h pour une journée, 3h30 − 4h = −0h30 pour une demi-journée).
+   *
+   * @param kind - Journée ou demi-journée
+   * @returns Le solde minimal, éventuellement négatif
+   */
+  minimumBalanceFor(kind: RecoveryKind): Duration {
+    return this.recoveryValue(kind).minus(this.rules.maximumDeficit);
+  }
+
+  /**
+   * Indique si le compteur est descendu sous le découvert autorisé (à signaler à l'utilisateur).
+   *
+   * @param counter - Compteur actuel
+   * @returns `true` si le solde est inférieur à −découvert (−4h01 avec 4h de découvert)
+   */
+  isBeyondMaximumDeficit(counter: HoursCounter): boolean {
+    return counter.balance.isLessThan(this.rules.maximumDeficit.negate());
   }
 
   /**
@@ -69,12 +91,14 @@ export class CounterCalculator {
    * @param workedThatDay - Temps travaillé ce jour-là ; par défaut 0 pour une journée,
    *   et le temps attendu moins la demi-récup (3h30) pour une demi-journée
    * @returns Le compteur après la récupération
-   * @throws {InsufficientCounterError} Si le solde ne couvre pas la récupération
+   * @throws {InsufficientCounterError} Si la récupération ferait passer le compteur sous le découvert autorisé
    */
   takeRecovery(counter: HoursCounter, kind: RecoveryKind, workedThatDay?: Duration): HoursCounter {
-    const value = this.recoveryValue(kind);
     if (!this.canTakeRecovery(counter, kind)) {
-      throw new InsufficientCounterError(value.minus(counter.balance), RECOVERY_LABELS[kind]);
+      throw new InsufficientCounterError(
+        this.minimumBalanceFor(kind).minus(counter.balance),
+        RECOVERY_LABELS[kind],
+      );
     }
     const worked = workedThatDay ?? this.defaultWorkedTime(kind);
     return this.applyWorkedDay(counter, worked);

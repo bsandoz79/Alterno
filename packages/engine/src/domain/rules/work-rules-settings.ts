@@ -35,6 +35,8 @@ export interface WorkRulesSettings {
   readonly expectedDailyWork: Duration;
   readonly fullDayRecovery: Duration;
   readonly halfDayRecovery: Duration;
+  /** Découvert autorisé au compteur (zéro : aucun découvert). */
+  readonly maximumDeficit: Duration;
 }
 
 /**
@@ -43,7 +45,7 @@ export interface WorkRulesSettings {
  * @param settings - Réglages saisis (ou preset)
  * @returns Les règles, du lundi au vendredi
  * @throws {InvalidValueError} Si les heures d'un groupe ne se suivent pas, ou si les règles sont incohérentes
- *   (pause minimale plus longue que la plage de déjeuner, durée nulle…)
+ *   (pause minimale plus longue que la plage de déjeuner, durée nulle, découvert négatif…)
  */
 export function buildWorkRules(settings: WorkRulesSettings): WorkRules {
   const mondayToThursday = toSchedule('Lundi–jeudi', settings.mondayToThursday);
@@ -60,6 +62,7 @@ export function buildWorkRules(settings: WorkRulesSettings): WorkRules {
     expectedDailyWork: settings.expectedDailyWork,
     fullDayRecovery: settings.fullDayRecovery,
     halfDayRecovery: settings.halfDayRecovery,
+    maximumDeficit: settings.maximumDeficit,
   });
 }
 
