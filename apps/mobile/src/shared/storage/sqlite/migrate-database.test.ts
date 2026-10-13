@@ -21,6 +21,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
       'plan_day',
       'plan_recovery',
       'planning_preferences',
+      'reminder_settings',
       'school_week',
       'work_rules_settings',
     ]);
@@ -31,7 +32,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(7);
+    expect(version?.user_version).toBe(8);
   });
 
   it('enregistre la date de chaque journée du plan (version 4)', async () => {
