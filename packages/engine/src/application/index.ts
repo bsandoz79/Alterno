@@ -20,4 +20,5 @@ export {
 export { paceStrategy, type PaceName } from './pace-name';
 export { ForecastBalance } from './forecast-balance';
 export { RecalibrateCounter } from './recalibrate-counter';
+export { ScheduleDepartureReminders } from './schedule-departure-reminders';
 export { ValidatePlan } from './validate-plan';

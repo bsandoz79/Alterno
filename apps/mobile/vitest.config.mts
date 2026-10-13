@@ -15,16 +15,23 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
-      include: ['src/shared/storage/**/*.ts', 'src/features/**/*.ts'],
+      include: [
+        'src/shared/storage/**/*.ts',
+        'src/shared/notifications/**/*.ts',
+        'src/features/**/*.ts',
+      ],
       exclude: [
         'src/**/*.test.ts',
         'src/**/testing/**',
         // Hooks React : la logique testable est extraite dans des fonctions pures (ex. work-rules-form).
         'src/**/hooks/**',
-        // Colle React et ponts vers expo-sqlite / expo-file-system : vérifiés en lançant l'app, pas en test unitaire.
+        // Colle React et ponts vers expo-sqlite / expo-file-system / expo-notifications :
+        // vérifiés en lançant l'app, pas en test unitaire.
         'src/**/repositories-context.ts',
         'src/**/expo-sql-database.ts',
         'src/**/expo-document-files.ts',
+        'src/**/expo-notifier.ts',
+        'src/**/create-notifier.ts',
       ],
     },
   },

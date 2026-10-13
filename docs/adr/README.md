@@ -12,3 +12,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0005](0005-rythme-choisi-au-recalcul.md) | Rythme choisi à chaque recalcul |
 | [0006](0006-semaines-d-ecole.md) | Semaines d'école stockées en lundis |
 | [0007](0007-calendrier-annuel-joint.md) | Calendrier annuel joint : port côté app, copie via `content://` |
+| [0008](0008-rappels-de-depart-notifications-locales.md) | Rappels de départ : notifications locales, reprogrammées par décorateur |

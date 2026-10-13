@@ -2,6 +2,7 @@ import {
   CalendarDate,
   Duration,
   HoursCounter,
+  ReminderSettings,
   SchoolWeeks,
   SimulatePlan,
   TimeOfDay,
@@ -16,6 +17,7 @@ import type { PickedDocument } from './annual-calendar-store';
 import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
+import { BrowserReminderSettingsRepository } from './browser/browser-reminder-settings-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
 import { BrowserSchoolWeeksRepository } from './browser/browser-school-weeks-repository';
 import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules-settings-repository';
@@ -24,6 +26,7 @@ import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
+import { SqliteReminderSettingsRepository } from './sqlite/sqlite-reminder-settings-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
 import { SqliteSchoolWeeksRepository } from './sqlite/sqlite-school-weeks-repository';
 import { SqliteWorkRulesSettingsRepository } from './sqlite/sqlite-work-rules-settings-repository';
@@ -48,6 +51,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         preferences: new SqlitePlanningPreferencesRepository(db),
         schoolWeeks: new SqliteSchoolWeeksRepository(db),
         annualCalendar: new SqliteAnnualCalendarStore(db, createMemoryDocumentFiles()),
+        reminders: new SqliteReminderSettingsRepository(db),
       };
     },
   ],
@@ -62,6 +66,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         preferences: new BrowserPlanningPreferencesRepository(storage),
         schoolWeeks: new BrowserSchoolWeeksRepository(storage),
         annualCalendar: new BrowserAnnualCalendarStore(storage),
+        reminders: new BrowserReminderSettingsRepository(storage),
       });
     },
   ],
@@ -308,6 +313,29 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await annualCalendar.remove();
 
       expect(await annualCalendar.load()).toBeNull();
+    });
+  });
+
+  describe('réglage des rappels', () => {
+    it('rappelle 15 min avant le départ tant que rien n’est enregistré', async () => {
+      const { reminders } = await create();
+
+      expect((await reminders.load()).departureLead?.format()).toBe('0h15');
+    });
+
+    it('retrouve le délai enregistré', async () => {
+      const { reminders } = await create();
+      await reminders.save(ReminderSettings.departureLead(Duration.ofMinutes(30)));
+
+      expect((await reminders.load()).departureLead?.format()).toBe('0h30');
+    });
+
+    it('retrouve un rappel désactivé', async () => {
+      const { reminders } = await create();
+      await reminders.save(ReminderSettings.departureLead(Duration.ofMinutes(5)));
+      await reminders.save(ReminderSettings.disabled());
+
+      expect((await reminders.load()).departureLead).toBeNull();
     });
   });
 });

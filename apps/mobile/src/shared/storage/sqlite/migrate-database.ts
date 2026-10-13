@@ -62,6 +62,11 @@ const MIGRATIONS: readonly string[] = [
      date TEXT NOT NULL,
      kind TEXT NOT NULL
    );`,
+  // Version 8 : réglage des rappels de départ (une seule ligne ; délai NULL = rappel désactivé).
+  `CREATE TABLE reminder_settings (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     departure_lead_minutes INTEGER
+   );`,
 ];
 
 /**

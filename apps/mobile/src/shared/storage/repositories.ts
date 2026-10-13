@@ -2,6 +2,7 @@ import type {
   CounterRepository,
   PlanRepository,
   PlanningPreferencesRepository,
+  ReminderSettingsRepository,
   SchoolWeeksRepository,
   WorkRulesSettingsRepository,
 } from '@alterno/engine';
@@ -22,4 +23,6 @@ export interface Repositories {
   readonly schoolWeeks: SchoolWeeksRepository;
   /** Calendrier annuel joint (facultatif). */
   readonly annualCalendar: AnnualCalendarStore;
+  /** Réglage des rappels de départ. */
+  readonly reminders: ReminderSettingsRepository;
 }
