@@ -1,16 +1,26 @@
-import { RecalibrateCounter, parseBalance, type HoursCounter } from '@alterno/engine';
+import {
+  RecalibrateCounter,
+  buildWorkRules,
+  laBrosseEtDupontSettings,
+  parseBalance,
+  type HoursCounter,
+  type WorkRules,
+} from '@alterno/engine';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
+import { balanceStatus, type BalanceStatus } from '../balance-status';
 import { previewRecalibration, type RecalibrationPreview } from '../recalibration-form';
 
 /** État et actions de l'écran « Mon compteur ». */
 export interface CounterState {
   /** `null` pendant le chargement. */
   readonly counter: HoursCounter | null;
+  /** Avance, retard ou découvert dépassé ; `null` pendant le chargement. */
+  readonly status: BalanceStatus | null;
   /** Solde Smart RH en cours de saisie. */
   readonly input: string;
   readonly setInput: (value: string) => void;
@@ -22,33 +32,41 @@ export interface CounterState {
 
 /**
  * Relie l'écran au compteur enregistré et au cas d'usage `RecalibrateCounter`.
- * Le compteur est rechargé à chaque affichage (une simulation ou un écart a pu le changer).
+ * Le compteur et les règles (découvert autorisé) sont rechargés à chaque affichage :
+ * une simulation, un écart ou les réglages ont pu les changer.
  *
  * @returns L'état de l'écran
  */
 export function useCounter(): CounterState {
-  const { counter: counters } = useRepositories();
+  const { counter: counters, workRules } = useRepositories();
   const [counter, setCounter] = useState<HoursCounter | null>(null);
+  const [rules, setRules] = useState<WorkRules | null>(null);
   const [input, setInput] = useState('');
   const [message, setMessage] = useState<FormMessage | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      void counters.load().then((loaded) => {
+      void Promise.all([counters.load(), workRules.load()]).then(([loaded, settings]) => {
         if (active) {
           setCounter(loaded);
+          setRules(buildWorkRules(settings ?? laBrosseEtDupontSettings()));
         }
       });
       return () => {
         active = false;
       };
-    }, [counters]),
+    }, [counters, workRules]),
   );
 
   const preview = useMemo(
     () => (counter === null ? null : previewRecalibration(counter, input)),
     [counter, input],
+  );
+
+  const status = useMemo(
+    () => (counter === null || rules === null ? null : balanceStatus(counter, rules)),
+    [counter, rules],
   );
 
   const recalibrate = useCallback(async () => {
@@ -66,6 +84,7 @@ export function useCounter(): CounterState {
 
   return {
     counter,
+    status,
     input,
     setInput: (value) => {
       setInput(value);

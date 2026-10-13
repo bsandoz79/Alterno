@@ -11,6 +11,7 @@ describe('Formulaire des règles horaires', () => {
     expect(presetForm.friday.coreEnd).toBe('15h30');
     expect(presetForm.minimumLunchBreak).toBe('0h45');
     expect(presetForm.halfDayRecovery).toBe('3h30');
+    expect(presetForm.maximumDeficit).toBe('4h');
   });
 
   it('relit un formulaire non modifié comme le preset', () => {
@@ -44,6 +45,14 @@ describe('Formulaire des règles horaires', () => {
     const result = parseWorkRulesForm({ ...presetForm, expectedDailyWork: 'sept heures' });
 
     expect(result.ok ? '' : result.error).toMatch(/Temps attendu par jour/);
+  });
+
+  it('accepte aucun découvert (« 0h ») et refuse un découvert négatif', () => {
+    const none = parseWorkRulesForm({ ...presetForm, maximumDeficit: '0h' });
+    const negative = parseWorkRulesForm({ ...presetForm, maximumDeficit: '-2h' });
+
+    expect(none.ok && none.settings.maximumDeficit.isZero()).toBe(true);
+    expect(negative.ok ? '' : negative.error).toMatch(/découvert/);
   });
 
   it('remonte les règles métier non respectées (heures dans le désordre)', () => {
