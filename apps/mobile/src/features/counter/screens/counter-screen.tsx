@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 
 import { MessageBox } from '@/shared/components/message-box';
+import { ReminderSettingsCard } from '@/features/reminders/components/reminder-settings-card';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -15,7 +16,7 @@ import { useCounter } from '../hooks/use-counter';
 /**
  * Écran « Compteur » : solde d'heures, solde à venir à la fin du plan en cours
  * et recalage sur le solde officiel de Smart RH.
- * Donne aussi accès aux réglages des règles horaires.
+ * Donne aussi accès au réglage du rappel de départ et aux règles horaires.
  *
  * @returns L'écran
  */
@@ -38,6 +39,7 @@ export function CounterScreen() {
           {message === null ? null : <MessageBox message={message} />}
         </>
       )}
+      <ReminderSettingsCard />
       <Link href="/reglages" style={styles.settingsLink} accessibilityRole="button">
         <Text style={styles.settingsTitle}>Règles horaires</Text>
         {'\n'}
