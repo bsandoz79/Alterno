@@ -56,6 +56,12 @@ const MIGRATIONS: readonly string[] = [
      added_on TEXT NOT NULL,
      uri TEXT NOT NULL
    );`,
+  // Version 7 : récup préparée par le plan en cours (au plus une ligne), pour le solde à venir.
+  `CREATE TABLE plan_recovery (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     date TEXT NOT NULL,
+     kind TEXT NOT NULL
+   );`,
 ];
 
 /**

@@ -91,7 +91,24 @@ const describePlan = (plan: DatedPlan | null): string[] =>
             `${date.toIsoString()} ${day.day} ${day.arrival.format()} ${day.lunchBreak.format()} ${day.departure.format()} ${day.worked.format()}`,
         ),
         `total ${plan.totalWorked.format()}`,
+        plan.recovery === undefined
+          ? 'sans récup'
+          : `récup ${plan.recovery.date.toIsoString()} ${plan.recovery.kind}`,
       ];
+
+/** Plan qui prépare une récup le dernier jour de la période. */
+const recoveryPlanFor = (days: readonly CalendarDate[]): DatedPlan => {
+  const last = days.at(-1);
+  if (last === undefined) {
+    throw new Error('Période de test vide');
+  }
+  return simulate.execute({
+    days,
+    objective: { kind: 'recovery', date: last, recovery: 'half' },
+    pace: 'steady',
+    counter: HoursCounter.zero(),
+  });
+};
 
 describe.each(implementations)('Stockage %s', (_, create) => {
   describe('compteur', () => {
@@ -139,6 +156,22 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await plans.saveCurrent(shorter);
 
       expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(shorter));
+    });
+
+    it('retrouve la récup que le plan prépare (date et type)', async () => {
+      const { plans } = await create();
+      const plan = recoveryPlanFor(WEEK);
+      await plans.saveCurrent(plan);
+
+      expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(plan));
+    });
+
+    it('oublie la récup quand le nouveau plan n’en prépare pas', async () => {
+      const { plans } = await create();
+      await plans.saveCurrent(recoveryPlanFor(WEEK));
+      await plans.saveCurrent(planFor(WEEK, 35));
+
+      expect((await plans.loadCurrent())?.recovery).toBeUndefined();
     });
   });
   describe('réglages des règles horaires', () => {
