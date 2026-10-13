@@ -9,22 +9,26 @@ import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { BalanceCard } from '../components/balance-card';
 import { RecalibrateCard } from '../components/recalibrate-card';
+import { UpcomingBalanceCard } from '../components/upcoming-balance-card';
 import { useCounter } from '../hooks/use-counter';
 
 /**
- * Écran « Compteur » : solde d'heures et recalage sur le solde officiel de Smart RH.
+ * Écran « Compteur » : solde d'heures, solde à venir à la fin du plan en cours
+ * et recalage sur le solde officiel de Smart RH.
  * Donne aussi accès aux réglages des règles horaires.
  *
  * @returns L'écran
  */
 export function CounterScreen() {
-  const { counter, status, input, setInput, preview, recalibrate, message } = useCounter();
+  const { counter, status, upcoming, input, setInput, preview, recalibrate, message } =
+    useCounter();
 
   return (
     <ScreenContainer title="Mon compteur">
       {counter === null || status === null ? null : (
         <>
           <BalanceCard counter={counter} status={status} />
+          {upcoming === null ? null : <UpcomingBalanceCard upcoming={upcoming} />}
           <RecalibrateCard
             input={input}
             onChange={setInput}
