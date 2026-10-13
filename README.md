@@ -56,4 +56,25 @@ cd apps/mobile && npx expo start   # QR code pour Expo Go (Android), touche w po
 
 Avant de pousser, la CI rejoue : `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run check:architecture`.
 
+## Installer l'app sur Android (APK)
+
+Expo Go suffit pour développer, mais certaines fonctions (rappels de départ) n'existent que dans l'app installée.
+L'APK est construit par EAS Build (gratuit, compte expo.dev), depuis `apps/mobile` :
+
+```
+npx eas-cli@latest login                                   # une seule fois
+npx eas-cli@latest init                                    # une seule fois : relie le projet (projectId dans app.json)
+npx eas-cli@latest update:configure                        # une seule fois : active les mises à jour (updates.url)
+npx eas-cli@latest build -p android --profile preview      # construit l'APK (lien à ouvrir sur le téléphone)
+```
+
+Ensuite, une modification du code JavaScript n'a pas besoin d'un nouvel APK : elle s'envoie par EAS Update.
+
+```
+npx eas-cli@latest update --channel preview --environment preview --message "ce qui change"
+```
+
+L'app télécharge la mise à jour au démarrage et l'applique au démarrage suivant. Un nouvel APK n'est nécessaire
+qu'après l'ajout d'un module natif ou un changement de `version` dans `app.json`.
+
 Les choix techniques importants sont expliqués dans [docs/adr](docs/adr/README.md).
