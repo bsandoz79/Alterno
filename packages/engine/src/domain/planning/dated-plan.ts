@@ -1,4 +1,5 @@
 import type { CalendarDate } from '../calendar/calendar-date';
+import type { RecoveryKind } from '../counter/recovery-kind';
 import type { Duration } from '../time/duration';
 import type { DayPlan } from './plan';
 
@@ -15,4 +16,12 @@ export interface DatedDay {
 export interface DatedPlan {
   readonly days: readonly DatedDay[];
   readonly totalWorked: Duration;
+  /** Récup que le plan prépare ; absente pour un objectif d'heures (ou un plan validé avant ALT-44). */
+  readonly recovery?: PlannedRecovery;
+}
+
+/** Récup posée à la fin d'un plan : sa date et son type. */
+export interface PlannedRecovery {
+  readonly date: CalendarDate;
+  readonly kind: RecoveryKind;
 }

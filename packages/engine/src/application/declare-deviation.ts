@@ -70,7 +70,9 @@ export class DeclareDeviation {
 
     return {
       // Le recalcul garde le même nombre de jours, dans le même ordre : chaque date retrouve sa journée.
+      // Le reste du plan (la récup prévue) est conservé tel quel.
       plan: {
+        ...plan,
         days: plan.days.flatMap((day, index) => {
           const dayPlan = outcome.plan.days[index];
           /* v8 ignore next -- le recalcul renvoie exactement une journée par jour du plan */

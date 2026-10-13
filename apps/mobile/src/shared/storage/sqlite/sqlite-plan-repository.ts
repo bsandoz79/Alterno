@@ -1,6 +1,11 @@
 import type { DatedPlan, PlanRepository } from '@alterno/engine';
 
 import { fromDayRecords, toDayRecord, type DayRecord } from '../day-record';
+import {
+  toPlanRecoveryRecord,
+  withPlanRecovery,
+  type PlanRecoveryRecord,
+} from '../plan-recovery-record';
 import type { SqlDatabase } from './sql-database';
 
 /** Ligne de la table `plan_day`. */
@@ -13,7 +18,10 @@ interface PlanDayRow {
   readonly worked_minutes: number;
 }
 
-/** Plan en cours stocké dans la table `plan_day`, une ligne par journée datée. */
+/**
+ * Plan en cours stocké dans la table `plan_day`, une ligne par journée datée,
+ * et sa récup éventuelle dans la table `plan_recovery`.
+ */
 export class SqlitePlanRepository implements PlanRepository {
   /**
    * @param db - Base SQLite migrée
@@ -27,7 +35,13 @@ export class SqlitePlanRepository implements PlanRepository {
               departure_minutes, worked_minutes
        FROM plan_day ORDER BY position`,
     );
-    return rows.length === 0 ? null : fromDayRecords(rows.map(toRecord));
+    if (rows.length === 0) {
+      return null;
+    }
+    const recovery = await this.db.getFirstAsync<PlanRecoveryRecord>(
+      'SELECT date, kind FROM plan_recovery WHERE id = 1',
+    );
+    return withPlanRecovery(fromDayRecords(rows.map(toRecord)), recovery);
   }
 
   /** @inheritdoc */
@@ -35,6 +49,15 @@ export class SqlitePlanRepository implements PlanRepository {
     // Transaction : on ne doit jamais se retrouver avec un plan à moitié remplacé.
     await this.db.withTransactionAsync(async () => {
       await this.db.runAsync('DELETE FROM plan_day');
+      // Un plan sans récup (objectif d'heures) efface celle du plan précédent.
+      await this.db.runAsync('DELETE FROM plan_recovery');
+      if (plan.recovery !== undefined) {
+        const recovery = toPlanRecoveryRecord(plan.recovery);
+        await this.db.runAsync('INSERT INTO plan_recovery (id, date, kind) VALUES (1, ?, ?)', [
+          recovery.date,
+          recovery.kind,
+        ]);
+      }
       for (const [position, day] of plan.days.entries()) {
         const record = toDayRecord(day);
         await this.db.runAsync(

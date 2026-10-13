@@ -78,6 +78,29 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
     expect(simulation.totalWorked.format()).toBe('32h45');
   });
 
+  it('objectif récup : le plan retient le jour et le type de récup (pour le solde à venir)', () => {
+    const simulation = simulate.execute({
+      days: nextWeek,
+      objective: { kind: 'recovery', date: friday, recovery: 'half' },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+
+    expect(simulation.recovery?.date.toIsoString()).toBe('2026-10-23');
+    expect(simulation.recovery?.kind).toBe('half');
+  });
+
+  it('objectif d’heures : aucune récup dans le plan', () => {
+    const simulation = simulate.execute({
+      days: nextWeek,
+      objective: { kind: 'hours', target: Duration.ofHours(35) },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+
+    expect(simulation.recovery).toBeUndefined();
+  });
+
   it('indique ce qu’il reste à faire avant la récup (récup moins compteur, jamais négatif)', () => {
     expect(simulate.hoursToCatchUp(HoursCounter.of(Duration.ofHours(2, 15)), 'full').format()).toBe(
       '4h45',

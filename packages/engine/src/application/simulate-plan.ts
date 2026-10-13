@@ -89,14 +89,19 @@ export class SimulatePlan {
         ? this.generator.planForTotalHours(weekdays, objective.target, pace)
         : this.recoveryPlanner.planForRecovery(weekdays, counter, objective.recovery, pace);
 
-    return {
-      days: dates.flatMap((date, index) => {
-        const dayPlan = plan.days[index];
-        /* v8 ignore next -- le générateur renvoie exactement une journée par jour demandé, dans l'ordre */
-        return dayPlan === undefined ? [] : [{ date, plan: dayPlan }];
-      }),
-      totalWorked: plan.totalWorked,
-    };
+    const days = dates.flatMap((date, index) => {
+      const dayPlan = plan.days[index];
+      /* v8 ignore next -- le générateur renvoie exactement une journée par jour demandé, dans l'ordre */
+      return dayPlan === undefined ? [] : [{ date, plan: dayPlan }];
+    });
+    // La récup est gardée dans le plan : le solde à venir doit la déduire.
+    return objective.kind === 'hours'
+      ? { days, totalWorked: plan.totalWorked }
+      : {
+          days,
+          totalWorked: plan.totalWorked,
+          recovery: { date: objective.date, kind: objective.recovery },
+        };
   }
 
   /**

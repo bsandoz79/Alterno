@@ -18,5 +18,6 @@ export {
   type DeviationRequest,
 } from './declare-deviation';
 export { paceStrategy, type PaceName } from './pace-name';
+export { ForecastBalance } from './forecast-balance';
 export { RecalibrateCounter } from './recalibrate-counter';
 export { ValidatePlan } from './validate-plan';
