@@ -20,9 +20,12 @@ Le cahier des charges prévoit un rappel avant l'heure de départ prévue. Le pl
   (enregistrement automatique du jeton push). Le module est donc chargé par import dynamique
   (`DeferredNotifier`) et seulement hors d'Expo Go ; dans Expo Go, un notificateur silencieux le remplace.
   Les rappels se testent dans l'application installée (APK, ALT-38) ou un build de développement.
-- Reprogrammation : les dépôts du plan et du réglage sont **décorés** (`ReschedulingPlanRepository`,
-  `ReschedulingReminderSettingsRepository`) ; s'y ajoute un rafraîchissement au retour au premier plan.
-  Les écrans n'ont rien à appeler.
+- Reprogrammation : le dépôt du plan est **décoré** (`ReschedulingPlanRepository`) ; s'y ajoute un
+  rafraîchissement au retour au premier plan. Les écrans qui modifient le plan n'ont rien à appeler.
+- Mise à jour ALT-47 : le réglage du rappel se **valide** (bouton, comme les autres écrans) via le cas
+  d'usage `ChangeReminderSettings`, qui reprogramme et renvoie le résultat (`ReminderScheduling` :
+  nombre de rappels, et `scheduled` / `not-allowed` / `unsupported`) pour l'afficher. Le décorateur
+  du dépôt du réglage est supprimé : il ne pouvait pas remonter ce résultat à l'écran.
 - Web : pas de notification (expo-notifications ne prend pas le web en charge) ; le réglage est gardé.
 - Réglage : aucun, 5, 15 ou 30 min (15 min par défaut), table `reminder_settings` (migration v8).
 
