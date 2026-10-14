@@ -13,6 +13,7 @@ import {
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
+import { SilentNotifier } from '../notifications/silent-notifier';
 import type { PickedDocument } from './annual-calendar-store';
 import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
@@ -52,6 +53,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         schoolWeeks: new SqliteSchoolWeeksRepository(db),
         annualCalendar: new SqliteAnnualCalendarStore(db, createMemoryDocumentFiles()),
         reminders: new SqliteReminderSettingsRepository(db),
+        notifier: new SilentNotifier(),
       };
     },
   ],
@@ -67,6 +69,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         schoolWeeks: new BrowserSchoolWeeksRepository(storage),
         annualCalendar: new BrowserAnnualCalendarStore(storage),
         reminders: new BrowserReminderSettingsRepository(storage),
+        notifier: new SilentNotifier(),
       });
     },
   ],

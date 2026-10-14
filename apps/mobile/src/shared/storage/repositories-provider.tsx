@@ -1,4 +1,4 @@
-import { ScheduleDepartureReminders } from '@alterno/engine';
+import { ScheduleDepartureReminders, type ReminderScheduling } from '@alterno/engine';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useMemo, type ReactNode } from 'react';
 
@@ -6,7 +6,6 @@ import { systemClock } from '../clock/system-clock';
 import { createNotifier } from '../notifications/create-notifier';
 import { useRescheduleOnForeground } from '../notifications/hooks/use-reschedule-on-foreground';
 import { ReschedulingPlanRepository } from '../notifications/rescheduling-plan-repository';
-import { ReschedulingReminderSettingsRepository } from '../notifications/rescheduling-reminder-settings-repository';
 
 import type { Repositories } from './repositories';
 import { expoDocumentFiles } from './files/expo-document-files';
@@ -43,8 +42,9 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
 
 /**
  * Crée les dépôts une seule fois à partir de la base ouverte par `SQLiteProvider`.
- * Les dépôts du plan et du réglage des rappels sont décorés : chaque enregistrement
- * reprogramme les rappels de départ (cas d'usage `ScheduleDepartureReminders`).
+ * Le dépôt du plan est décoré : chaque plan enregistré reprogramme les rappels de départ
+ * (cas d'usage `ScheduleDepartureReminders`). Le réglage des rappels, lui, est validé
+ * depuis son écran, qui affiche le résultat de la reprogrammation.
  */
 function SqliteRepositories({ children }: { readonly children: ReactNode }) {
   const db = useSQLiteContext();
@@ -52,13 +52,9 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
     const sql = fromExpoDatabase(db);
     const plans = new SqlitePlanRepository(sql);
     const reminders = new SqliteReminderSettingsRepository(sql);
-    const scheduler = new ScheduleDepartureReminders(
-      plans,
-      reminders,
-      createNotifier(),
-      systemClock,
-    );
-    const rescheduleReminders = (): Promise<number> => scheduler.execute();
+    const notifier = createNotifier();
+    const scheduler = new ScheduleDepartureReminders(plans, reminders, notifier, systemClock);
+    const rescheduleReminders = (): Promise<ReminderScheduling> => scheduler.execute();
     const all: Repositories = {
       plans: new ReschedulingPlanRepository(plans, rescheduleReminders),
       counter: new SqliteCounterRepository(sql),
@@ -66,7 +62,8 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
       preferences: new SqlitePlanningPreferencesRepository(sql),
       schoolWeeks: new SqliteSchoolWeeksRepository(sql),
       annualCalendar: new SqliteAnnualCalendarStore(sql, expoDocumentFiles),
-      reminders: new ReschedulingReminderSettingsRepository(reminders, rescheduleReminders),
+      reminders,
+      notifier,
     };
     return { repositories: all, reschedule: rescheduleReminders };
   }, [db]);
