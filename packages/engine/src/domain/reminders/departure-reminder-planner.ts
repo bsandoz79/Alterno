@@ -3,8 +3,16 @@ import type { DatedPlan } from '../planning/dated-plan';
 import type { TimeOfDay } from '../time/time-of-day';
 import type { ReminderSettings } from './reminder-settings';
 
-/** Rappel à programmer : le jour, l'heure du rappel et l'heure de départ qu'il annonce. */
+/**
+ * Type de notification :
+ * - `before` : rappel un peu avant l'heure de départ ;
+ * - `at-departure` : à l'heure de départ, pour signaler un départ plus tard si besoin.
+ */
+export type DepartureReminderKind = 'before' | 'at-departure';
+
+/** Rappel à programmer : son type, le jour, l'heure du rappel et l'heure de départ qu'il annonce. */
 export interface DepartureReminder {
+  readonly kind: DepartureReminderKind;
   readonly date: CalendarDate;
   readonly at: TimeOfDay;
   readonly departure: TimeOfDay;
@@ -17,8 +25,8 @@ export interface Moment {
 }
 
 /**
- * Calcule les rappels « bientôt l'heure de partir » du plan en cours.
- * Seuls les rappels encore à venir sont gardés : un rappel passé ne sert plus à rien.
+ * Calcule les notifications de départ du plan en cours : « bientôt l'heure de partir »,
+ * puis, à l'heure prévue, « tu pars plus tard ? ». Seules celles encore à venir sont gardées.
  */
 export class DepartureReminderPlanner {
   /**
@@ -33,18 +41,29 @@ export class DepartureReminderPlanner {
     settings: ReminderSettings,
   ): readonly DepartureReminder[] {
     const lead = settings.departureLead;
-    if (lead === null) {
-      return [];
-    }
     return plan.days.flatMap(({ date, plan: day }) => {
-      // Un départ trop matinal pour être précédé du délai (avant minuit) n'a pas de rappel.
-      if (day.departure.toMinutesSinceMidnight() < lead.toMinutes()) {
-        return [];
+      const reminders: DepartureReminder[] = [];
+      // Un départ trop matinal pour être précédé du délai (avant minuit) n'a pas de rappel avant.
+      if (lead !== null && day.departure.toMinutesSinceMidnight() >= lead.toMinutes()) {
+        reminders.push({
+          kind: 'before',
+          date,
+          at: day.departure.plus(lead.negate()),
+          departure: day.departure,
+        });
       }
-      const at = day.departure.plus(lead.negate());
-      const upcoming =
-        moment.today.isBefore(date) || (date.equals(moment.today) && at.isAfter(moment.now));
-      return upcoming ? [{ date, at, departure: day.departure }] : [];
+      if (settings.atDeparture) {
+        reminders.push({ kind: 'at-departure', date, at: day.departure, departure: day.departure });
+      }
+      return reminders.filter((reminder) => isUpcoming(reminder, moment));
     });
   }
+}
+
+/** Un rappel passé ne sert plus à rien : seuls ceux encore à venir sont programmés. */
+function isUpcoming(reminder: DepartureReminder, moment: Moment): boolean {
+  return (
+    moment.today.isBefore(reminder.date) ||
+    (reminder.date.equals(moment.today) && reminder.at.isAfter(moment.now))
+  );
 }
