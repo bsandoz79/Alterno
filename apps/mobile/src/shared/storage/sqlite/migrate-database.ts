@@ -67,6 +67,8 @@ const MIGRATIONS: readonly string[] = [
      id INTEGER PRIMARY KEY CHECK (id = 1),
      departure_lead_minutes INTEGER
    );`,
+  // Version 9 : question à l'heure de départ (1 / 0 ; NULL pour un réglage enregistré avant : activée).
+  `ALTER TABLE reminder_settings ADD COLUMN at_departure INTEGER;`,
 ];
 
 /**
