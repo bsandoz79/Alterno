@@ -44,7 +44,8 @@ export class ExpoNotifier implements Notifier {
     }
     for (const reminder of reminders) {
       await Notifications.scheduleNotificationAsync({
-        identifier: `${IDENTIFIER_PREFIX}${reminder.date.toIsoString()}`,
+        // Un rappel « avant » et une question « au départ » par jour : le type fait partie de l'identifiant.
+        identifier: `${IDENTIFIER_PREFIX}${reminder.kind}-${reminder.date.toIsoString()}`,
         content: departureReminderContent(reminder),
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,

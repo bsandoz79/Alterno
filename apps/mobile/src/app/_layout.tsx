@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { useAppFonts } from '@/shared/hooks/use-app-fonts';
+import { useNotificationTaps } from '@/shared/notifications/hooks/use-notification-taps';
 import { RepositoriesProvider } from '@/shared/storage/repositories-provider';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -21,6 +22,8 @@ void SplashScreen.preventAutoHideAsync();
  */
 export default function RootLayout() {
   const fontsReady = useAppFonts();
+  // Toucher une notification de départ ouvre l'écran qu'elle désigne (ex. « Parti plus tard »).
+  useNotificationTaps();
 
   useEffect(() => {
     if (fontsReady) {

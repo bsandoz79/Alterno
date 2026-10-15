@@ -2,23 +2,34 @@ import type { DepartureReminder, Duration } from '@alterno/engine';
 
 const MINUTES_PER_HOUR = 60;
 
-/** Texte d'une notification. */
-export interface NotificationText {
+/** Contenu d'une notification : son texte, et l'écran à ouvrir quand on la touche. */
+export interface NotificationContent {
   readonly title: string;
   readonly body: string;
+  readonly data: { readonly url: string };
 }
 
 /**
- * Texte du rappel de départ, affiché dans la barre de notifications.
+ * Contenu d'une notification de départ, affiché dans la barre de notifications.
+ * Toucher la question de l'heure de départ ouvre directement la saisie « Parti plus tard ».
  *
  * @param reminder - Rappel calculé par le moteur
- * @returns Le titre et le message
+ * @returns Le titre, le message et l'écran à ouvrir
  */
-export function departureReminderContent(reminder: DepartureReminder): NotificationText {
+export function departureReminderContent(reminder: DepartureReminder): NotificationContent {
+  const departure = reminder.departure.format();
+  if (reminder.kind === 'at-departure') {
+    return {
+      title: 'C’est l’heure de partir',
+      body: `Départ prévu à ${departure}. Tu pars plus tard ? Touche ici pour le signaler.`,
+      data: { url: `/jour/${reminder.date.toIsoString()}?change=late-departure` },
+    };
+  }
   const remaining = spokenDuration(reminder.at.durationUntil(reminder.departure));
   return {
     title: 'Bientôt l’heure de partir',
-    body: `Départ prévu à ${reminder.departure.format()} (dans ${remaining}).`,
+    body: `Départ prévu à ${departure} (dans ${remaining}).`,
+    data: { url: '/' },
   };
 }
 

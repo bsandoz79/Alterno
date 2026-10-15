@@ -32,6 +32,7 @@ export default defineConfig({
         'src/**/expo-document-files.ts',
         'src/**/expo-notifier.ts',
         'src/**/create-notifier.ts',
+        'src/**/notification-taps.ts',
       ],
     },
   },
