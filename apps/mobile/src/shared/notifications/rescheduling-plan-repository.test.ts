@@ -2,7 +2,6 @@ import {
   CalendarDate,
   Duration,
   HoursCounter,
-  ReminderSettings,
   SimulatePlan,
   laBrosseEtDupontRules,
   type DatedPlan,
@@ -10,10 +9,8 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { BrowserPlanRepository } from '../storage/browser/browser-plan-repository';
-import { BrowserReminderSettingsRepository } from '../storage/browser/browser-reminder-settings-repository';
 import { createMemoryStorage } from '../storage/testing/memory-storage';
 import { ReschedulingPlanRepository } from './rescheduling-plan-repository';
-import { ReschedulingReminderSettingsRepository } from './rescheduling-reminder-settings-repository';
 
 const plan: DatedPlan = new SimulatePlan(laBrosseEtDupontRules()).execute({
   days: [CalendarDate.fromIsoString('2026-10-19')],
@@ -34,7 +31,7 @@ const counting = (): { calls: number; reschedule: () => Promise<void> } => {
   return spy;
 };
 
-describe('Reprogrammation automatique des rappels', () => {
+describe('Reprogrammation des rappels après un changement de plan', () => {
   it('reprogramme après l’enregistrement d’un plan, et relit le plan enregistré', async () => {
     const spy = counting();
     const plans = new ReschedulingPlanRepository(
@@ -46,18 +43,5 @@ describe('Reprogrammation automatique des rappels', () => {
 
     expect(spy.calls).toBe(1);
     expect((await plans.loadCurrent())?.days).toHaveLength(1);
-  });
-
-  it('reprogramme après un changement de réglage, et relit le réglage enregistré', async () => {
-    const spy = counting();
-    const reminders = new ReschedulingReminderSettingsRepository(
-      new BrowserReminderSettingsRepository(createMemoryStorage()),
-      spy.reschedule,
-    );
-
-    await reminders.save(ReminderSettings.disabled());
-
-    expect(spy.calls).toBe(1);
-    expect((await reminders.load()).departureLead).toBeNull();
   });
 });

@@ -1,8 +1,14 @@
 import type { Clock } from '../domain/ports/clock';
-import type { Notifier } from '../domain/ports/notifier';
+import type { Notifier, ReminderDelivery } from '../domain/ports/notifier';
 import type { PlanRepository } from '../domain/ports/plan-repository';
 import type { ReminderSettingsRepository } from '../domain/ports/reminder-settings-repository';
 import { DepartureReminderPlanner } from '../domain/reminders/departure-reminder-planner';
+
+/** Résultat d'une reprogrammation : combien de rappels, et s'ils ont pu être programmés. */
+export interface ReminderScheduling {
+  readonly count: number;
+  readonly delivery: ReminderDelivery;
+}
 
 /**
  * Cas d'usage « Reprogrammer les rappels de départ » : à chaque changement du plan ou du réglage
@@ -26,9 +32,9 @@ export class ScheduleDepartureReminders {
   ) {}
 
   /**
-   * @returns Le nombre de rappels programmés
+   * @returns Le nombre de rappels à venir et ce qu'en a fait le téléphone
    */
-  async execute(): Promise<number> {
+  async execute(): Promise<ReminderScheduling> {
     const [plan, settings] = await Promise.all([this.plans.loadCurrent(), this.settings.load()]);
     const reminders =
       plan === null
@@ -38,7 +44,7 @@ export class ScheduleDepartureReminders {
             { today: this.clock.today(), now: this.clock.currentTime() },
             settings,
           );
-    await this.notifier.replaceDepartureReminders(reminders);
-    return reminders.length;
+    const delivery = await this.notifier.replaceDepartureReminders(reminders);
+    return { count: reminders.length, delivery };
   }
 }

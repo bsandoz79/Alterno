@@ -67,7 +67,7 @@ export {
   type PlanningPeriodRequest,
 } from './calendar/planning-period';
 export type { Clock } from './ports/clock';
-export type { Notifier } from './ports/notifier';
+export type { Notifier, ReminderDelivery } from './ports/notifier';
 export type { ReminderSettingsRepository } from './ports/reminder-settings-repository';
 export { ReminderSettings } from './reminders/reminder-settings';
 export {

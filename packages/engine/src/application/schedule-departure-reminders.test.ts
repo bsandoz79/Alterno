@@ -4,7 +4,7 @@ import { CalendarDate } from '../domain/calendar/calendar-date';
 import { HoursCounter } from '../domain/counter/hours-counter';
 import type { DatedPlan } from '../domain/planning/dated-plan';
 import type { Clock } from '../domain/ports/clock';
-import type { Notifier } from '../domain/ports/notifier';
+import type { Notifier, ReminderDelivery } from '../domain/ports/notifier';
 import type { PlanRepository } from '../domain/ports/plan-repository';
 import type { ReminderSettingsRepository } from '../domain/ports/reminder-settings-repository';
 import type { DepartureReminder } from '../domain/reminders/departure-reminder-planner';
@@ -26,12 +26,14 @@ const settingsOf = (settings: ReminderSettings): ReminderSettingsRepository => (
   save: () => Promise.resolve(),
 });
 /** Notificateur en mémoire : garde les derniers rappels programmés. */
-const memoryNotifier = (): Notifier & { scheduled: readonly DepartureReminder[] | null } => {
+const memoryNotifier = (
+  delivery: ReminderDelivery = 'scheduled',
+): Notifier & { scheduled: readonly DepartureReminder[] | null } => {
   const notifier = {
     scheduled: null as readonly DepartureReminder[] | null,
     replaceDepartureReminders: (reminders: readonly DepartureReminder[]) => {
       notifier.scheduled = reminders;
-      return Promise.resolve();
+      return Promise.resolve(delivery);
     },
   };
   return notifier;
@@ -47,14 +49,14 @@ const plan = new SimulatePlan(laBrosseEtDupontRules()).execute({
 describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', () => {
   it('programme un rappel par jour à venir du plan en cours', async () => {
     const notifier = memoryNotifier();
-    const count = await new ScheduleDepartureReminders(
+    const result = await new ScheduleDepartureReminders(
       plansWith(plan),
       settingsOf(ReminderSettings.defaults()),
       notifier,
       clock,
     ).execute();
 
-    expect(count).toBe(2);
+    expect(result).toEqual({ count: 2, delivery: 'scheduled' });
     expect(notifier.scheduled?.map((reminder) => reminder.date.toIsoString())).toEqual([
       '2026-10-19',
       '2026-10-20',
@@ -83,5 +85,16 @@ describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', (
     ).execute();
 
     expect(notifier.scheduled).toEqual([]);
+  });
+
+  it('signale que le téléphone refuse les notifications', async () => {
+    const result = await new ScheduleDepartureReminders(
+      plansWith(plan),
+      settingsOf(ReminderSettings.defaults()),
+      memoryNotifier('not-allowed'),
+      clock,
+    ).execute();
+
+    expect(result.delivery).toBe('not-allowed');
   });
 });

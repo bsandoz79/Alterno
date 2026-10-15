@@ -1,4 +1,4 @@
-import type { DepartureReminder, Notifier } from '@alterno/engine';
+import type { DepartureReminder, Notifier, ReminderDelivery } from '@alterno/engine';
 import * as Notifications from 'expo-notifications';
 
 import { departureReminderContent, departureReminderTime } from './departure-reminder-content';
@@ -27,15 +27,20 @@ export class ExpoNotifier implements Notifier {
   }
 
   /** @inheritdoc */
-  async replaceDepartureReminders(reminders: readonly DepartureReminder[]): Promise<void> {
+  async replaceDepartureReminders(
+    reminders: readonly DepartureReminder[],
+  ): Promise<ReminderDelivery> {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(
       scheduled
         .filter((request) => request.identifier.startsWith(IDENTIFIER_PREFIX))
         .map((request) => Notifications.cancelScheduledNotificationAsync(request.identifier)),
     );
-    if (reminders.length === 0 || !(await this.allowed())) {
-      return;
+    if (reminders.length === 0) {
+      return 'scheduled';
+    }
+    if (!(await this.allowed())) {
+      return 'not-allowed';
     }
     for (const reminder of reminders) {
       await Notifications.scheduleNotificationAsync({
@@ -48,6 +53,7 @@ export class ExpoNotifier implements Notifier {
         },
       });
     }
+    return 'scheduled';
   }
 
   /**
