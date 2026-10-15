@@ -1,10 +1,15 @@
 import { Duration, ReminderSettings } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
-import { REMINDER_OPTIONS, reminderOptionOf, reminderSettingsFor } from './reminder-options';
+import {
+  REMINDER_OPTIONS,
+  reminderDraftOf,
+  reminderSettingsFor,
+  sameReminderDraft,
+} from './reminder-options';
 
-describe('Choix du rappel de départ', () => {
-  it('propose : aucun, 5, 15 ou 30 min', () => {
+describe('Réglage des notifications de départ', () => {
+  it('propose : aucun, 5, 15 ou 30 min avant le départ', () => {
     expect(REMINDER_OPTIONS.map((option) => option.label)).toEqual([
       'Aucun',
       '5 min',
@@ -13,16 +18,28 @@ describe('Choix du rappel de départ', () => {
     ]);
   });
 
-  it('affiche le réglage par défaut sur « 15 min »', () => {
-    expect(reminderOptionOf(ReminderSettings.defaults())).toBe(15);
+  it('affiche le réglage par défaut : 15 min avant, et question à l’heure de départ', () => {
+    expect(reminderDraftOf(ReminderSettings.defaults())).toEqual({ lead: 15, atDeparture: true });
   });
 
-  it('affiche un rappel désactivé sur « Aucun »', () => {
-    expect(reminderOptionOf(ReminderSettings.disabled())).toBe(0);
+  it('affiche un réglage désactivé : aucun rappel, pas de question', () => {
+    expect(reminderDraftOf(ReminderSettings.disabled())).toEqual({ lead: 0, atDeparture: false });
   });
 
-  it('transforme le choix en réglage', () => {
-    expect(reminderSettingsFor(0).departureLead).toBeNull();
-    expect(reminderSettingsFor(30).departureLead?.equals(Duration.ofMinutes(30))).toBe(true);
+  it('transforme la saisie en réglage', () => {
+    const settings = reminderSettingsFor({ lead: 30, atDeparture: false });
+
+    expect(settings.departureLead?.equals(Duration.ofMinutes(30))).toBe(true);
+    expect(settings.atDeparture).toBe(false);
+    expect(reminderSettingsFor({ lead: 0, atDeparture: true }).departureLead).toBeNull();
+  });
+
+  it('compare deux saisies pour savoir s’il y a quelque chose à valider', () => {
+    expect(sameReminderDraft({ lead: 5, atDeparture: true }, { lead: 5, atDeparture: true })).toBe(
+      true,
+    );
+    expect(sameReminderDraft({ lead: 5, atDeparture: true }, { lead: 5, atDeparture: false })).toBe(
+      false,
+    );
   });
 });

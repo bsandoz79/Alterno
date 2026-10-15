@@ -69,10 +69,11 @@ export {
 export type { Clock } from './ports/clock';
 export type { Notifier, ReminderDelivery } from './ports/notifier';
 export type { ReminderSettingsRepository } from './ports/reminder-settings-repository';
-export { ReminderSettings } from './reminders/reminder-settings';
+export { ReminderSettings, type ReminderSettingsProps } from './reminders/reminder-settings';
 export {
   DepartureReminderPlanner,
   type DepartureReminder,
+  type DepartureReminderKind,
   type Moment,
 } from './reminders/departure-reminder-planner';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';

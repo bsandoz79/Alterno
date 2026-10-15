@@ -47,7 +47,7 @@ const plan = new SimulatePlan(laBrosseEtDupontRules()).execute({
 });
 
 describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', () => {
-  it('programme un rappel par jour à venir du plan en cours', async () => {
+  it('programme, pour chaque jour à venir, le rappel avant le départ et la question à l’heure de départ', async () => {
     const notifier = memoryNotifier();
     const result = await new ScheduleDepartureReminders(
       plansWith(plan),
@@ -56,10 +56,14 @@ describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', (
       clock,
     ).execute();
 
-    expect(result).toEqual({ count: 2, delivery: 'scheduled' });
-    expect(notifier.scheduled?.map((reminder) => reminder.date.toIsoString())).toEqual([
-      '2026-10-19',
-      '2026-10-20',
+    expect(result).toEqual({ count: 4, delivery: 'scheduled' });
+    expect(
+      notifier.scheduled?.map((reminder) => `${reminder.date.toIsoString()} ${reminder.kind}`),
+    ).toEqual([
+      '2026-10-19 before',
+      '2026-10-19 at-departure',
+      '2026-10-20 before',
+      '2026-10-20 at-departure',
     ]);
   });
 

@@ -5,6 +5,7 @@ import { DeferredNotifier } from './deferred-notifier';
 import { SilentNotifier } from './silent-notifier';
 
 const reminder: DepartureReminder = {
+  kind: 'before',
   date: CalendarDate.fromIsoString('2026-10-19'),
   at: TimeOfDay.of(17, 0),
   departure: TimeOfDay.of(17, 15),

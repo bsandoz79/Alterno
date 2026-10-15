@@ -1,7 +1,13 @@
 import { Duration, ReminderSettings } from '@alterno/engine';
 
-/** Valeur d'une option : délai en minutes, 0 pour aucun rappel. */
+/** Délai du rappel avant le départ, en minutes ; 0 pour aucun rappel avant. */
 export type ReminderOption = number;
+
+/** Réglage en cours de saisie : délai du rappel avant, et question à l'heure de départ. */
+export interface ReminderDraft {
+  readonly lead: ReminderOption;
+  readonly atDeparture: boolean;
+}
 
 /** Délais proposés à l'écran (peu de choix, pour tenir sur une ligne). */
 export const REMINDER_OPTIONS: readonly {
@@ -16,18 +22,26 @@ export const REMINDER_OPTIONS: readonly {
 
 /**
  * @param settings - Réglage enregistré
- * @returns L'option à afficher comme choisie
+ * @returns Le réglage à afficher dans le formulaire
  */
-export function reminderOptionOf(settings: ReminderSettings): ReminderOption {
-  return settings.departureLead?.toMinutes() ?? 0;
+export function reminderDraftOf(settings: ReminderSettings): ReminderDraft {
+  return { lead: settings.departureLead?.toMinutes() ?? 0, atDeparture: settings.atDeparture };
 }
 
 /**
- * @param option - Option choisie
+ * @param draft - Réglage saisi
  * @returns Le réglage correspondant
  */
-export function reminderSettingsFor(option: ReminderOption): ReminderSettings {
-  return option === 0
-    ? ReminderSettings.disabled()
-    : ReminderSettings.departureLead(Duration.ofMinutes(option));
+export function reminderSettingsFor(draft: ReminderDraft): ReminderSettings {
+  return ReminderSettings.create({
+    departureLead: draft.lead === 0 ? null : Duration.ofMinutes(draft.lead),
+    atDeparture: draft.atDeparture,
+  });
+}
+
+/**
+ * @returns `true` si les deux réglages sont identiques (rien à valider)
+ */
+export function sameReminderDraft(a: ReminderDraft, b: ReminderDraft): boolean {
+  return a.lead === b.lead && a.atDeparture === b.atDeparture;
 }

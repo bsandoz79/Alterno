@@ -333,6 +333,20 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       expect((await reminders.load()).departureLead?.format()).toBe('0h30');
     });
 
+    it('retrouve la question à l’heure de départ, activée ou non', async () => {
+      const { reminders } = await create();
+      await reminders.save(ReminderSettings.create({ departureLead: null, atDeparture: true }));
+
+      expect((await reminders.load()).atDeparture).toBe(true);
+      expect((await reminders.load()).departureLead).toBeNull();
+
+      await reminders.save(
+        ReminderSettings.create({ departureLead: Duration.ofMinutes(5), atDeparture: false }),
+      );
+
+      expect((await reminders.load()).atDeparture).toBe(false);
+    });
+
     it('retrouve un rappel désactivé', async () => {
       const { reminders } = await create();
       await reminders.save(ReminderSettings.departureLead(Duration.ofMinutes(5)));

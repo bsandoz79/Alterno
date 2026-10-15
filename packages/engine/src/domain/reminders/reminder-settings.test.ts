@@ -5,12 +5,25 @@ import { Duration } from '../time/duration';
 import { ReminderSettings } from './reminder-settings';
 
 describe('ReminderSettings — réglage du rappel de départ', () => {
-  it('rappelle 15 min avant le départ par défaut', () => {
-    expect(ReminderSettings.defaults().departureLead?.format()).toBe('0h15');
+  it('par défaut, rappelle 15 min avant le départ et demande à l’heure de départ', () => {
+    const settings = ReminderSettings.defaults();
+
+    expect(settings.departureLead?.format()).toBe('0h15');
+    expect(settings.atDeparture).toBe(true);
   });
 
-  it('peut être désactivé', () => {
-    expect(ReminderSettings.disabled().departureLead).toBeNull();
+  it('peut être entièrement désactivé', () => {
+    const settings = ReminderSettings.disabled();
+
+    expect(settings.departureLead).toBeNull();
+    expect(settings.atDeparture).toBe(false);
+  });
+
+  it('règle séparément le rappel avant le départ et la question à l’heure de départ', () => {
+    const settings = ReminderSettings.create({ departureLead: null, atDeparture: true });
+
+    expect(settings.departureLead).toBeNull();
+    expect(settings.atDeparture).toBe(true);
   });
 
   it('accepte un délai jusqu’à 2h', () => {
@@ -23,5 +36,8 @@ describe('ReminderSettings — réglage du rappel de départ', () => {
     ['supérieur à 2h', Duration.ofMinutes(121)],
   ])('refuse un délai %s', (_case, lead) => {
     expect(() => ReminderSettings.departureLead(lead)).toThrow(InvalidValueError);
+    expect(() => ReminderSettings.create({ departureLead: lead, atDeparture: false })).toThrow(
+      InvalidValueError,
+    );
   });
 });
