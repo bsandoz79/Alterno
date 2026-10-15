@@ -7,32 +7,37 @@ import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import { reminderConfirmation } from '../reminder-confirmation';
-import { reminderOptionOf, reminderSettingsFor, type ReminderOption } from '../reminder-options';
+import {
+  reminderDraftOf,
+  reminderSettingsFor,
+  sameReminderDraft,
+  type ReminderDraft,
+} from '../reminder-options';
 
-/** État et actions du réglage du rappel de départ. */
+/** État et actions du réglage des notifications de départ. */
 export interface ReminderSettingsState {
-  /** Option affichée (choisie mais pas forcément validée) ; `null` pendant le chargement. */
-  readonly option: ReminderOption | null;
-  /** Change l'option affichée, sans rien enregistrer. */
-  readonly choose: (option: ReminderOption) => void;
-  /** `true` si l'option affichée diffère du réglage enregistré. */
+  /** Réglage affiché (saisi mais pas forcément validé) ; `null` pendant le chargement. */
+  readonly draft: ReminderDraft | null;
+  /** Modifie le réglage affiché, sans rien enregistrer. */
+  readonly change: (changes: Partial<ReminderDraft>) => void;
+  /** `true` si le réglage affiché diffère du réglage enregistré. */
   readonly changed: boolean;
-  /** Enregistre l'option choisie et reprogramme les rappels (cas d'usage `ChangeReminderSettings`). */
+  /** Enregistre le réglage affiché et reprogramme les rappels (cas d'usage `ChangeReminderSettings`). */
   readonly validate: () => Promise<void>;
   /** Confirmation après validation. */
   readonly message: FormMessage | null;
 }
 
 /**
- * Relie le réglage du rappel à son dépôt : l'utilisateur choisit un délai, puis le valide,
+ * Relie le réglage des notifications de départ à son dépôt : l'utilisateur le modifie, puis le valide,
  * comme sur les autres écrans de l'app. Rechargé à chaque affichage de l'écran.
  *
- * @returns L'option choisie, son état et l'action de validation
+ * @returns Le réglage affiché, son état et l'action de validation
  */
 export function useReminderSettings(): ReminderSettingsState {
   const { reminders, plans, notifier } = useRepositories();
-  const [saved, setSaved] = useState<ReminderOption | null>(null);
-  const [option, setOption] = useState<ReminderOption | null>(null);
+  const [saved, setSaved] = useState<ReminderDraft | null>(null);
+  const [draft, setDraft] = useState<ReminderDraft | null>(null);
   const [message, setMessage] = useState<FormMessage | null>(null);
 
   useFocusEffect(
@@ -40,8 +45,8 @@ export function useReminderSettings(): ReminderSettingsState {
       let active = true;
       void reminders.load().then((settings) => {
         if (active) {
-          setSaved(reminderOptionOf(settings));
-          setOption(reminderOptionOf(settings));
+          setSaved(reminderDraftOf(settings));
+          setDraft(reminderDraftOf(settings));
         }
       });
       return () => {
@@ -51,24 +56,24 @@ export function useReminderSettings(): ReminderSettingsState {
   );
 
   const validate = useCallback(async () => {
-    if (option === null) {
+    if (draft === null) {
       return;
     }
     const scheduling = await new ChangeReminderSettings(
       reminders,
       new ScheduleDepartureReminders(plans, reminders, notifier, systemClock),
-    ).execute(reminderSettingsFor(option));
-    setSaved(option);
-    setMessage(reminderConfirmation(option, scheduling));
-  }, [option, reminders, plans, notifier]);
+    ).execute(reminderSettingsFor(draft));
+    setSaved(draft);
+    setMessage(reminderConfirmation(draft, scheduling));
+  }, [draft, reminders, plans, notifier]);
 
   return {
-    option,
-    choose: (next) => {
-      setOption(next);
+    draft,
+    change: (changes) => {
+      setDraft((current) => (current === null ? current : { ...current, ...changes }));
       setMessage(null);
     },
-    changed: option !== saved,
+    changed: draft !== null && (saved === null || !sameReminderDraft(draft, saved)),
     validate,
     message,
   };
