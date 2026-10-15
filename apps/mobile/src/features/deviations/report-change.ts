@@ -4,7 +4,7 @@ import type { TimeFieldName } from './day-edit-form';
  * Changements proposés par le bouton « Signaler un changement » de l'accueil.
  * L'absence n'en fait pas partie en V1 (journée neutre, prévue après la V1).
  */
-export type ChangeKind = 'late-arrival' | 'early-departure' | 'longer-lunch';
+export type ChangeKind = 'late-arrival' | 'early-departure' | 'late-departure' | 'longer-lunch';
 
 /** Choix rapide : libellé du bouton, question posée et seule heure à saisir. */
 export interface ChangeChoice {
@@ -28,6 +28,13 @@ export const CHANGE_KINDS: readonly ChangeChoice[] = [
   {
     kind: 'early-departure',
     label: 'Parti plus tôt',
+    question: 'À quelle heure es-tu parti ?',
+    field: 'departure',
+  },
+  {
+    // Aussi ouvert depuis la notification à l'heure de départ (« tu pars plus tard ? »).
+    kind: 'late-departure',
+    label: 'Parti plus tard',
     question: 'À quelle heure es-tu parti ?',
     field: 'departure',
   },
