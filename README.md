@@ -8,10 +8,10 @@ Planificateur d'horaires variables pour alternants : simule une semaine (ou plus
 
 ## Ce que fait l'app aujourd'hui
 
-- **Aujourd'hui** : heure de départ prévue en grand, reste de la semaine, bouton « Signaler un changement » (arrivé plus tard, parti plus tôt, pause plus longue).
+- **Aujourd'hui** : heure de départ prévue en grand, reste de la semaine, bouton « Signaler un changement » (arrivé plus tard, parti plus tôt, parti plus tard, pause plus longue).
 - **Simulation** : période (cette semaine / semaine prochaine, 1 à 4 semaines), objectif d'heures ou récup (jours impossibles barrés avec les heures qui manquent, découvert de 4h max utilisé seulement si besoin), comparaison des rythmes rapide / régulier / au plus juste, validation du plan.
 - **Planning** : grille semaine façon EDT, vue mois, détail et modification d'un jour avec recalcul de la suite.
-- **Compteur** : solde d'heures (alerte au-delà du découvert autorisé), solde à venir à la fin du plan (récup comprise), recalage sur Smart RH, rappel avant l'heure de départ (notification Android), règles horaires et préférences par jour paramétrables.
+- **Compteur** : solde d'heures (alerte au-delà du découvert autorisé), solde à venir à la fin du plan (récup comprise), recalage sur Smart RH, rappel avant l'heure de départ et question « tu pars plus tard ? » à l'heure prévue (notifications Android), règles horaires et préférences par jour paramétrables.
 - **Alternance** : semaines d'école (exclues des simulations), calendrier annuel joint (PDF ou image).
 
 ## Structure du monorepo

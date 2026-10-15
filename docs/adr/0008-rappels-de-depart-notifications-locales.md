@@ -26,6 +26,10 @@ Le cahier des charges prévoit un rappel avant l'heure de départ prévue. Le pl
   d'usage `ChangeReminderSettings`, qui reprogramme et renvoie le résultat (`ReminderScheduling` :
   nombre de rappels, et `scheduled` / `not-allowed` / `unsupported`) pour l'afficher. Le décorateur
   du dépôt du réglage est supprimé : il ne pouvait pas remonter ce résultat à l'écran.
+- Mise à jour ALT-48 : une seconde notification, **à l'heure de départ** (« tu pars plus tard ? »),
+  activable dans le réglage (colonne `at_departure`, migration v9). Ses données contiennent l'adresse
+  `/jour/<date>?change=late-departure` : la toucher ouvre directement la saisie « Parti plus tard »
+  (écoute des notifications touchées, chargée elle aussi seulement hors d'Expo Go).
 - Web : pas de notification (expo-notifications ne prend pas le web en charge) ; le réglage est gardé.
 - Réglage : aucun, 5, 15 ou 30 min (15 min par défaut), table `reminder_settings` (migration v8).
 
