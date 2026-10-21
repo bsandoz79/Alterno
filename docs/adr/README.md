@@ -15,3 +15,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0008](0008-rappels-de-depart-notifications-locales.md) | Rappels de départ : notifications locales, reprogrammées par décorateur |
 | [0009](0009-apk-eas-build-et-eas-update.md) | Android : APK interne avec EAS Build, mises à jour avec EAS Update |
 | [0010](0010-semaine-standard-par-defaut.md) | Semaine standard quand aucun plan n'est validé |
+| [0011](0011-repos-compensatoire-dans-l-edt.md) | Repos compensatoire dans l'EDT : moitié choisie, horaires calculés |

@@ -22,6 +22,8 @@ export const COLORS = {
   border: '#F3E2D8',
   /** Valeur positive (compteur créditeur). */
   positive: '#2F5A3A',
+  /** Fond du repos compensatoire dans l'EDT (vert doux, distinct du travail et de la pause). */
+  restBackground: '#E3EFE4',
   /** Fond des alertes « attention ». */
   warningBackground: '#FBE7C6',
   /** Texte des alertes « attention ». */

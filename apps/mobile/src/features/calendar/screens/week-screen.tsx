@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { systemClock } from '@/shared/clock/system-clock';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -24,6 +25,7 @@ const TITLE = 'Mon planning';
 export function WeekScreen() {
   const plan = useCurrentPlan();
   const { schoolWeeks } = useSchoolWeeks();
+  const recoveryDay = useRecoveryDay(plan);
   const today = systemClock.today();
 
   if (plan === undefined) {
@@ -58,6 +60,7 @@ export function WeekScreen() {
         plan={plan}
         today={today}
         schoolWeeks={schoolWeeks ?? SchoolWeeks.none()}
+        recoveryDay={recoveryDay}
       />
       <Link href="/ecole" style={styles.secondaryLink}>
         Marquer mes semaines d’école

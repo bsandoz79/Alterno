@@ -64,6 +64,18 @@ describe('todayStatus — ce qu’affiche l’accueil', () => {
     expect(status.kind === 'off' && status.next?.date.toIsoString()).toBe('2026-10-26');
   });
 
+  it('jour de repos compensatoire : l’annonce, avec le type de récup', () => {
+    const withRecovery: DatedPlan = {
+      ...plan,
+      recovery: { date: date('2026-10-23'), kind: 'half', part: 'morning' },
+    };
+
+    expect(todayStatus(withRecovery, noSchool, date('2026-10-23'))).toEqual({
+      kind: 'recovery',
+      recovery: withRecovery.recovery,
+    });
+  });
+
   it('plan terminé : plus de prochain jour', () => {
     const status = todayStatus(plan, noSchool, date('2026-11-09'));
 

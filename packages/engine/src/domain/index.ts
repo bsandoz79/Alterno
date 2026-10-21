@@ -80,5 +80,6 @@ export { WeekCheckPlanner } from './reminders/week-check-planner';
 export { DefaultWeekPlanner } from './planning/default-week-planner';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';
 export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
-export type { DatedDay, DatedPlan, PlannedRecovery } from './planning/dated-plan';
+export type { DatedDay, DatedPlan, PlannedRecovery, RecoveryPart } from './planning/dated-plan';
+export { RecoveryDayTimetable, type RecoveryDay } from './planning/recovery-day-timetable';
 export { BalanceForecaster, type BalanceForecast } from './planning/balance-forecaster';

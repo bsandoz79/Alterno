@@ -18,6 +18,25 @@ describe('Récup du plan enregistrée', () => {
     expect(plan.recovery?.kind).toBe('half');
   });
 
+  it('relit la moitié de journée en repos', () => {
+    const record = toPlanRecoveryRecord({
+      date: CalendarDate.fromIsoString('2026-10-23'),
+      kind: 'half',
+      part: 'morning',
+    });
+
+    expect(withPlanRecovery(emptyPlan, record).recovery?.part).toBe('morning');
+  });
+
+  it('ne garde pas de moitié absente ou inconnue (l’après-midi s’appliquera par défaut)', () => {
+    expect(
+      withPlanRecovery(emptyPlan, { date: '2026-10-23', kind: 'half', part: null }).recovery,
+    ).not.toHaveProperty('part');
+    expect(
+      withPlanRecovery(emptyPlan, { date: '2026-10-23', kind: 'half', part: 'soir' }).recovery,
+    ).not.toHaveProperty('part');
+  });
+
   it('ignore un type inconnu (donnée corrompue)', () => {
     expect(
       withPlanRecovery(emptyPlan, { date: '2026-10-23', kind: 'week' }).recovery,

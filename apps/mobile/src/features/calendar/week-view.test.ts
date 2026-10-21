@@ -8,10 +8,11 @@ import {
   TimeSlot,
   laBrosseEtDupontRules,
   type DatedPlan,
+  type RecoveryDay,
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
-import { dayBlocks, dayKind, gridHours, selectWeek, weekAt } from './week-view';
+import { dayBlocks, dayKind, gridHours, recoveryBlocks, selectWeek, weekAt } from './week-view';
 
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
 const simulate = new SimulatePlan(laBrosseEtDupontRules());
@@ -104,6 +105,60 @@ describe('gridHours — plage d’heures de la grille', () => {
     const emptyWeek = { monday: date('2026-10-19'), columns: [], total: Duration.zero() };
 
     expect(gridHours(emptyWeek)).toEqual({ start: 8, end: 18 });
+  });
+});
+
+describe('recoveryBlocks — repos compensatoire dans la grille', () => {
+  const at = (value: string): TimeOfDay => TimeOfDay.parse(value);
+  const afternoonOff: RecoveryDay = {
+    kind: 'half',
+    part: 'afternoon',
+    worked: TimeSlot.between(at('09:00'), at('12:30')),
+    rest: TimeSlot.between(at('12:30'), at('16:00')),
+  };
+
+  it('journée complète : un seul bloc « Repos compensatoire » sur toute la hauteur', () => {
+    expect(recoveryBlocks({ kind: 'full' }, { start: 8, end: 17 })).toEqual([
+      { kind: 'rest', label: 'Repos compensatoire', top: 0, height: 1 },
+    ]);
+  });
+
+  it('demi-journée : la partie travaillée avec ses horaires, puis le repos avec les siens', () => {
+    const blocks = recoveryBlocks(afternoonOff, { start: 8, end: 16 });
+
+    expect(blocks.map((block) => [block.kind, block.label])).toEqual([
+      ['work', '9h00 – 12h30'],
+      ['rest', 'Repos compensatoire 12h30 – 16h00'],
+    ]);
+    expect(blocks[1]?.top).toBeCloseTo(4.5 / 8);
+    expect(blocks[1]?.height).toBeCloseTo(3.5 / 8);
+  });
+
+  it('cas limite : la grille s’étend aux heures de la demi-journée de récup', () => {
+    const morningOff: RecoveryDay = {
+      kind: 'half',
+      part: 'morning',
+      worked: TimeSlot.between(at('12:00'), at('15:30')),
+      rest: TimeSlot.between(at('07:30'), at('12:00')),
+    };
+    const withRecovery = simulate.execute({
+      days: ['2026-10-19', '2026-10-20'].map(date),
+      objective: { kind: 'recovery', date: date('2026-10-23'), recovery: 'half' },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+    const week = selectWeek(withRecovery, date('2026-10-19'));
+
+    expect(gridHours(week, morningOff).start).toBe(7);
+    expect(recoveryBlocks(morningOff, { start: 7, end: 16 }).map((block) => block.kind)).toEqual([
+      'rest',
+      'work',
+    ]);
+    // Sans récup dans la semaine affichée, les horaires de la récup sont ignorés.
+    expect(gridHours(weekAt(withRecovery, date('2026-10-26')), morningOff)).toEqual({
+      start: 8,
+      end: 18,
+    });
   });
 });
 

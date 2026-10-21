@@ -4,6 +4,7 @@ import {
   type DatedDay,
   type DatedPlan,
   type DayPlan,
+  type RecoveryDay,
   type RecoveryKind,
   type SchoolWeeks,
   type TimeOfDay,
@@ -30,15 +31,27 @@ export interface WeekView {
   readonly total: Duration;
 }
 
+/** Début et fin d'un moment de la journée (présence ou repos). */
+interface Span {
+  readonly start: TimeOfDay;
+  readonly end: TimeOfDay;
+}
+
 /** Heures pleines de début et de fin de la grille. */
 export interface GridHours {
   readonly start: number;
   readonly end: number;
 }
 
-/** Bloc dessiné dans une colonne : travail ou pause, positionné en fraction de la hauteur de la grille. */
+/** Libellé du repos dans l'EDT (« récup » reste réservé aux petits boutons). */
+const REST_LABEL = 'Repos compensatoire';
+
+/**
+ * Bloc dessiné dans une colonne : travail, pause ou repos compensatoire,
+ * positionné en fraction de la hauteur de la grille.
+ */
 export interface DayBlock {
-  readonly kind: 'work' | 'lunch';
+  readonly kind: 'work' | 'lunch' | 'rest';
   readonly label: string;
   readonly top: number;
   readonly height: number;
@@ -84,18 +97,26 @@ export function weekAt(plan: DatedPlan, anyDay: CalendarDate): WeekView {
 
 /**
  * Plage d'heures de la grille : de l'heure pleine précédant la première arrivée
- * à l'heure pleine suivant le dernier départ de la semaine.
+ * à l'heure pleine suivant le dernier départ de la semaine, demi-journée de récup comprise.
  *
  * @param week - Semaine affichée
+ * @param recoveryDay - Horaires du jour de récup du plan, s'il y en a un
  * @returns Les heures de début et de fin
  */
-export function gridHours(week: WeekView): GridHours {
-  const days = week.columns.flatMap((column) => (column.day === null ? [] : [column.day.plan]));
-  if (days.length === 0) {
+export function gridHours(week: WeekView, recoveryDay: RecoveryDay | null = null): GridHours {
+  const slots: Span[] = week.columns.flatMap((column) =>
+    column.day === null ? [] : [{ start: column.day.plan.arrival, end: column.day.plan.departure }],
+  );
+  // Les horaires de la récup ne comptent que si elle tombe dans la semaine affichée.
+  const recoveryShown = week.columns.some((column) => column.recovery !== null);
+  if (recoveryShown && recoveryDay?.kind === 'half') {
+    slots.push(recoveryDay.worked, recoveryDay.rest);
+  }
+  if (slots.length === 0) {
     return DEFAULT_HOURS;
   }
-  const earliest = Math.min(...days.map((day) => day.arrival.toMinutesSinceMidnight()));
-  const latest = Math.max(...days.map((day) => day.departure.toMinutesSinceMidnight()));
+  const earliest = Math.min(...slots.map((slot) => slot.start.toMinutesSinceMidnight()));
+  const latest = Math.max(...slots.map((slot) => slot.end.toMinutesSinceMidnight()));
   return {
     start: Math.floor(earliest / MINUTES_PER_HOUR),
     end: Math.ceil(latest / MINUTES_PER_HOUR),
@@ -111,14 +132,8 @@ export function gridHours(week: WeekView): GridHours {
  * @returns Les blocs, positionnés en fraction de la hauteur de la grille
  */
 export function dayBlocks(day: DayPlan, hours: GridHours): readonly DayBlock[] {
-  const gridStart = hours.start * MINUTES_PER_HOUR;
-  const gridLength = (hours.end - hours.start) * MINUTES_PER_HOUR;
-  const block = (kind: DayBlock['kind'], from: TimeOfDay, to: TimeOfDay): DayBlock => ({
-    kind,
-    label: `${from.format()} – ${to.format()}`,
-    top: (from.toMinutesSinceMidnight() - gridStart) / gridLength,
-    height: from.durationUntil(to).toMinutes() / gridLength,
-  });
+  const block = (kind: DayBlock['kind'], from: TimeOfDay, to: TimeOfDay): DayBlock =>
+    placedBlock(kind, '', { start: from, end: to }, hours);
   // Même règle que le calcul du temps travaillé : la pause n'est prise que si l'on est là avant et après.
   const lunchTaken =
     day.arrival.isBefore(day.lunchBreak.start) && day.departure.isAfter(day.lunchBreak.end);
@@ -130,6 +145,42 @@ export function dayBlocks(day: DayPlan, hours: GridHours): readonly DayBlock[] {
     block('lunch', day.lunchBreak.start, day.lunchBreak.end),
     block('work', day.lunchBreak.end, day.departure),
   ];
+}
+
+/**
+ * Blocs du jour de récup :
+ * - journée complète : un bloc « Repos compensatoire » sur toute la hauteur ;
+ * - demi-journée : la partie travaillée (sans pause), puis le repos avec ses horaires.
+ *
+ * @param day - Horaires du jour de récup
+ * @param hours - Plage d'heures de la grille
+ * @returns Les blocs, positionnés en fraction de la hauteur de la grille
+ */
+export function recoveryBlocks(day: RecoveryDay, hours: GridHours): readonly DayBlock[] {
+  if (day.kind === 'full') {
+    return [{ kind: 'rest', label: REST_LABEL, top: 0, height: 1 }];
+  }
+  const worked = placedBlock('work', '', day.worked, hours);
+  const rest = placedBlock('rest', `${REST_LABEL} `, day.rest, hours);
+  // Dans l'ordre de la journée : le repos vient d'abord quand c'est le matin.
+  return day.part === 'morning' ? [rest, worked] : [worked, rest];
+}
+
+/** Bloc positionné dans la grille, avec ses horaires précédés d'un éventuel intitulé. */
+function placedBlock(
+  kind: DayBlock['kind'],
+  title: string,
+  span: Span,
+  hours: GridHours,
+): DayBlock {
+  const gridStart = hours.start * MINUTES_PER_HOUR;
+  const gridLength = (hours.end - hours.start) * MINUTES_PER_HOUR;
+  return {
+    kind,
+    label: `${title}${span.start.format()} – ${span.end.format()}`,
+    top: (span.start.toMinutesSinceMidnight() - gridStart) / gridLength,
+    height: span.start.durationUntil(span.end).toMinutes() / gridLength,
+  };
 }
 
 /**

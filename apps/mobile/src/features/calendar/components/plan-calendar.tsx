@@ -1,4 +1,4 @@
-import type { CalendarDate, DatedPlan, Duration, SchoolWeeks } from '@alterno/engine';
+import type { CalendarDate, DatedPlan, Duration, RecoveryDay, SchoolWeeks } from '@alterno/engine';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PeriodNavigator } from '@/shared/components/period-navigator';
@@ -17,16 +17,18 @@ interface PlanCalendarProps {
   readonly plan: DatedPlan;
   readonly today: CalendarDate;
   readonly schoolWeeks: SchoolWeeks;
+  /** Horaires du jour de récup du plan, s'il y en a un. */
+  readonly recoveryDay: RecoveryDay | null;
 }
 
 /**
  * Calendrier du plan validé : choix semaine / mois, flèches pour se déplacer, grille et total.
  * Séparé de l'écran pour que le hook de navigation ne s'exécute qu'une fois le plan chargé.
  *
- * @param props - Plan validé, date du jour et semaines d'école
+ * @param props - Plan validé, date du jour, semaines d'école et horaires du jour de récup
  * @returns Le calendrier
  */
-export function PlanCalendar({ plan, today, schoolWeeks }: PlanCalendarProps) {
+export function PlanCalendar({ plan, today, schoolWeeks, recoveryDay }: PlanCalendarProps) {
   const navigation = useCalendarNavigation(plan, today);
   const { week, month } = navigation;
   const previousWeek = navigation.weekNavigation.previous;
@@ -66,7 +68,7 @@ export function PlanCalendar({ plan, today, schoolWeeks }: PlanCalendarProps) {
                   }
             }
           />
-          <WeekGrid week={week} today={today} schoolWeeks={schoolWeeks} />
+          <WeekGrid week={week} today={today} schoolWeeks={schoolWeeks} recoveryDay={recoveryDay} />
           <TotalRow label="Total prévu sur la semaine" total={week.total} />
         </>
       ) : (

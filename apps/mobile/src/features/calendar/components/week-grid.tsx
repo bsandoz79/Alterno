@@ -1,4 +1,4 @@
-import type { CalendarDate, SchoolWeeks } from '@alterno/engine';
+import type { CalendarDate, RecoveryDay, SchoolWeeks } from '@alterno/engine';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,7 +7,15 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { dayBlocks, dayKind, gridHours, type WeekColumn, type WeekView } from '../week-view';
+import {
+  dayBlocks,
+  dayKind,
+  gridHours,
+  recoveryBlocks,
+  type DayBlock,
+  type WeekColumn,
+  type WeekView,
+} from '../week-view';
 
 const HOUR_HEIGHT = 46;
 
@@ -20,18 +28,21 @@ interface WeekGridProps {
   readonly today: CalendarDate;
   /** Semaines d'école, affichées à la place des jours sans plan. */
   readonly schoolWeeks: SchoolWeeks;
+  /** Horaires du jour de récup du plan (dessinés dans sa colonne), s'il y en a un. */
+  readonly recoveryDay: RecoveryDay | null;
 }
 
 /**
  * Grille de la semaine au format d'un emploi du temps (EDT EPSI) : une colonne par jour,
- * les heures en vertical, le travail en rouge et la pause en rose clair.
+ * les heures en vertical, le travail en rouge, la pause en rose clair et le repos compensatoire
+ * en vert (style distinct, comme un autre type de cours).
  *
- * @param props - Semaine à afficher et date du jour
+ * @param props - Semaine à afficher, date du jour, semaines d'école et horaires du jour de récup
  * @returns La grille
  */
-export function WeekGrid({ week, today, schoolWeeks }: WeekGridProps) {
+export function WeekGrid({ week, today, schoolWeeks, recoveryDay }: WeekGridProps) {
   const router = useRouter();
-  const hours = gridHours(week);
+  const hours = gridHours(week, recoveryDay);
   const hourCount = hours.end - hours.start;
   const height = hourCount * HOUR_HEIGHT;
 
@@ -86,31 +97,21 @@ export function WeekGrid({ week, today, schoolWeeks }: WeekGridProps) {
                   <View style={[styles.block, styles.schoolBlock, { top: 0, height }]}>
                     <Text style={styles.schoolText}>École</Text>
                   </View>
+                ) : kind === 'recovery' && recoveryDay !== null ? (
+                  recoveryBlocks(recoveryDay, hours).map((block) => (
+                    <GridBlock key={block.label} block={block} date={date} height={height} />
+                  ))
                 ) : (
                   <Text style={styles.emptyDay}>{kind === 'recovery' ? 'Récup' : '—'}</Text>
                 )
               ) : (
                 dayBlocks(day.plan, hours).map((block) => (
-                  <View
+                  <GridBlock
                     key={`${block.kind}-${block.label}`}
-                    style={[
-                      styles.block,
-                      block.kind === 'work' ? styles.workBlock : styles.lunchBlock,
-                      { top: block.top * height, height: block.height * height },
-                    ]}
-                    accessibilityLabel={`${formatShortDate(date)} : ${block.kind === 'work' ? 'travail' : 'pause'} ${block.label}`}
-                  >
-                    {block.height * height >= 30 ? (
-                      <Text
-                        style={[
-                          styles.blockText,
-                          block.kind === 'work' ? styles.workText : styles.lunchText,
-                        ]}
-                      >
-                        {block.label.replace(' – ', '\n')}
-                      </Text>
-                    ) : null}
-                  </View>
+                    block={block}
+                    date={date}
+                    height={height}
+                  />
                 ))
               )}
             </Pressable>
@@ -128,6 +129,61 @@ export function WeekGrid({ week, today, schoolWeeks }: WeekGridProps) {
       </View>
     </View>
   );
+}
+
+/** Nom d'un type de bloc, lu par les lecteurs d'écran. */
+const BLOCK_NAMES: Readonly<Record<DayBlock['kind'], string>> = {
+  work: 'travail',
+  lunch: 'pause',
+  rest: 'repos compensatoire',
+};
+
+/**
+ * Bloc dessiné dans une colonne (travail, pause ou repos), à sa place dans la grille.
+ *
+ * @param props - Bloc, date de la colonne et hauteur de la grille en points
+ * @returns Le bloc
+ */
+function GridBlock({
+  block,
+  date,
+  height,
+}: {
+  readonly block: DayBlock;
+  readonly date: CalendarDate;
+  readonly height: number;
+}) {
+  const blockHeight = block.height * height;
+  return (
+    <View
+      style={[
+        styles.block,
+        BLOCK_STYLES[block.kind].box,
+        { top: block.top * height, height: blockHeight },
+      ]}
+      accessibilityLabel={`${formatShortDate(date)} : ${block.kind === 'rest' ? block.label : `${BLOCK_NAMES[block.kind]} ${block.label}`}`}
+    >
+      {blockHeight >= 30 ? (
+        <Text style={[styles.blockText, BLOCK_STYLES[block.kind].text]}>
+          {gridText(block.label)}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Texte d'un bloc, découpé pour une colonne étroite : une heure par ligne, et
+ * « Repos compensatoire » coupé à la syllabe plutôt qu'au milieu d'une lettre.
+ *
+ * @param label - Libellé du bloc
+ * @returns Le texte, sur plusieurs lignes
+ */
+function gridText(label: string): string {
+  return label
+    .replace(' – ', '\n')
+    .replace(/^Repos compensatoire ?/, 'Repos\ncompen-\nsatoire\n')
+    .trim();
 }
 
 /**
@@ -244,6 +300,12 @@ const styles = StyleSheet.create({
   lunchText: {
     color: COLORS.primary,
   },
+  restBlock: {
+    backgroundColor: COLORS.restBackground,
+  },
+  restText: {
+    color: COLORS.positive,
+  },
   footerRow: {
     flexDirection: 'row',
     gap: 3,
@@ -256,3 +318,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
 });
+
+/** Couleurs de chaque type de bloc : fond et texte. */
+const BLOCK_STYLES = {
+  work: { box: styles.workBlock, text: styles.workText },
+  lunch: { box: styles.lunchBlock, text: styles.lunchText },
+  rest: { box: styles.restBlock, text: styles.restText },
+} as const;

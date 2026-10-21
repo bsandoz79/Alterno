@@ -5,6 +5,7 @@ import {
   type PaceName,
   type PeriodStart,
   type RecoveryKind,
+  type RecoveryPart,
   type SimulationRequest,
 } from '@alterno/engine';
 
@@ -24,6 +25,8 @@ export interface SimulationForm {
   /** Jour de récup choisi (« AAAA-MM-JJ »), `null` tant qu'aucun n'est choisi. */
   readonly recoveryDate: string | null;
   readonly recoveryKind: RecoveryKind;
+  /** Moitié prise en repos, pour une demi-journée. */
+  readonly recoveryPart: RecoveryPart;
   readonly pace: PaceName;
 }
 
@@ -35,6 +38,7 @@ export const DEFAULT_SIMULATION_FORM: SimulationForm = {
   target: '35h',
   recoveryDate: null,
   recoveryKind: 'full',
+  recoveryPart: 'afternoon',
   pace: 'steady',
 };
 
@@ -69,6 +73,7 @@ export function toSimulationRequest(
           kind: 'recovery',
           date: CalendarDate.fromIsoString(form.recoveryDate),
           recovery: form.recoveryKind,
+          part: form.recoveryPart,
         },
       },
     };

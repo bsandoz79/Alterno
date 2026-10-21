@@ -7,6 +7,7 @@ import { systemClock } from '@/shared/clock/system-clock';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { formatLongDate, formatShortDate } from '@/shared/format/format-date';
+import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -16,6 +17,7 @@ import { DepartureCard } from '../components/departure-card';
 import { ReportChangeCard } from '../components/report-change-card';
 import { RestOfWeek } from '../components/rest-of-week';
 import { useTodayPlan } from '../hooks/use-today-plan';
+import { recoveryNotice, type RecoveryNotice } from '../recovery-notice';
 import { restOfWeek, todayStatus } from '../today-view';
 
 /**
@@ -29,6 +31,7 @@ import { restOfWeek, todayStatus } from '../today-view';
 export function TodayScreen() {
   const plan = useTodayPlan();
   const { schoolWeeks } = useSchoolWeeks();
+  const recoveryDay = useRecoveryDay(plan);
   const today = systemClock.today();
   const overline = formatLongDate(today);
 
@@ -64,6 +67,8 @@ export function TodayScreen() {
             Aller à la simulation
           </Link>
         </Notice>
+      ) : status.kind === 'recovery' ? (
+        <RecoveryNoticeCard notice={recoveryNotice(status.recovery, recoveryDay)} />
       ) : status.kind === 'school' ? (
         <Notice title="Journée d’école">
           <Text style={styles.text}>Pas d’horaire en entreprise aujourd’hui. Bon cours !</Text>
@@ -82,6 +87,20 @@ export function TodayScreen() {
       )}
       {rest.length === 0 ? null : <RestOfWeek days={rest} />}
     </ScreenContainer>
+  );
+}
+
+/**
+ * Carte du jour de repos compensatoire.
+ *
+ * @param props - Titre et texte du message
+ * @returns La carte
+ */
+function RecoveryNoticeCard({ notice }: { readonly notice: RecoveryNotice }) {
+  return (
+    <Notice title={notice.title}>
+      <Text style={styles.text}>{notice.text}</Text>
+    </Notice>
   );
 }
 
