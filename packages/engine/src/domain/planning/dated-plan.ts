@@ -18,6 +18,11 @@ export interface DatedPlan {
   readonly totalWorked: Duration;
   /** Récup que le plan prépare ; absente pour un objectif d'heures (ou un plan validé avant ALT-44). */
   readonly recovery?: PlannedRecovery;
+  /**
+   * `true` pour la semaine standard proposée faute de plan validé (ALT-51) :
+   * elle n'est pas enregistrée tant qu'on ne la valide pas ou qu'on n'y déclare pas un écart.
+   */
+  readonly isDefault?: boolean;
 }
 
 /** Récup posée à la fin d'un plan : sa date et son type. */
