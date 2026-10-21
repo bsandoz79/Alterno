@@ -133,7 +133,8 @@ describe('DeviationReplanner — écart déclaré', () => {
       expect(outcome.plan.totalWorked.equals(h(48, 15))).toBe(true);
       expect(outcome.alerts).toContainEqual({
         kind: 'target-out-of-reach',
-        message: 'Objectif hors d’atteinte : il manque 1h sur la période.',
+        message:
+          'Objectif hors d’atteinte : il manque 1h sur la période, elles seront prises sur ton compteur.',
       });
     });
 
@@ -166,7 +167,8 @@ describe('DeviationReplanner — écart déclaré', () => {
       expect(outcome.plan.days).toHaveLength(5);
       expect(outcome.alerts).toContainEqual({
         kind: 'target-out-of-reach',
-        message: 'Objectif hors d’atteinte : il manque 1h sur la période.',
+        message:
+          'Objectif hors d’atteinte : il manque 1h sur la période, elles seront prises sur ton compteur.',
       });
     });
   });
