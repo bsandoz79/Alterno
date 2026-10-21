@@ -33,6 +33,13 @@ describe('Bandeau « temps restant » de l’accueil', () => {
     ).toEqual({ headline: 'Pause jusqu’à 13h00', detail: 'Encore 3h ensuite · départ à 16h00' });
   });
 
+  it('le soir, la journée est terminée', () => {
+    expect(timeLeftText({ kind: 'day-over', departure: at('16:00') })).toEqual({
+      headline: 'Journée terminée',
+      detail: 'Départ prévu à 16h00',
+    });
+  });
+
   it('à l’heure du départ, puis au-delà', () => {
     expect(
       timeLeftText({ kind: 'overtime', departure: at('16:00'), beyond: Duration.zero() }).headline,

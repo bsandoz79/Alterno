@@ -36,5 +36,10 @@ export function timeLeftText(progress: DayProgress): TimeLeftText {
           : `+${progress.beyond.format()} au-delà du départ`,
         detail: `Départ prévu à ${progress.departure.format()}`,
       };
+    case 'day-over':
+      return {
+        headline: 'Journée terminée',
+        detail: `Départ prévu à ${progress.departure.format()}`,
+      };
   }
 }

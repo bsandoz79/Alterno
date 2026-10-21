@@ -28,6 +28,8 @@ const describeProgress = (progress: DayProgress): string => {
       return `pause jusqu’à ${progress.lunchEnd.format()}, reste ${progress.remaining.format()}`;
     case 'overtime':
       return `départ ${progress.departure.format()} dépassé de ${progress.beyond.format()}`;
+    case 'day-over':
+      return `journée terminée (départ ${progress.departure.format()})`;
   }
 };
 
@@ -51,6 +53,21 @@ describe('dayProgress — temps restant à travailler aujourd’hui', () => {
 
   it('après le départ prévu : dit de combien il est dépassé', () => {
     expect(describeProgress(dayProgress(day, at('16:12')))).toBe('départ 16h00 dépassé de 0h12');
+  });
+
+  it('cas limite : jusqu’à 1h après le départ prévu, il est encore « dépassé »', () => {
+    expect(describeProgress(dayProgress(day, at('16:59')))).toBe('départ 16h00 dépassé de 0h59');
+  });
+
+  it('1h après le départ prévu, la journée est terminée (le soir, plus de « +6h43 »)', () => {
+    expect(describeProgress(dayProgress(day, at('17:00')))).toBe('journée terminée (départ 16h00)');
+    expect(describeProgress(dayProgress(day, at('22:43')))).toBe('journée terminée (départ 16h00)');
+  });
+
+  it('le délai avant « journée terminée » se règle', () => {
+    expect(describeProgress(dayProgress(day, at('16:30'), Duration.ofMinutes(30)))).toBe(
+      'journée terminée (départ 16h00)',
+    );
   });
 
   it('cas limite : journée sans pause (départ avant midi), tout le temps compte', () => {
