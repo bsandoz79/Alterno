@@ -7,32 +7,34 @@ const all = { lead: 5, atDeparture: true, weekCheck: true, approvalCheck: true, 
 const none = { lead: 0, atDeparture: false, weekCheck: false, approvalCheck: false, ...delays };
 
 describe('Confirmation du réglage validé', () => {
-  it('résume le réglage et le nombre de notifications programmées', () => {
+  it('donne le nombre de notifications programmées', () => {
     expect(reminderConfirmation(all, { count: 6, delivery: 'scheduled' })).toEqual({
       kind: 'success',
-      text: 'Réglé : rappel 5 min avant le départ, question à l’heure de départ, question de fin de semaine et suivi de la récup. 6 notifications programmées.',
+      text: 'Enregistré · 6 notifications programmées.',
     });
   });
 
-  it('accorde au singulier et décrit un rappel seul', () => {
+  it('accorde au singulier', () => {
     expect(
       reminderConfirmation({ ...none, lead: 15 }, { count: 1, delivery: 'scheduled' }).text,
-    ).toBe('Réglé : rappel 15 min avant le départ. 1 notification programmée.');
+    ).toBe('Enregistré · 1 notification programmée.');
   });
 
-  it('décrit une question seule, sans départ à venir', () => {
+  it('dit quand rien n’est à venir', () => {
     expect(
       reminderConfirmation({ ...none, atDeparture: true }, { count: 0, delivery: 'scheduled' })
         .text,
-    ).toBe(
-      'Réglé : question à l’heure de départ. Aucun départ à venir dans ton plan pour l’instant.',
-    );
+    ).toBe('Enregistré · rien à venir pour l’instant.');
   });
 
-  it('décrit la question de fin de semaine seule', () => {
+  it('considère une seule question activée comme un réglage actif', () => {
+    expect(
+      reminderConfirmation({ ...none, approvalCheck: true }, { count: 0, delivery: 'scheduled' })
+        .kind,
+    ).toBe('success');
     expect(
       reminderConfirmation({ ...none, weekCheck: true }, { count: 1, delivery: 'scheduled' }).text,
-    ).toBe('Réglé : question de fin de semaine. 1 notification programmée.');
+    ).toBe('Enregistré · 1 notification programmée.');
   });
 
   it('confirme la désactivation complète', () => {

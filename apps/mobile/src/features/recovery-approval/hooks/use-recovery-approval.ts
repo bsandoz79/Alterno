@@ -80,7 +80,7 @@ export function useRecoveryApproval(
         ? null
         : {
             kind: 'success',
-            text: `Récup annulée : le ${formatShortDate(cancelledDate)} redevient une journée de travail, la suite du plan repasse à 7h par jour.`,
+            text: `Récup annulée : le ${formatShortDate(cancelledDate)} redevient travaillé.`,
           },
     );
   }, [cancelRecovery, recovery]);

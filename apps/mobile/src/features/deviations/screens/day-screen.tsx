@@ -41,7 +41,7 @@ export function DayScreen() {
     return (
       <Notice
         title={title}
-        text="Ce jour ne fait pas partie de ton plan en cours (jour de récup, week-end ou hors période)."
+        text="Ce jour n’est pas dans ton plan (récup, week-end ou hors période)."
       />
     );
   }

@@ -44,9 +44,7 @@ export function WeekScreen() {
       <ScreenContainer title={TITLE}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Aucun plan validé</Text>
-          <Text style={styles.cardText}>
-            Fais une simulation puis « Valider ce plan » : ta semaine s’affichera ici.
-          </Text>
+          <Text style={styles.cardText}>Fais une simulation, puis valide-la.</Text>
           <Link href="/simulation" style={styles.link}>
             Aller à la simulation
           </Link>
@@ -75,11 +73,11 @@ export function WeekScreen() {
       {canCancelPlan(plan, today) ? (
         <ConfirmButton
           label="Annuler le plan"
-          warning="À partir d’aujourd’hui, les jours repassent à 7h et la récup prévue est annulée. Les jours passés sont gardés, ainsi que les heures déjà au compteur."
+          warning="Dès aujourd’hui, les jours repassent à 7h et la récup est annulée. Les jours passés et le compteur ne changent pas."
           confirmLabel="Annuler le plan"
           onConfirm={async () => {
             await cancelPlan(plan);
-            setMessage({ kind: 'success', text: 'Plan annulé : la semaine standard reprend.' });
+            setMessage({ kind: 'success', text: 'Plan annulé.' });
             reload();
           }}
         />

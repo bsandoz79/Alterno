@@ -65,7 +65,7 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
       return;
     }
     await new ValidatePlan(plans, systemClock).execute(preview.outcome.plan);
-    setMessage({ kind: 'success', text: 'Journée modifiée : la suite du plan est recalculée.' });
+    setMessage({ kind: 'success', text: 'Journée enregistrée, suite recalculée.' });
     onSaved();
   }, [preview, plans, onSaved]);
 
@@ -75,10 +75,7 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
     }
     // La journée modifiée est gardée telle que saisie ; l'annulation commence le lendemain.
     await cancelPlan(preview.outcome.plan, date.plusDays(1));
-    setMessage({
-      kind: 'success',
-      text: 'Journée enregistrée et plan annulé : la suite repasse à 7h par jour.',
-    });
+    setMessage({ kind: 'success', text: 'Journée enregistrée, plan annulé.' });
     onSaved();
   }, [preview, cancelPlan, date, onSaved]);
 
