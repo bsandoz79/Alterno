@@ -42,10 +42,9 @@ export function CounterScreen() {
       <ReminderSettingsCard />
       <Link href="/reglages" style={styles.settingsLink} accessibilityRole="button">
         <Text style={styles.settingsTitle}>Règles horaires</Text>
-        {'\n'}
-        <Text style={styles.settingsHint}>
-          Plages, pause minimale, temps attendu, récups et découvert
-        </Text>
+      </Link>
+      <Link href="/mes-donnees" style={styles.settingsLink} accessibilityRole="button">
+        <Text style={styles.settingsTitle}>Mes données</Text>
       </Link>
     </ScreenContainer>
   );
@@ -61,10 +60,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 16,
     color: COLORS.primary,
-  },
-  settingsHint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.textMuted,
   },
 });

@@ -70,6 +70,7 @@ export default function RootLayout() {
         />
         <Tabs.Screen name="jour/[date]" options={{ href: null, title: 'Détail du jour' }} />
         <Tabs.Screen name="recup" options={{ href: null, title: 'Ma récup' }} />
+        <Tabs.Screen name="mes-donnees" options={{ href: null, title: 'Mes données' }} />
       </Tabs>
     </RepositoriesProvider>
   );
