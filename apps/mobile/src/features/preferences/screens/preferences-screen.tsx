@@ -1,7 +1,9 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MessageBox } from '@/shared/components/message-box';
+import { BrandSwitch } from '@/shared/components/brand-switch';
+import { InfoTip } from '@/shared/components/info-tip';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { SettingsSection } from '@/shared/components/settings-section';
 import { TimeField } from '@/shared/components/time-field';
@@ -52,7 +54,10 @@ export function PreferencesScreen() {
             />
           </SettingsSection>
 
-          <Text style={styles.hint}>Pour chaque jour, laisse vide pour garder tes habitudes.</Text>
+          <InfoTip
+            title="Préférences par jour"
+            info="Pour chaque jour, laisse vide pour garder tes habitudes."
+          />
 
           {PREFERENCE_DAYS.map((day) => {
             const values = form.days[day];
@@ -92,12 +97,11 @@ export function PreferencesScreen() {
                 />
                 <View style={styles.switchRow}>
                   <Text style={styles.switchLabel}>Journée à 7h pile</Text>
-                  <Switch
+                  <BrandSwitch
                     value={values.exactlyExpected}
                     onValueChange={(value) => {
                       updateDay(day, 'exactlyExpected', value);
                     }}
-                    trackColor={{ true: COLORS.primary, false: COLORS.border }}
                     accessibilityLabel={`${PREFERENCE_DAY_LABELS[day]} : journée à 7h pile`}
                   />
                 </View>
@@ -127,11 +131,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 15,
     color: COLORS.primary,
-  },
-  hint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.textMuted,
   },
   switchRow: {
     flexDirection: 'row',

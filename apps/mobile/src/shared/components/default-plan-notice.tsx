@@ -1,7 +1,8 @@
 import type { DatedPlan } from '@alterno/engine';
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { InfoTip } from '@/shared/components/info-tip';
 import { defaultPlanSummary } from '@/shared/format/default-plan-summary';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -20,8 +21,11 @@ export function DefaultPlanNotice({ plan }: { readonly plan: DatedPlan }) {
   }
   return (
     <View style={styles.box}>
-      <Text style={styles.title}>Plan par défaut</Text>
-      <Text style={styles.text}>{defaultPlanSummary(plan)}</Text>
+      <InfoTip
+        title={`Plan par défaut · ${plan.totalWorked.format()}`}
+        info={defaultPlanSummary(plan)}
+        titleStyle={styles.title}
+      />
       <Link href="/simulation" style={styles.link}>
         Simuler une autre semaine
       </Link>
@@ -39,12 +43,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FONTS.extraBold,
     fontSize: 15,
-    color: COLORS.text,
-  },
-  text: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 20,
     color: COLORS.text,
   },
   link: {

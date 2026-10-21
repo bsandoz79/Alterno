@@ -46,9 +46,7 @@ export function RecoveryApprovalScreen() {
         {message === null ? null : <MessageBox message={message} />}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Aucune demande suivie</Text>
-          <Text style={styles.text}>
-            Pose une récup dans la simulation : Alterno te demandera ensuite si elle a été acceptée.
-          </Text>
+          <Text style={styles.text}>Pose une récup dans la simulation pour la suivre ici.</Text>
           <Link href="/simulation" style={styles.link}>
             Aller à la simulation
           </Link>
@@ -86,7 +84,7 @@ export function RecoveryApprovalScreen() {
       {recovery.date.isBefore(systemClock.today()) ? null : (
         <ConfirmButton
           label="Annuler la récup"
-          warning="Ce jour redevient une journée de travail, et les jours restants repassent à 7h. Les heures d’avance déjà faites restent au compteur."
+          warning="Ce jour redevient travaillé et la suite repasse à 7h. L’avance déjà faite reste au compteur."
           confirmLabel="Annuler la récup"
           onConfirm={cancel}
         />

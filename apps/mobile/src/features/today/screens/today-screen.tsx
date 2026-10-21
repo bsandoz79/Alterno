@@ -54,9 +54,7 @@ export function TodayScreen() {
         </>
       ) : status.kind === 'no-plan' ? (
         <Notice title="Aucun plan validé">
-          <Text style={styles.text}>
-            Fais une simulation puis « Valider ce plan » : ton heure de départ s’affichera ici.
-          </Text>
+          <Text style={styles.text}>Fais une simulation, puis valide-la.</Text>
           <Link href="/simulation" style={styles.link}>
             Aller à la simulation
           </Link>
@@ -64,7 +62,7 @@ export function TodayScreen() {
       ) : status.kind === 'before-plan' ? (
         <Notice title="Pas de plan pour aujourd’hui">
           <Text style={styles.text}>
-            {`Ton plan commence le ${formatShortDate(status.first.date)}. Pour avoir ton heure de départ dès aujourd’hui, simule « Cette semaine ».`}
+            {`Ton plan commence le ${formatShortDate(status.first.date)}.`}
           </Text>
           <Link href="/simulation" style={styles.link}>
             Aller à la simulation

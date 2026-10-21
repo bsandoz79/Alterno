@@ -30,13 +30,10 @@ export function answerConfirmation(
   const day = formatShortDate(recoveryDate);
   switch (answer) {
     case 'approved':
-      return { kind: 'success', text: `Récup du ${day} acceptée : profite bien !` };
+      return { kind: 'success', text: `Récup du ${day} acceptée.` };
     case 'refused':
-      return {
-        kind: 'info',
-        text: `Récup du ${day} refusée. Tu peux l’annuler ci-dessous : ce jour redeviendra une journée de travail.`,
-      };
+      return { kind: 'info', text: `Récup du ${day} refusée.` };
     case 'not-yet':
-      return { kind: 'info', text: 'D’accord, Alterno te redemandera plus tard.' };
+      return { kind: 'info', text: 'D’accord, on te redemandera.' };
   }
 }

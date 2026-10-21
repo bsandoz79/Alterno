@@ -23,15 +23,15 @@ describe('Réponse au suivi de la récup', () => {
   it('confirme chaque réponse', () => {
     expect(answerConfirmation('approved', friday)).toEqual({
       kind: 'success',
-      text: 'Récup du ven. 30 oct. acceptée : profite bien !',
+      text: 'Récup du ven. 30 oct. acceptée.',
     });
     expect(answerConfirmation('refused', friday)).toEqual({
       kind: 'info',
-      text: 'Récup du ven. 30 oct. refusée. Tu peux l’annuler ci-dessous : ce jour redeviendra une journée de travail.',
+      text: 'Récup du ven. 30 oct. refusée.',
     });
     expect(answerConfirmation('not-yet', friday)).toEqual({
       kind: 'info',
-      text: 'D’accord, Alterno te redemandera plus tard.',
+      text: 'D’accord, on te redemandera.',
     });
   });
 });

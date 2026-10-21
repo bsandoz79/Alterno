@@ -1,5 +1,7 @@
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { BrandSwitch } from '@/shared/components/brand-switch';
+import { InfoTip } from '@/shared/components/info-tip';
 import { MessageBox } from '@/shared/components/message-box';
 import { SegmentedControl } from '@/shared/components/segmented-control';
 import { notificationsSupported } from '@/shared/notifications/create-notifier';
@@ -29,7 +31,15 @@ export function ReminderSettingsCard() {
   }
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Notifications</Text>
+      <InfoTip
+        title="Notifications"
+        info={
+          notificationsSupported()
+            ? 'Pour chaque jour du plan. Les questions s’affichent avec leurs boutons : il suffit d’y répondre depuis la notification.'
+            : 'Les notifications s’affichent dans l’application installée sur Android (APK), pas dans Expo Go ni dans le navigateur.'
+        }
+        titleStyle={styles.title}
+      />
       <Text style={styles.label}>Rappel avant le départ</Text>
       <SegmentedControl
         accessibilityLabel="Rappel avant le départ"
@@ -41,7 +51,8 @@ export function ReminderSettingsCard() {
         }}
       />
       <SettingSwitch
-        label="À l’heure de départ, me demander si je pars plus tard"
+        label="Question au départ"
+        info="À l’heure de départ prévue, te demande si tu pars plus tard ; la toucher ouvre « Parti plus tard »."
         accessibilityLabel="Question à l’heure de départ"
         value={draft.atDeparture}
         onChange={(atDeparture) => {
@@ -49,7 +60,8 @@ export function ReminderSettingsCard() {
         }}
       />
       <SettingSwitch
-        label="En fin de semaine, me demander si elle s’est passée comme prévu"
+        label="Bilan de la semaine"
+        info="1h après le dernier départ de la semaine : « Ta semaine s’est passée comme prévu ? », avec Oui ou Corriger."
         accessibilityLabel="Question de fin de semaine"
         value={draft.weekCheck}
         onChange={(weekCheck) => {
@@ -57,7 +69,8 @@ export function ReminderSettingsCard() {
         }}
       />
       <SettingSwitch
-        label="Après une demande de récup, me demander si elle a été acceptée"
+        label="Suivi de la récup"
+        info="Après une demande de récup, te demande si elle a été acceptée (Oui, Non, Pas encore), puis relance sans réponse."
         accessibilityLabel="Suivi de la demande de récup"
         value={draft.approvalCheck}
         onChange={(approvalCheck) => {
@@ -88,11 +101,6 @@ export function ReminderSettingsCard() {
           />
         </>
       ) : null}
-      <Text style={styles.hint}>
-        {notificationsSupported()
-          ? 'Pour chaque jour du plan. Toucher la question du départ ouvre « Parti plus tard » ; celle de fin de semaine arrive 1h après le dernier départ, avec « Oui » ou « Corriger ».'
-          : 'Les notifications s’affichent dans l’application installée sur Android (APK), pas dans Expo Go ni dans le navigateur.'}
-      </Text>
       <Pressable
         style={[styles.button, !changed && styles.buttonDisabled]}
         accessibilityRole="button"
@@ -110,25 +118,24 @@ export function ReminderSettingsCard() {
 /** Interrupteur d'un réglage, avec son libellé à gauche. */
 function SettingSwitch({
   label,
+  info,
   accessibilityLabel,
   value,
   onChange,
 }: {
   readonly label: string;
+  /** Ce que fait le réglage, affiché à la demande. */
+  readonly info: string;
   readonly accessibilityLabel: string;
   readonly value: boolean;
   readonly onChange: (value: boolean) => void;
 }) {
   return (
     <View style={styles.switchRow}>
-      <Text style={styles.switchLabel}>{label}</Text>
-      <Switch
-        accessibilityLabel={accessibilityLabel}
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ false: COLORS.border, true: COLORS.primarySoft }}
-        thumbColor={value ? COLORS.primary : COLORS.surface}
-      />
+      <View style={styles.switchText}>
+        <InfoTip title={label} info={info} titleStyle={styles.switchLabel} />
+      </View>
+      <BrandSwitch accessibilityLabel={accessibilityLabel} value={value} onValueChange={onChange} />
     </View>
   );
 }
@@ -156,17 +163,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: SPACING.md,
   },
-  switchLabel: {
+  switchText: {
     flex: 1,
+  },
+  switchLabel: {
     fontFamily: FONTS.bold,
     fontSize: 15,
     color: COLORS.text,
-  },
-  hint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textMuted,
   },
   button: {
     height: 52,

@@ -97,7 +97,7 @@ export function DayEditor({ change, ...params }: DayEditorProps) {
       {outOfReach ? (
         <ConfirmButton
           label="Annuler le plan"
-          warning="La journée est enregistrée telle que saisie, puis les jours suivants repassent à 7h et la récup prévue est annulée."
+          warning="La journée est gardée ; la suite repasse à 7h et la récup est annulée."
           confirmLabel="Enregistrer et annuler"
           onConfirm={saveAndCancel}
         />

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { InfoTip } from '@/shared/components/info-tip';
 import { MessageBox } from '@/shared/components/message-box';
 import { TimeField } from '@/shared/components/time-field';
 import { COLORS } from '@/shared/theme/colors';
@@ -27,10 +28,11 @@ export function RecalibrateCard({ input, onChange, preview, onRecalibrate }: Rec
   const ready = preview?.ok === true;
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Recaler sur Smart RH</Text>
-      <Text style={styles.text}>
-        Saisis le solde affiché dans Smart RH : il fait foi, le compteur d’Alterno prend sa valeur.
-      </Text>
+      <InfoTip
+        title="Recaler sur Smart RH"
+        info="Saisis le solde affiché dans Smart RH : il fait foi, le compteur d’Alterno prend sa valeur."
+        titleStyle={styles.title}
+      />
       <TimeField label="Solde Smart RH" value={input} onChange={onChange} placeholder="+2h15" />
       {preview === null ? null : preview.ok ? (
         <>
@@ -68,12 +70,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 16,
     color: COLORS.text,
-  },
-  text: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textMuted,
   },
   correction: {
     fontFamily: FONTS.bold,
