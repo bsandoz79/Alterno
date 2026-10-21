@@ -21,6 +21,7 @@ export { paceStrategy, type PaceName } from './pace-name';
 export { ForecastBalance } from './forecast-balance';
 export { RecalibrateCounter } from './recalibrate-counter';
 export { ChangeReminderSettings } from './change-reminder-settings';
+export { PlanWithDefaultWeek, type DefaultWeekSources } from './plan-with-default-week';
 export {
   ScheduleDepartureReminders,
   type ReminderScheduling,

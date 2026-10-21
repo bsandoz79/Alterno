@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
+import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
 import { COLORS } from '@/shared/theme/colors';
@@ -15,7 +16,8 @@ import { useCurrentPlan } from '../hooks/use-current-plan';
 const TITLE = 'Mon planning';
 
 /**
- * Écran « Semaine » : le plan validé, semaine par semaine (grille façon EDT EPSI) ou mois par mois.
+ * Écran « Semaine » : le plan validé (ou, à défaut, la semaine standard), semaine par semaine
+ * (grille façon EDT EPSI) ou mois par mois.
  *
  * @returns L'écran
  */
@@ -50,6 +52,7 @@ export function WeekScreen() {
   const planKey = plan.days.map((day) => day.date.toIsoString()).join();
   return (
     <ScreenContainer title={TITLE}>
+      <DefaultPlanNotice plan={plan} />
       <PlanCalendar
         key={planKey}
         plan={plan}

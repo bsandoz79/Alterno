@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
+import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { formatLongDate, formatShortDate } from '@/shared/format/format-date';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
@@ -20,7 +21,8 @@ import { restOfWeek, todayStatus } from '../today-view';
 /**
  * Écran « Aujourd'hui » (accueil) : l'heure de départ prévue en grand, le bouton
  * « Signaler un changement » et le reste de la semaine. On n'ouvre l'app que pour ça :
- * le plan est considéré comme suivi, seuls les écarts se déclarent.
+ * le plan est considéré comme suivi, seuls les écarts se déclarent. Sans plan validé,
+ * la semaine standard est suivie, et un encadré le signale.
  *
  * @returns L'écran
  */
@@ -38,6 +40,7 @@ export function TodayScreen() {
 
   return (
     <ScreenContainer title="Aujourd'hui" overline={overline}>
+      {plan === null ? null : <DefaultPlanNotice plan={plan} />}
       {status.kind === 'work' ? (
         <>
           <DepartureCard day={status.day.plan} />
