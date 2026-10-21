@@ -1,23 +1,36 @@
 import type { DepartureReminder, Duration } from '@alterno/engine';
 
+import { WEEK_CHECK_CATEGORY } from './week-check-category';
+
 const MINUTES_PER_HOUR = 60;
 
-/** Contenu d'une notification : son texte, et l'écran à ouvrir quand on la touche. */
+/** Contenu d'une notification : son texte, l'écran à ouvrir quand on la touche, et ses boutons éventuels. */
 export interface NotificationContent {
   readonly title: string;
   readonly body: string;
   readonly data: { readonly url: string };
+  /** Catégorie déclarée au téléphone qui ajoute des boutons à la notification. */
+  readonly categoryIdentifier?: string;
 }
 
 /**
  * Contenu d'une notification de départ, affiché dans la barre de notifications.
- * Toucher la question de l'heure de départ ouvre directement la saisie « Parti plus tard ».
+ * Toucher la question de l'heure de départ ouvre directement la saisie « Parti plus tard » ;
+ * la question de fin de semaine propose « Oui » et « Corriger » (qui ouvre la semaine).
  *
  * @param reminder - Rappel calculé par le moteur
  * @returns Le titre, le message et l'écran à ouvrir
  */
 export function departureReminderContent(reminder: DepartureReminder): NotificationContent {
   const departure = reminder.departure.format();
+  if (reminder.kind === 'week-check') {
+    return {
+      title: 'Fin de semaine',
+      body: 'Ta semaine s’est passée comme prévu ?',
+      data: { url: '/semaine' },
+      categoryIdentifier: WEEK_CHECK_CATEGORY,
+    };
+  }
   if (reminder.kind === 'at-departure') {
     return {
       title: 'C’est l’heure de partir',
