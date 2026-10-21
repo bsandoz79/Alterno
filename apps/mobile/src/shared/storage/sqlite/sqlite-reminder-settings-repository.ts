@@ -15,13 +15,17 @@ export class SqliteReminderSettingsRepository implements ReminderSettingsReposit
     const row = await this.db.getFirstAsync<{
       departure_lead_minutes: number | null;
       at_departure: number | null;
-    }>('SELECT departure_lead_minutes, at_departure FROM reminder_settings WHERE id = 1');
+      week_check: number | null;
+    }>(
+      'SELECT departure_lead_minutes, at_departure, week_check FROM reminder_settings WHERE id = 1',
+    );
     return row === null
       ? ReminderSettings.defaults()
       : fromReminderSettingsRecord({
           departureLeadMinutes: row.departure_lead_minutes,
-          // SQLite n'a pas de booléen : 1 / 0, et NULL pour une ligne enregistrée avant ALT-48.
-          atDeparture: row.at_departure === null ? null : row.at_departure === 1,
+          // SQLite n'a pas de booléen : 1 / 0, et NULL pour une colonne ajoutée après la ligne.
+          atDeparture: toBoolean(row.at_departure),
+          weekCheck: toBoolean(row.week_check),
         });
   }
 
@@ -29,10 +33,22 @@ export class SqliteReminderSettingsRepository implements ReminderSettingsReposit
   async save(settings: ReminderSettings): Promise<void> {
     const record = toReminderSettingsRecord(settings);
     await this.db.runAsync(
-      `INSERT INTO reminder_settings (id, departure_lead_minutes, at_departure) VALUES (1, ?, ?)
+      `INSERT INTO reminder_settings (id, departure_lead_minutes, at_departure, week_check)
+       VALUES (1, ?, ?, ?)
        ON CONFLICT (id) DO UPDATE SET departure_lead_minutes = excluded.departure_lead_minutes,
-                                      at_departure = excluded.at_departure`,
-      [record.departureLeadMinutes, record.atDeparture === false ? 0 : 1],
+                                      at_departure = excluded.at_departure,
+                                      week_check = excluded.week_check`,
+      [record.departureLeadMinutes, toInteger(record.atDeparture), toInteger(record.weekCheck)],
     );
   }
+}
+
+/** Booléen SQLite (1 / 0) ; `null` si la colonne n'a pas encore de valeur. */
+function toBoolean(value: number | null): boolean | null {
+  return value === null ? null : value === 1;
+}
+
+/** Booléen enregistré en 1 / 0 ; une valeur absente vaut « activé », comme par défaut. */
+function toInteger(value: boolean | null | undefined): number {
+  return value === false ? 0 : 1;
 }
