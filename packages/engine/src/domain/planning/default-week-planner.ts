@@ -1,11 +1,9 @@
 import type { CalendarDate } from '../calendar/calendar-date';
 import type { SchoolWeeks } from '../calendar/school-weeks';
 import type { WorkRules } from '../rules/work-rules';
-import { Duration } from '../time/duration';
 import type { DatedPlan } from './dated-plan';
-import { SteadyPace } from './pace/steady-pace';
-import { PlanGenerator } from './plan-generator';
 import type { PlanningPreferences } from './planning-preferences';
+import { StandardDayPlanner, totalWorkedOf } from './standard-day-planner';
 
 const DAYS_PER_WEEK = 7;
 
@@ -15,7 +13,7 @@ const DAYS_PER_WEEK = 7;
  * Ainsi l'accueil, la semaine et les rappels fonctionnent même sans simulation.
  */
 export class DefaultWeekPlanner {
-  private readonly generator: PlanGenerator;
+  private readonly standardDays: StandardDayPlanner;
 
   /**
    * @param rules - Règles horaires (temps attendu et jours travaillés viennent d'ici, jamais en dur)
@@ -25,7 +23,7 @@ export class DefaultWeekPlanner {
     private readonly rules: WorkRules,
     preferences: PlanningPreferences = {},
   ) {
-    this.generator = new PlanGenerator(rules, preferences);
+    this.standardDays = new StandardDayPlanner(rules, preferences);
   }
 
   /**
@@ -53,21 +51,8 @@ export class DefaultWeekPlanner {
     // La récup posée par le plan terminé est un jour de repos, pas un jour à travailler.
     const recovery = stored?.recovery?.date;
     const dates = this.workingDates(monday).filter((date) => !(recovery?.equals(date) ?? false));
-    const target = dates.reduce((sum) => sum.plus(this.rules.expectedDailyWork), Duration.zero());
-    const plan = this.generator.planForTotalHours(
-      dates.map((date) => date.weekday()),
-      target,
-      new SteadyPace(),
-    );
-    return {
-      days: dates.flatMap((date, index) => {
-        const day = plan.days[index];
-        /* v8 ignore next -- le générateur renvoie exactement une journée par jour demandé, dans l'ordre */
-        return day === undefined ? [] : [{ date, plan: day }];
-      }),
-      totalWorked: plan.totalWorked,
-      isDefault: true,
-    };
+    const days = this.standardDays.daysFor(dates);
+    return { days, totalWorked: totalWorkedOf(days), isDefault: true };
   }
 
   /**
