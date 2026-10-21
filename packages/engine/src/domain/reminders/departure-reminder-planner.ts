@@ -64,11 +64,14 @@ export class DepartureReminderPlanner {
 /**
  * Un rappel passé ne sert plus à rien : seuls ceux encore à venir sont programmés.
  *
- * @param reminder - Rappel calculé
+ * @param reminder - Rappel calculé (son jour et son heure)
  * @param moment - Date et heure actuelles
  * @returns `true` si le rappel est encore à venir
  */
-export function isUpcoming(reminder: DepartureReminder, moment: Moment): boolean {
+export function isUpcoming(
+  reminder: Pick<DepartureReminder, 'date' | 'at'>,
+  moment: Moment,
+): boolean {
   return (
     moment.today.isBefore(reminder.date) ||
     (reminder.date.equals(moment.today) && reminder.at.isAfter(moment.now))

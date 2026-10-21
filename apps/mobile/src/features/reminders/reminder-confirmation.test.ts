@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import { reminderConfirmation } from './reminder-confirmation';
 
-const all = { lead: 5, atDeparture: true, weekCheck: true };
-const none = { lead: 0, atDeparture: false, weekCheck: false };
+const delays = { approvalFirstDelayDays: 2, approvalRepeatDays: 1 };
+const all = { lead: 5, atDeparture: true, weekCheck: true, approvalCheck: true, ...delays };
+const none = { lead: 0, atDeparture: false, weekCheck: false, approvalCheck: false, ...delays };
 
 describe('Confirmation du réglage validé', () => {
   it('résume le réglage et le nombre de notifications programmées', () => {
     expect(reminderConfirmation(all, { count: 6, delivery: 'scheduled' })).toEqual({
       kind: 'success',
-      text: 'Réglé : rappel 5 min avant le départ, question à l’heure de départ et question de fin de semaine. 6 notifications programmées.',
+      text: 'Réglé : rappel 5 min avant le départ, question à l’heure de départ, question de fin de semaine et suivi de la récup. 6 notifications programmées.',
     });
   });
 

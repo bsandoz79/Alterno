@@ -10,6 +10,10 @@ export interface ReminderSettingsRecord {
   readonly atDeparture?: boolean | null;
   /** Absent des réglages enregistrés avant ALT-30 : la question est alors activée, comme par défaut. */
   readonly weekCheck?: boolean | null;
+  /** Suivi de la récup et ses délais en jours ; absents avant ALT-55 : valeurs par défaut. */
+  readonly approvalCheck?: boolean | null;
+  readonly approvalFirstDelayDays?: number | null;
+  readonly approvalRepeatDays?: number | null;
 }
 
 /**
@@ -23,6 +27,9 @@ export function toReminderSettingsRecord(settings: ReminderSettings): ReminderSe
     departureLeadMinutes: settings.departureLead?.toMinutes() ?? null,
     atDeparture: settings.atDeparture,
     weekCheck: settings.weekCheck,
+    approvalCheck: settings.approvalCheck,
+    approvalFirstDelayDays: settings.approvalFirstDelayDays,
+    approvalRepeatDays: settings.approvalRepeatDays,
   };
 }
 
@@ -39,5 +46,11 @@ export function fromReminderSettingsRecord(record: ReminderSettingsRecord): Remi
       record.departureLeadMinutes === null ? null : Duration.ofMinutes(record.departureLeadMinutes),
     atDeparture: record.atDeparture ?? ReminderSettings.defaults().atDeparture,
     weekCheck: record.weekCheck ?? ReminderSettings.defaults().weekCheck,
+    // Valeurs absentes : `create` applique les valeurs par défaut.
+    ...(record.approvalCheck == null ? {} : { approvalCheck: record.approvalCheck }),
+    ...(record.approvalFirstDelayDays == null
+      ? {}
+      : { approvalFirstDelayDays: record.approvalFirstDelayDays }),
+    ...(record.approvalRepeatDays == null ? {} : { approvalRepeatDays: record.approvalRepeatDays }),
   });
 }

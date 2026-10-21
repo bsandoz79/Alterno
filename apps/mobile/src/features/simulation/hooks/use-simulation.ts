@@ -159,9 +159,9 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
     if (outcome?.ok !== true) {
       return;
     }
-    await new ValidatePlan(plans).execute(outcome.simulation);
+    await new ValidatePlan(plans, clock).execute(outcome.simulation);
     setMessage({ kind: 'success', text: 'Plan validé : c’est maintenant ton plan en cours.' });
-  }, [outcome, plans]);
+  }, [outcome, plans, clock]);
 
   return {
     context,

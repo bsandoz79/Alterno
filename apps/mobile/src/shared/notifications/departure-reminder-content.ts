@@ -1,5 +1,7 @@
-import type { DepartureReminder, Duration } from '@alterno/engine';
+import type { Duration, ScheduledReminder } from '@alterno/engine';
 
+import { formatShortDate } from '../format/format-date';
+import { RECOVERY_APPROVAL_CATEGORY } from './recovery-approval-category';
 import { WEEK_CHECK_CATEGORY } from './week-check-category';
 
 const MINUTES_PER_HOUR = 60;
@@ -16,12 +18,21 @@ export interface NotificationContent {
 /**
  * Contenu d'une notification de départ, affiché dans la barre de notifications.
  * Toucher la question de l'heure de départ ouvre directement la saisie « Parti plus tard » ;
- * la question de fin de semaine propose « Oui » et « Corriger » (qui ouvre la semaine).
+ * la question de fin de semaine propose « Oui » et « Corriger » (qui ouvre la semaine) ;
+ * le suivi de la récup propose « Oui », « Non » et « Pas encore ».
  *
  * @param reminder - Rappel calculé par le moteur
  * @returns Le titre, le message et l'écran à ouvrir
  */
-export function departureReminderContent(reminder: DepartureReminder): NotificationContent {
+export function departureReminderContent(reminder: ScheduledReminder): NotificationContent {
+  if (reminder.kind === 'recovery-approval') {
+    return {
+      title: 'Ta récup a-t-elle été acceptée ?',
+      body: `Repos compensatoire du ${formatShortDate(reminder.recoveryDate)} : réponds Oui, Non ou Pas encore.`,
+      data: { url: '/recup' },
+      categoryIdentifier: RECOVERY_APPROVAL_CATEGORY,
+    };
+  }
   const departure = reminder.departure.format();
   if (reminder.kind === 'week-check') {
     return {
@@ -52,7 +63,7 @@ export function departureReminderContent(reminder: DepartureReminder): Notificat
  * @param reminder - Rappel calculé par le moteur
  * @returns La date et l'heure du rappel
  */
-export function departureReminderTime(reminder: DepartureReminder): Date {
+export function departureReminderTime(reminder: ScheduledReminder): Date {
   const { date, at } = reminder;
   return new Date(date.year, date.month - 1, date.day, at.hours, at.minutes);
 }

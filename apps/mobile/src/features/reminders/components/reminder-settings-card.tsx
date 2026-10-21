@@ -8,11 +8,16 @@ import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { useReminderSettings } from '../hooks/use-reminder-settings';
-import { REMINDER_OPTIONS } from '../reminder-options';
+import {
+  APPROVAL_FIRST_DELAY_OPTIONS,
+  APPROVAL_REPEAT_OPTIONS,
+  REMINDER_OPTIONS,
+} from '../reminder-options';
 
 /**
  * Carte « Notifications » : délai du rappel avant le départ, question à l'heure de départ
- * (« tu pars plus tard ? ») et question de fin de semaine (« ta semaine s'est passée comme prévu ? »).
+ * (« tu pars plus tard ? »), question de fin de semaine (« ta semaine s'est passée comme prévu ? »)
+ * et suivi de la demande de récup (« ta récup a-t-elle été acceptée ? », avec ses délais).
  * On règle, puis on valide ; un message confirme ce qui a été programmé (ou pourquoi rien ne s'affichera).
  *
  * @returns La carte, une fois le réglage chargé
@@ -51,6 +56,38 @@ export function ReminderSettingsCard() {
           change({ weekCheck });
         }}
       />
+      <SettingSwitch
+        label="Après une demande de récup, me demander si elle a été acceptée"
+        accessibilityLabel="Suivi de la demande de récup"
+        value={draft.approvalCheck}
+        onChange={(approvalCheck) => {
+          change({ approvalCheck });
+        }}
+      />
+      {draft.approvalCheck ? (
+        <>
+          <Text style={styles.label}>Première question après</Text>
+          <SegmentedControl
+            accessibilityLabel="Première question de suivi après"
+            onSurface
+            options={APPROVAL_FIRST_DELAY_OPTIONS}
+            selected={draft.approvalFirstDelayDays}
+            onChange={(approvalFirstDelayDays) => {
+              change({ approvalFirstDelayDays });
+            }}
+          />
+          <Text style={styles.label}>Sans réponse, redemander</Text>
+          <SegmentedControl
+            accessibilityLabel="Relance du suivi"
+            onSurface
+            options={APPROVAL_REPEAT_OPTIONS}
+            selected={draft.approvalRepeatDays}
+            onChange={(approvalRepeatDays) => {
+              change({ approvalRepeatDays });
+            }}
+          />
+        </>
+      ) : null}
       <Text style={styles.hint}>
         {notificationsSupported()
           ? 'Pour chaque jour du plan. Toucher la question du départ ouvre « Parti plus tard » ; celle de fin de semaine arrive 1h après le dernier départ, avec « Oui » ou « Corriger ».'

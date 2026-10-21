@@ -3,6 +3,7 @@ import type { Notifier, ReminderDelivery } from '../domain/ports/notifier';
 import type { PlanRepository } from '../domain/ports/plan-repository';
 import type { ReminderSettingsRepository } from '../domain/ports/reminder-settings-repository';
 import { DepartureReminderPlanner } from '../domain/reminders/departure-reminder-planner';
+import { RecoveryApprovalPlanner } from '../domain/reminders/recovery-approval-planner';
 import { WeekCheckPlanner } from '../domain/reminders/week-check-planner';
 
 /** Résultat d'une reprogrammation : combien de rappels, et s'ils ont pu être programmés. */
@@ -14,12 +15,13 @@ export interface ReminderScheduling {
 /**
  * Cas d'usage « Reprogrammer les rappels de départ » : à chaque changement du plan ou du réglage
  * (et à l'ouverture de l'app), les rappels programmés sont remplacés par ceux du plan en cours,
- * question de fin de semaine comprise.
+ * question de fin de semaine et suivi de la demande de récup compris.
  * Tout remplacer plutôt que modifier au cas par cas évite les rappels oubliés d'un ancien plan.
  */
 export class ScheduleDepartureReminders {
   private readonly planner = new DepartureReminderPlanner();
   private readonly weekChecks = new WeekCheckPlanner();
+  private readonly approvalQuestions = new RecoveryApprovalPlanner();
 
   /**
    * @param plans - Dépôt du plan en cours
@@ -46,8 +48,9 @@ export class ScheduleDepartureReminders {
         : [
             ...this.planner.remindersFor(plan, moment, settings),
             ...this.weekChecks.checksFor(plan, moment, settings),
+            ...this.approvalQuestions.questionsFor(plan, moment, settings),
           ];
-    const delivery = await this.notifier.replaceDepartureReminders(reminders);
+    const delivery = await this.notifier.replaceReminders(reminders);
     return { count: reminders.length, delivery };
   }
 }

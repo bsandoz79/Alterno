@@ -32,6 +32,7 @@ export function reminderConfirmation(
     ...(draft.lead === 0 ? [] : [`rappel ${String(draft.lead)} min avant le départ`]),
     ...(draft.atDeparture ? ['question à l’heure de départ'] : []),
     ...(draft.weekCheck ? ['question de fin de semaine'] : []),
+    ...(draft.approvalCheck ? ['suivi de la récup'] : []),
   ];
   if (parts.length === 0) {
     return { kind: 'success', text: 'Notifications désactivées.' };

@@ -23,6 +23,16 @@ describe('Réglage des rappels enregistré', () => {
     ).toBe(false);
   });
 
+  it('suit la récup avec les délais par défaut pour un réglage enregistré avant son ajout', () => {
+    const settings = fromReminderSettingsRecord({ departureLeadMinutes: 5 });
+
+    expect([
+      settings.approvalCheck,
+      settings.approvalFirstDelayDays,
+      settings.approvalRepeatDays,
+    ]).toEqual([true, 2, 1]);
+  });
+
   it('respecte une question désactivée', () => {
     expect(
       fromReminderSettingsRecord({ departureLeadMinutes: 5, atDeparture: false }).atDeparture,

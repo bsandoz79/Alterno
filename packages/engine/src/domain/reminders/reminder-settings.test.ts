@@ -39,6 +39,34 @@ describe('ReminderSettings — réglage du rappel de départ', () => {
     expect(ReminderSettings.departureLead(Duration.ofMinutes(5)).weekCheck).toBe(true);
   });
 
+  it('suit la demande de récup par défaut : 1re question après 2 jours, relance chaque jour', () => {
+    const settings = ReminderSettings.defaults();
+
+    expect([
+      settings.approvalCheck,
+      settings.approvalFirstDelayDays,
+      settings.approvalRepeatDays,
+    ]).toEqual([true, 2, 1]);
+    expect(ReminderSettings.disabled().approvalCheck).toBe(false);
+  });
+
+  it.each([0, 8, 1.5])('refuse un délai de suivi de récup de %s jour(s)', (days) => {
+    expect(() =>
+      ReminderSettings.create({
+        departureLead: null,
+        atDeparture: false,
+        approvalRepeatDays: days,
+      }),
+    ).toThrow(InvalidValueError);
+    expect(() =>
+      ReminderSettings.create({
+        departureLead: null,
+        atDeparture: false,
+        approvalFirstDelayDays: days,
+      }),
+    ).toThrow(InvalidValueError);
+  });
+
   it('accepte un délai jusqu’à 2h', () => {
     expect(ReminderSettings.departureLead(Duration.ofHours(2)).departureLead?.format()).toBe('2h');
   });

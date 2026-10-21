@@ -2,6 +2,7 @@ import { ValidatePlan, type CalendarDate, type DayPlan } from '@alterno/engine';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { FormMessage } from '@/shared/components/message-box';
+import { systemClock } from '@/shared/clock/system-clock';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import {
@@ -59,7 +60,7 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
     if (!preview.ok) {
       return;
     }
-    await new ValidatePlan(plans).execute(preview.outcome.plan);
+    await new ValidatePlan(plans, systemClock).execute(preview.outcome.plan);
     setMessage({ kind: 'success', text: 'Journée modifiée : la suite du plan est recalculée.' });
     onSaved();
   }, [preview, plans, onSaved]);

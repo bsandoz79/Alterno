@@ -39,7 +39,9 @@ export class SqlitePlanRepository implements PlanRepository {
       return null;
     }
     const recovery = await this.db.getFirstAsync<PlanRecoveryRecord>(
-      'SELECT date, kind, part FROM plan_recovery WHERE id = 1',
+      `SELECT date, kind, part, approval_status AS approvalStatus, requested_on AS requestedOn,
+              requested_at_minutes AS requestedAtMinutes
+       FROM plan_recovery WHERE id = 1`,
     );
     return withPlanRecovery(fromDayRecords(rows.map(toRecord)), recovery);
   }
@@ -54,8 +56,17 @@ export class SqlitePlanRepository implements PlanRepository {
       if (plan.recovery !== undefined) {
         const recovery = toPlanRecoveryRecord(plan.recovery);
         await this.db.runAsync(
-          'INSERT INTO plan_recovery (id, date, kind, part) VALUES (1, ?, ?, ?)',
-          [recovery.date, recovery.kind, recovery.part ?? null],
+          `INSERT INTO plan_recovery (id, date, kind, part, approval_status, requested_on,
+                                     requested_at_minutes)
+           VALUES (1, ?, ?, ?, ?, ?, ?)`,
+          [
+            recovery.date,
+            recovery.kind,
+            recovery.part ?? null,
+            recovery.approvalStatus ?? null,
+            recovery.requestedOn ?? null,
+            recovery.requestedAtMinutes ?? null,
+          ],
         );
       }
       for (const [position, day] of plan.days.entries()) {

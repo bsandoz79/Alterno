@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
+import { RecoveryStatusLink } from '@/shared/components/recovery-status-link';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { formatLongDate, formatShortDate } from '@/shared/format/format-date';
 import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
@@ -86,6 +87,7 @@ export function TodayScreen() {
         </Notice>
       )}
       {rest.length === 0 ? null : <RestOfWeek days={rest} />}
+      {plan === null ? null : <RecoveryStatusLink plan={plan} />}
     </ScreenContainer>
   );
 }

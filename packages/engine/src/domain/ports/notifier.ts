@@ -1,4 +1,4 @@
-import type { DepartureReminder } from '../reminders/departure-reminder-planner';
+import type { ScheduledReminder } from '../reminders/scheduled-reminder';
 
 /**
  * Ce qu'il est advenu des rappels confiés au notificateur :
@@ -14,11 +14,11 @@ export type ReminderDelivery = 'scheduled' | 'not-allowed' | 'unsupported';
  */
 export interface Notifier {
   /**
-   * Remplace tous les rappels de départ déjà programmés par ceux-ci
-   * (une liste vide les annule tous).
+   * Remplace toutes les notifications déjà programmées par celles-ci
+   * (rappels de départ, fin de semaine, suivi de la récup ; une liste vide les annule toutes).
    *
    * @param reminders - Rappels à programmer
    * @returns Si les rappels ont pu être programmés, pour le dire à l'utilisateur
    */
-  replaceDepartureReminders(reminders: readonly DepartureReminder[]): Promise<ReminderDelivery>;
+  replaceReminders(reminders: readonly ScheduledReminder[]): Promise<ReminderDelivery>;
 }

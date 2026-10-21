@@ -1,6 +1,7 @@
 import type { CalendarDate } from '../calendar/calendar-date';
 import type { RecoveryKind } from '../counter/recovery-kind';
 import type { Duration } from '../time/duration';
+import type { TimeOfDay } from '../time/time-of-day';
 import type { DayPlan } from './plan';
 
 /** Journée d'un plan rattachée à sa date du calendrier. */
@@ -25,6 +26,21 @@ export interface DatedPlan {
   readonly isDefault?: boolean;
 }
 
+/**
+ * Où en est la demande de récup auprès de l'entreprise :
+ * - `pending` : demande en cours (on demandera si elle a été acceptée) ;
+ * - `approved` : acceptée ;
+ * - `refused` : refusée.
+ */
+export type RecoveryApprovalStatus = 'pending' | 'approved' | 'refused';
+
+/** Suivi de la demande de récup : son état, et quand elle a été faite (validation du plan). */
+export interface RecoveryApproval {
+  readonly status: RecoveryApprovalStatus;
+  readonly requestedOn: CalendarDate;
+  readonly requestedAt: TimeOfDay;
+}
+
 /** Moitié de journée prise en repos lors d'une demi-journée de récup. */
 export type RecoveryPart = 'morning' | 'afternoon';
 
@@ -34,4 +50,6 @@ export interface PlannedRecovery {
   readonly kind: RecoveryKind;
   /** Moitié en repos (demi-journée seulement) ; absente : l'après-midi (plans validés avant ALT-56). */
   readonly part?: RecoveryPart;
+  /** Suivi de la demande ; absent pour un plan validé avant ALT-55 (pas de suivi). */
+  readonly approval?: RecoveryApproval;
 }

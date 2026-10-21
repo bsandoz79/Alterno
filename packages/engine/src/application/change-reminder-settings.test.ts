@@ -31,7 +31,7 @@ const clock: Clock = {
   today: () => CalendarDate.fromIsoString('2026-10-19'),
   currentTime: () => TimeOfDay.of(9, 0),
 };
-const unsupported: Notifier = { replaceDepartureReminders: () => Promise.resolve('unsupported') };
+const unsupported: Notifier = { replaceReminders: () => Promise.resolve('unsupported') };
 
 describe('ChangeReminderSettings — valider le réglage du rappel', () => {
   it('enregistre le réglage puis reprogramme les rappels, et dit ce qu’il en est', async () => {

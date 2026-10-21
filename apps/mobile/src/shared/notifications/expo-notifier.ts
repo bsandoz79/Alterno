@@ -1,7 +1,11 @@
-import type { DepartureReminder, Notifier, ReminderDelivery } from '@alterno/engine';
+import type { Notifier, ReminderDelivery, ScheduledReminder } from '@alterno/engine';
 import * as Notifications from 'expo-notifications';
 
 import { departureReminderContent, departureReminderTime } from './departure-reminder-content';
+import {
+  RECOVERY_APPROVAL_ACTIONS,
+  RECOVERY_APPROVAL_CATEGORY,
+} from './recovery-approval-category';
 import { WEEK_CHECK_ACTIONS, WEEK_CHECK_CATEGORY } from './week-check-category';
 
 /** Canal Android des rappels : l'utilisateur peut le régler ou le couper dans les paramètres du téléphone. */
@@ -28,9 +32,7 @@ export class ExpoNotifier implements Notifier {
   }
 
   /** @inheritdoc */
-  async replaceDepartureReminders(
-    reminders: readonly DepartureReminder[],
-  ): Promise<ReminderDelivery> {
+  async replaceReminders(reminders: readonly ScheduledReminder[]): Promise<ReminderDelivery> {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(
       scheduled
@@ -59,7 +61,7 @@ export class ExpoNotifier implements Notifier {
   }
 
   /**
-   * Crée le canal et les boutons de la question de fin de semaine, puis vérifie (ou demande)
+   * Crée le canal et les boutons des questions (fin de semaine, suivi de la récup), puis vérifie (ou demande)
    * la permission. Sur Android 13, la demande n'apparaît qu'une fois un canal créé.
    */
   private async allowed(): Promise<boolean> {
@@ -78,6 +80,23 @@ export class ExpoNotifier implements Notifier {
       {
         identifier: WEEK_CHECK_ACTIONS.correct,
         buttonTitle: 'Corriger',
+        options: { opensAppToForeground: true },
+      },
+    ]);
+    await Notifications.setNotificationCategoryAsync(RECOVERY_APPROVAL_CATEGORY, [
+      {
+        identifier: RECOVERY_APPROVAL_ACTIONS.approved,
+        buttonTitle: 'Oui',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: RECOVERY_APPROVAL_ACTIONS.refused,
+        buttonTitle: 'Non',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: RECOVERY_APPROVAL_ACTIONS.notYet,
+        buttonTitle: 'Pas encore',
         options: { opensAppToForeground: true },
       },
     ]);

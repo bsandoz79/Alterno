@@ -37,6 +37,15 @@ Le cahier des charges prévoit un rappel avant l'heure de départ prévue. Le pl
   notification `weekcheck`) : « Corriger » ouvre la semaine, « Oui » n'enregistre rien, puisque le plan
   est déjà considéré comme suivi. Les deux ouvrent l'app (`opensAppToForeground`) : app fermée, un bouton
   qui ne l'ouvre pas ne déclenche pas l'écoute et la notification resterait affichée ; l'écoute la retire.
+- Mise à jour ALT-55 : **suivi de la demande de récup**. Valider un plan avec récup (`ValidatePlan`,
+  qui reçoit désormais l'horloge) la met « en cours », datée du moment de la validation. Les questions
+  « Ta récup a-t-elle été acceptée ? » sont calculées par `RecoveryApprovalPlanner` : après un délai
+  réglable (48h par défaut), puis une relance réglable (chaque jour par défaut) jusqu'à la veille de la
+  récup. Boutons Oui / Non / Pas encore (catégorie `recoveryapproval`) : ils ouvrent l'écran « Ma récup »
+  avec la réponse dans l'adresse (`/recup?answer=…`), qui l'enregistre (`AnswerRecoveryApproval`) ;
+  enregistrer le plan reprogramme les notifications, donc les relances s'arrêtent. Le port devient
+  `Notifier.replaceReminders(ScheduledReminder[])` : il ne programme plus seulement des rappels de départ.
+  Stockage : colonnes de suivi dans `plan_recovery` et délais dans `reminder_settings` (migration v12).
 - Web : pas de notification (expo-notifications ne prend pas le web en charge) ; le réglage est gardé.
 - Réglage : aucun, 5, 15 ou 30 min (15 min par défaut), table `reminder_settings` (migration v8).
 
