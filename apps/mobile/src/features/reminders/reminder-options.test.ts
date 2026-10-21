@@ -19,27 +19,37 @@ describe('Réglage des notifications de départ', () => {
   });
 
   it('affiche le réglage par défaut : 15 min avant, et question à l’heure de départ', () => {
-    expect(reminderDraftOf(ReminderSettings.defaults())).toEqual({ lead: 15, atDeparture: true });
+    expect(reminderDraftOf(ReminderSettings.defaults())).toEqual({
+      lead: 15,
+      atDeparture: true,
+      weekCheck: true,
+    });
   });
 
   it('affiche un réglage désactivé : aucun rappel, pas de question', () => {
-    expect(reminderDraftOf(ReminderSettings.disabled())).toEqual({ lead: 0, atDeparture: false });
+    expect(reminderDraftOf(ReminderSettings.disabled())).toEqual({
+      lead: 0,
+      atDeparture: false,
+      weekCheck: false,
+    });
   });
 
   it('transforme la saisie en réglage', () => {
-    const settings = reminderSettingsFor({ lead: 30, atDeparture: false });
+    const settings = reminderSettingsFor({ lead: 30, atDeparture: false, weekCheck: false });
 
     expect(settings.departureLead?.equals(Duration.ofMinutes(30))).toBe(true);
     expect(settings.atDeparture).toBe(false);
-    expect(reminderSettingsFor({ lead: 0, atDeparture: true }).departureLead).toBeNull();
+    expect(settings.weekCheck).toBe(false);
+    expect(
+      reminderSettingsFor({ lead: 0, atDeparture: true, weekCheck: true }).departureLead,
+    ).toBeNull();
   });
 
   it('compare deux saisies pour savoir s’il y a quelque chose à valider', () => {
-    expect(sameReminderDraft({ lead: 5, atDeparture: true }, { lead: 5, atDeparture: true })).toBe(
-      true,
-    );
-    expect(sameReminderDraft({ lead: 5, atDeparture: true }, { lead: 5, atDeparture: false })).toBe(
-      false,
-    );
+    const draft = { lead: 5, atDeparture: true, weekCheck: true };
+
+    expect(sameReminderDraft(draft, { ...draft })).toBe(true);
+    expect(sameReminderDraft(draft, { ...draft, atDeparture: false })).toBe(false);
+    expect(sameReminderDraft(draft, { ...draft, weekCheck: false })).toBe(false);
   });
 });

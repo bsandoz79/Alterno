@@ -69,6 +69,8 @@ const MIGRATIONS: readonly string[] = [
    );`,
   // Version 9 : question à l'heure de départ (1 / 0 ; NULL pour un réglage enregistré avant : activée).
   `ALTER TABLE reminder_settings ADD COLUMN at_departure INTEGER;`,
+  // Version 10 : question de fin de semaine (1 / 0 ; NULL pour un réglage enregistré avant : activée).
+  `ALTER TABLE reminder_settings ADD COLUMN week_check INTEGER;`,
 ];
 
 /**

@@ -28,17 +28,24 @@ export function reminderConfirmation(
       text: 'Réglage enregistré. Les notifications s’affichent dans l’application installée sur Android, pas dans Expo Go ni dans le navigateur.',
     };
   }
-  if (draft.lead === 0 && !draft.atDeparture) {
-    return { kind: 'success', text: 'Notifications de départ désactivées.' };
-  }
   const parts = [
     ...(draft.lead === 0 ? [] : [`rappel ${String(draft.lead)} min avant le départ`]),
     ...(draft.atDeparture ? ['question à l’heure de départ'] : []),
+    ...(draft.weekCheck ? ['question de fin de semaine'] : []),
   ];
+  if (parts.length === 0) {
+    return { kind: 'success', text: 'Notifications désactivées.' };
+  }
   const { count } = scheduling;
   const scheduled =
     count === 0
       ? 'Aucun départ à venir dans ton plan pour l’instant.'
       : `${String(count)} ${count === 1 ? 'notification programmée' : 'notifications programmées'}.`;
-  return { kind: 'success', text: `Réglé : ${parts.join(' et ')}. ${scheduled}` };
+  return { kind: 'success', text: `Réglé : ${enumerate(parts)}. ${scheduled}` };
+}
+
+/** Énumération à la française : « a », « a et b », « a, b et c ». */
+function enumerate(parts: readonly string[]): string {
+  const last = parts.at(-1) ?? '';
+  return parts.length === 1 ? last : `${parts.slice(0, -1).join(', ')} et ${last}`;
 }

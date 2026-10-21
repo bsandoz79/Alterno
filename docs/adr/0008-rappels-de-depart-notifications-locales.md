@@ -30,6 +30,13 @@ Le cahier des charges prévoit un rappel avant l'heure de départ prévue. Le pl
   activable dans le réglage (colonne `at_departure`, migration v9). Ses données contiennent l'adresse
   `/jour/<date>?change=late-departure` : la toucher ouvre directement la saisie « Parti plus tard »
   (écoute des notifications touchées, chargée elle aussi seulement hors d'Expo Go).
+- Mise à jour ALT-30 : une **question de fin de semaine** (« Ta semaine s'est passée comme prévu ? »),
+  calculée par `WeekCheckPlanner` au dernier jour planifié de chaque semaine (le vendredi, ou la veille
+  d'une récup), 1h après le départ prévu pour ne pas sonner en même temps que « tu pars plus tard ? ».
+  Activable dans le réglage (colonne `week_check`, migration v10). Deux boutons (catégorie de
+  notification `weekcheck`) : « Corriger » ouvre la semaine, « Oui » n'enregistre rien, puisque le plan
+  est déjà considéré comme suivi. Les deux ouvrent l'app (`opensAppToForeground`) : app fermée, un bouton
+  qui ne l'ouvre pas ne déclenche pas l'écoute et la notification resterait affichée ; l'écoute la retire.
 - Web : pas de notification (expo-notifications ne prend pas le web en charge) ; le réglage est gardé.
 - Réglage : aucun, 5, 15 ou 30 min (15 min par défaut), table `reminder_settings` (migration v8).
 

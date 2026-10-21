@@ -10,6 +10,19 @@ describe('Réglage des rappels enregistré', () => {
     ).toBe(true);
   });
 
+  it('active la question de fin de semaine pour un réglage enregistré avant son ajout', () => {
+    expect(fromReminderSettingsRecord({ departureLeadMinutes: 5 }).weekCheck).toBe(true);
+    expect(
+      fromReminderSettingsRecord({ departureLeadMinutes: null, weekCheck: null }).weekCheck,
+    ).toBe(true);
+  });
+
+  it('respecte une question de fin de semaine désactivée', () => {
+    expect(
+      fromReminderSettingsRecord({ departureLeadMinutes: 5, weekCheck: false }).weekCheck,
+    ).toBe(false);
+  });
+
   it('respecte une question désactivée', () => {
     expect(
       fromReminderSettingsRecord({ departureLeadMinutes: 5, atDeparture: false }).atDeparture,

@@ -47,7 +47,7 @@ const plan = new SimulatePlan(laBrosseEtDupontRules()).execute({
 });
 
 describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', () => {
-  it('programme, pour chaque jour à venir, le rappel avant le départ et la question à l’heure de départ', async () => {
+  it('programme, pour chaque jour à venir, le rappel avant le départ et la question à l’heure de départ, puis la question de fin de semaine', async () => {
     const notifier = memoryNotifier();
     const result = await new ScheduleDepartureReminders(
       plansWith(plan),
@@ -56,7 +56,7 @@ describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', (
       clock,
     ).execute();
 
-    expect(result).toEqual({ count: 4, delivery: 'scheduled' });
+    expect(result).toEqual({ count: 5, delivery: 'scheduled' });
     expect(
       notifier.scheduled?.map((reminder) => `${reminder.date.toIsoString()} ${reminder.kind}`),
     ).toEqual([
@@ -64,7 +64,23 @@ describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', (
       '2026-10-19 at-departure',
       '2026-10-20 before',
       '2026-10-20 at-departure',
+      '2026-10-20 week-check',
     ]);
+  });
+
+  it('ajoute la question de fin de semaine au dernier jour du plan', async () => {
+    const notifier = memoryNotifier();
+    const result = await new ScheduleDepartureReminders(
+      plansWith(plan),
+      settingsOf(ReminderSettings.create({ departureLead: null, atDeparture: false })),
+      notifier,
+      clock,
+    ).execute();
+
+    expect(result.count).toBe(1);
+    expect(
+      notifier.scheduled?.map((reminder) => `${reminder.date.toIsoString()} ${reminder.kind}`),
+    ).toEqual(['2026-10-20 week-check']);
   });
 
   it('annule les rappels quand il n’y a pas de plan en cours', async () => {

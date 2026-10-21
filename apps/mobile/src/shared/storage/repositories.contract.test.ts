@@ -347,6 +347,19 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       expect((await reminders.load()).atDeparture).toBe(false);
     });
 
+    it('retrouve la question de fin de semaine, activée ou non', async () => {
+      const { reminders } = await create();
+
+      expect((await reminders.load()).weekCheck).toBe(true);
+
+      await reminders.save(
+        ReminderSettings.create({ departureLead: null, atDeparture: true, weekCheck: false }),
+      );
+
+      expect((await reminders.load()).weekCheck).toBe(false);
+      expect((await reminders.load()).atDeparture).toBe(true);
+    });
+
     it('retrouve un rappel désactivé', async () => {
       const { reminders } = await create();
       await reminders.save(ReminderSettings.departureLead(Duration.ofMinutes(5)));

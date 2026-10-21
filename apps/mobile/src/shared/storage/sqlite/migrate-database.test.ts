@@ -32,7 +32,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(9);
+    expect(version?.user_version).toBe(10);
   });
 
   it('enregistre la date de chaque journée du plan (version 4)', async () => {
@@ -83,5 +83,20 @@ describe('migrateDatabase — schéma de la base locale', () => {
     );
 
     expect(row?.at_departure).toBeNull();
+  });
+
+  it('garde la question de fin de semaine activée pour un réglage enregistré avant la version 10', async () => {
+    const db = createNodeSqlDatabase();
+    await migrateDatabase(db, 9);
+    await db.runAsync(
+      'INSERT INTO reminder_settings (id, departure_lead_minutes, at_departure) VALUES (1, ?, ?)',
+      [5, 0],
+    );
+    await migrateDatabase(db);
+    const row = await db.getFirstAsync<{ week_check: number | null }>(
+      'SELECT week_check FROM reminder_settings',
+    );
+
+    expect(row?.week_check).toBeNull();
   });
 });

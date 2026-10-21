@@ -2,6 +2,7 @@ import type { DepartureReminder, Notifier, ReminderDelivery } from '@alterno/eng
 import * as Notifications from 'expo-notifications';
 
 import { departureReminderContent, departureReminderTime } from './departure-reminder-content';
+import { WEEK_CHECK_ACTIONS, WEEK_CHECK_CATEGORY } from './week-check-category';
 
 /** Canal Android des rappels : l'utilisateur peut le régler ou le couper dans les paramètres du téléphone. */
 const CHANNEL_ID = 'departure-reminders';
@@ -44,7 +45,7 @@ export class ExpoNotifier implements Notifier {
     }
     for (const reminder of reminders) {
       await Notifications.scheduleNotificationAsync({
-        // Un rappel « avant » et une question « au départ » par jour : le type fait partie de l'identifiant.
+        // Plusieurs notifications par jour (avant, au départ, fin de semaine) : le type fait partie de l'identifiant.
         identifier: `${IDENTIFIER_PREFIX}${reminder.kind}-${reminder.date.toIsoString()}`,
         content: departureReminderContent(reminder),
         trigger: {
@@ -58,14 +59,28 @@ export class ExpoNotifier implements Notifier {
   }
 
   /**
-   * Crée le canal puis vérifie (ou demande) la permission.
-   * Sur Android 13, la demande n'apparaît qu'une fois un canal créé.
+   * Crée le canal et les boutons de la question de fin de semaine, puis vérifie (ou demande)
+   * la permission. Sur Android 13, la demande n'apparaît qu'une fois un canal créé.
    */
   private async allowed(): Promise<boolean> {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: 'Rappels de départ',
       importance: Notifications.AndroidImportance.HIGH,
     });
+    // Les deux boutons ouvrent l'app : sinon, app fermée, la réponse serait perdue
+    // et la notification resterait affichée.
+    await Notifications.setNotificationCategoryAsync(WEEK_CHECK_CATEGORY, [
+      {
+        identifier: WEEK_CHECK_ACTIONS.confirm,
+        buttonTitle: 'Oui',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: WEEK_CHECK_ACTIONS.correct,
+        buttonTitle: 'Corriger',
+        options: { opensAppToForeground: true },
+      },
+    ]);
     const current = await Notifications.getPermissionsAsync();
     if (current.granted) {
       return true;
