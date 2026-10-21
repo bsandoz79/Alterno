@@ -118,6 +118,7 @@ export function computeDayBalance(worked: Duration, expected: Duration): Duratio
 - Aucun tracker ni analytics tiers.
 - Tout envoi de fichier à un service externe (IA) exige un consentement explicite et révocable.
 - Jamais de secret ni de donnée personnelle dans le code, les logs ou les commits.
+- Concrètement : l'ajouter à `MyDataExport` (features/my-data/my-data-export.ts), à `PERSONAL_TABLES` (sqlite-personal-data-eraser.ts) et à `PERSONAL_KEYS` (browser-personal-data-eraser.ts). Le test de contrat de l'effacement échoue si on l'oublie.
 
 ## 9. Workflow Git : une feature = une branche = des commits = un push
 
