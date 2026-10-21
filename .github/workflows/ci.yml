@@ -1,5 +1,6 @@
 # Intégration continue : vérifie chaque pull request vers main (et main après merge).
 # Une PR ne peut être mergée que si ce workflow passe (règle « Protection main »).
+# Après un merge, le job eas-update publie la nouvelle version sur le téléphone (ALT-46).
 name: CI
 
 on:
@@ -49,3 +50,53 @@ jobs:
 
       - name: Contrôle de l'architecture
         run: npm run check:architecture
+
+  # Après un merge sur main (et seulement si le job engine passe), publie une mise à jour EAS
+  # sur le canal « preview » : l'APK installé la télécharge à sa prochaine ouverture (ADR 0009).
+  eas-update:
+    name: eas-update
+    needs: engine
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Deux merges rapprochés : la mise à jour la plus récente contient tout, on ne publie pas l'ancienne.
+    concurrency:
+      group: eas-update
+      cancel-in-progress: true
+    steps:
+      - name: Vérifier que le secret EXPO_TOKEN existe
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Secret EXPO_TOKEN manquant : Settings → Secrets and variables → Actions." >&2
+            exit 1
+          fi
+
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js (avec cache npm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer EAS CLI et se connecter
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Publier la mise à jour EAS
+        working-directory: apps/mobile
+        # Le message du commit passe par une variable d'environnement, jamais directement dans le script :
+        # un titre de PR ne peut ainsi pas injecter de commande. Seule sa première ligne est gardée.
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          title="${COMMIT_MESSAGE%%$'\n'*}"
+          eas update --channel preview --environment preview --message "$title" --non-interactive
