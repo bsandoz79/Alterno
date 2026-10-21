@@ -9,6 +9,7 @@ import type {
 } from '@alterno/engine';
 
 import type { AnnualCalendarStore } from './annual-calendar-store';
+import type { PersonalDataEraser } from './personal-data-eraser';
 
 /**
  * Ensemble des dépôts de données dont l'app a besoin, quelle que soit la plateforme,
@@ -31,4 +32,6 @@ export interface Repositories {
   readonly reminders: ReminderSettingsRepository;
   /** Notifications locales des rappels de départ. */
   readonly notifier: Notifier;
+  /** Effacement de toutes les données (page « Mes données »). */
+  readonly eraser: PersonalDataEraser;
 }

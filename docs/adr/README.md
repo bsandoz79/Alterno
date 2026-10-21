@@ -18,3 +18,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0011](0011-repos-compensatoire-dans-l-edt.md) | Repos compensatoire dans l'EDT : moitié choisie, horaires calculés |
 | [0012](0012-objectif-propose-en-cours-de-semaine.md) | Objectif proposé en cours de semaine, et plafond du compteur |
 | [0013](0013-annuler-un-plan-ou-sa-recup.md) | Annuler un plan ou sa récup : journées standard, sans vider le dépôt |
+| [0014](0014-mes-donnees-export-et-effacement.md) | « Mes données » : export JSON et effacement, sans serveur |

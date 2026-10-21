@@ -17,6 +17,7 @@ import { RepositoriesContext } from './repositories-context';
 import { fromExpoDatabase } from './sqlite/expo-sql-database';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
+import { SqlitePersonalDataEraser } from './sqlite/sqlite-personal-data-eraser';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
@@ -76,6 +77,7 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
       annualCalendar: new SqliteAnnualCalendarStore(sql, expoDocumentFiles),
       reminders,
       notifier,
+      eraser: new SqlitePersonalDataEraser(sql),
     };
     return { repositories: all, reschedule: rescheduleReminders };
   }, [db]);
