@@ -54,6 +54,22 @@ describe('Rappel de départ', () => {
     });
   });
 
+  it('demande si la récup a été acceptée, avec les boutons Oui / Non / Pas encore', () => {
+    expect(
+      departureReminderContent({
+        kind: 'recovery-approval',
+        date: CalendarDate.fromIsoString('2026-10-21'),
+        at: TimeOfDay.of(9, 0),
+        recoveryDate: CalendarDate.fromIsoString('2026-10-30'),
+      }),
+    ).toEqual({
+      title: 'Ta récup a-t-elle été acceptée ?',
+      body: 'Repos compensatoire du ven. 30 oct. : réponds Oui, Non ou Pas encore.',
+      data: { url: '/recup' },
+      categoryIdentifier: 'recoveryapproval',
+    });
+  });
+
   it('se déclenche à l’heure locale du rappel, ce jour-là', () => {
     const time = departureReminderTime(reminder);
 

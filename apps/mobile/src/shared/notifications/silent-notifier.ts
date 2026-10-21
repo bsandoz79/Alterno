@@ -6,7 +6,7 @@ import type { Notifier, ReminderDelivery } from '@alterno/engine';
  */
 export class SilentNotifier implements Notifier {
   /** Ignore les rappels et signale qu'ils ne peuvent pas s'afficher ici. */
-  replaceDepartureReminders(): Promise<ReminderDelivery> {
+  replaceReminders(): Promise<ReminderDelivery> {
     return Promise.resolve('unsupported');
   }
 }

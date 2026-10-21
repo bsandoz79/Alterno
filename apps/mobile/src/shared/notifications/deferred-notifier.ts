@@ -1,4 +1,4 @@
-import type { DepartureReminder, Notifier, ReminderDelivery } from '@alterno/engine';
+import type { Notifier, ReminderDelivery, ScheduledReminder } from '@alterno/engine';
 
 /**
  * Notificateur chargé seulement au premier rappel à programmer.
@@ -13,10 +13,8 @@ export class DeferredNotifier implements Notifier {
   constructor(private readonly load: () => Promise<Notifier>) {}
 
   /** @inheritdoc */
-  async replaceDepartureReminders(
-    reminders: readonly DepartureReminder[],
-  ): Promise<ReminderDelivery> {
+  async replaceReminders(reminders: readonly ScheduledReminder[]): Promise<ReminderDelivery> {
     this.loaded ??= this.load();
-    return (await this.loaded).replaceDepartureReminders(reminders);
+    return (await this.loaded).replaceReminders(reminders);
   }
 }
