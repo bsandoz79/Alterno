@@ -57,6 +57,14 @@ describe('buildWorkRules — règles construites depuis les réglages', () => {
     expect(
       buildWorkRules({ ...preset, maximumDeficit: Duration.zero() }).maximumDeficit.isZero(),
     ).toBe(true);
+    // Plafond du compteur : 7h chez La Brosse et Dupont.
+    expect(buildWorkRules(preset).maximumCredit?.format()).toBe('7h');
+    expect(
+      buildWorkRules({ ...preset, maximumCredit: Duration.ofHours(5) }).maximumCredit?.format(),
+    ).toBe('5h');
+    expect(
+      buildWorkRules({ ...preset, maximumDeficit: Duration.zero() }).maximumDeficit.isZero(),
+    ).toBe(true);
   });
 
   it('refuse des heures dans le désordre en nommant le groupe concerné', () => {

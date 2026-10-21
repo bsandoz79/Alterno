@@ -133,6 +133,24 @@ describe('WorkRules', () => {
       expect(rules.maximumDeficit.isZero()).toBe(true);
     });
 
+    it('n’a pas de plafond de compteur quand il n’est pas précisé, et refuse un plafond négatif', () => {
+      const base = {
+        week: { monday: standardDay },
+        minimumLunchBreak: Duration.ofMinutes(45),
+        expectedDailyWork: Duration.ofHours(7),
+        fullDayRecovery: Duration.ofHours(7),
+        halfDayRecovery: Duration.ofHours(3, 30),
+      };
+
+      expect(WorkRules.create(base).maximumCredit).toBeNull();
+      expect(
+        WorkRules.create({ ...base, maximumCredit: Duration.ofHours(7) }).maximumCredit?.format(),
+      ).toBe('7h');
+      expect(() => WorkRules.create({ ...base, maximumCredit: Duration.ofHours(-1) })).toThrow(
+        /plafond/,
+      );
+    });
+
     it('refuse un découvert négatif', () => {
       expect(() =>
         WorkRules.create({
