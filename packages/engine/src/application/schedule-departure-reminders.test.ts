@@ -7,7 +7,7 @@ import type { Clock } from '../domain/ports/clock';
 import type { Notifier, ReminderDelivery } from '../domain/ports/notifier';
 import type { PlanRepository } from '../domain/ports/plan-repository';
 import type { ReminderSettingsRepository } from '../domain/ports/reminder-settings-repository';
-import type { DepartureReminder } from '../domain/reminders/departure-reminder-planner';
+import type { ScheduledReminder } from '../domain/reminders/scheduled-reminder';
 import { ReminderSettings } from '../domain/reminders/reminder-settings';
 import { laBrosseEtDupontRules } from '../domain/rules/presets/la-brosse-et-dupont';
 import { Duration } from '../domain/time/duration';
@@ -28,10 +28,10 @@ const settingsOf = (settings: ReminderSettings): ReminderSettingsRepository => (
 /** Notificateur en mémoire : garde les derniers rappels programmés. */
 const memoryNotifier = (
   delivery: ReminderDelivery = 'scheduled',
-): Notifier & { scheduled: readonly DepartureReminder[] | null } => {
+): Notifier & { scheduled: readonly ScheduledReminder[] | null } => {
   const notifier = {
-    scheduled: null as readonly DepartureReminder[] | null,
-    replaceDepartureReminders: (reminders: readonly DepartureReminder[]) => {
+    scheduled: null as readonly ScheduledReminder[] | null,
+    replaceReminders: (reminders: readonly ScheduledReminder[]) => {
       notifier.scheduled = reminders;
       return Promise.resolve(delivery);
     },
@@ -81,6 +81,34 @@ describe('ScheduleDepartureReminders — reprogrammer les rappels de départ', (
     expect(
       notifier.scheduled?.map((reminder) => `${reminder.date.toIsoString()} ${reminder.kind}`),
     ).toEqual(['2026-10-20 week-check']);
+  });
+
+  it('ajoute les questions de suivi de la récup demandée', async () => {
+    const notifier = memoryNotifier();
+    const withRecovery: DatedPlan = {
+      ...plan,
+      recovery: {
+        date: date('2026-10-23'),
+        kind: 'full',
+        approval: {
+          status: 'pending',
+          requestedOn: date('2026-10-19'),
+          requestedAt: TimeOfDay.of(9, 0),
+        },
+      },
+    };
+    await new ScheduleDepartureReminders(
+      plansWith(withRecovery),
+      settingsOf(
+        ReminderSettings.create({ departureLead: null, atDeparture: false, weekCheck: false }),
+      ),
+      notifier,
+      clock,
+    ).execute();
+
+    expect(
+      notifier.scheduled?.map((reminder) => `${reminder.date.toIsoString()} ${reminder.kind}`),
+    ).toEqual(['2026-10-21 recovery-approval', '2026-10-22 recovery-approval']);
   });
 
   it('annule les rappels quand il n’y a pas de plan en cours', async () => {
