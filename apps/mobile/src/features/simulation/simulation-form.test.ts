@@ -61,6 +61,7 @@ describe('Formulaire de simulation', () => {
         objective: 'recovery',
         recoveryDate: '2026-10-21',
         recoveryKind: 'half',
+        recoveryPart: 'morning',
       },
       days,
       counter,
@@ -69,6 +70,11 @@ describe('Formulaire de simulation', () => {
     expect(result.ok && result.request.objective).toMatchObject({
       kind: 'recovery',
       recovery: 'half',
+      part: 'morning',
     });
+  });
+
+  it('propose par défaut l’après-midi en repos pour une demi-journée', () => {
+    expect(DEFAULT_SIMULATION_FORM.recoveryPart).toBe('afternoon');
   });
 });

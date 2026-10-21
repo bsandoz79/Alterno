@@ -1,3 +1,4 @@
+import type { RecoveryPart } from '@alterno/engine';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -137,6 +138,20 @@ export function SimulationScreen() {
                 }}
               />
             )}
+            {form.recoveryKind === 'half' ? (
+              <SegmentedControl<RecoveryPart>
+                accessibilityLabel="Moitié en repos"
+                onSurface
+                options={[
+                  { value: 'morning', label: 'Matin en repos' },
+                  { value: 'afternoon', label: 'Après-midi en repos' },
+                ]}
+                selected={form.recoveryPart}
+                onChange={(recoveryPart) => {
+                  update({ recoveryPart });
+                }}
+              />
+            ) : null}
             {context === null || hoursToCatchUp === null ? null : (
               <View style={styles.catchUp}>
                 <Text style={styles.catchUpLabel}>
