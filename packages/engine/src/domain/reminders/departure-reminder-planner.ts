@@ -6,9 +6,10 @@ import type { ReminderSettings } from './reminder-settings';
 /**
  * Type de notification :
  * - `before` : rappel un peu avant l'heure de départ ;
- * - `at-departure` : à l'heure de départ, pour signaler un départ plus tard si besoin.
+ * - `at-departure` : à l'heure de départ, pour signaler un départ plus tard si besoin ;
+ * - `week-check` : après le dernier départ de la semaine, « ta semaine s'est passée comme prévu ? ».
  */
-export type DepartureReminderKind = 'before' | 'at-departure';
+export type DepartureReminderKind = 'before' | 'at-departure' | 'week-check';
 
 /** Rappel à programmer : son type, le jour, l'heure du rappel et l'heure de départ qu'il annonce. */
 export interface DepartureReminder {
@@ -60,8 +61,14 @@ export class DepartureReminderPlanner {
   }
 }
 
-/** Un rappel passé ne sert plus à rien : seuls ceux encore à venir sont programmés. */
-function isUpcoming(reminder: DepartureReminder, moment: Moment): boolean {
+/**
+ * Un rappel passé ne sert plus à rien : seuls ceux encore à venir sont programmés.
+ *
+ * @param reminder - Rappel calculé
+ * @param moment - Date et heure actuelles
+ * @returns `true` si le rappel est encore à venir
+ */
+export function isUpcoming(reminder: DepartureReminder, moment: Moment): boolean {
   return (
     moment.today.isBefore(reminder.date) ||
     (reminder.date.equals(moment.today) && reminder.at.isAfter(moment.now))

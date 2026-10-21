@@ -10,6 +10,7 @@ describe('ReminderSettings — réglage du rappel de départ', () => {
 
     expect(settings.departureLead?.format()).toBe('0h15');
     expect(settings.atDeparture).toBe(true);
+    expect(settings.weekCheck).toBe(true);
   });
 
   it('peut être entièrement désactivé', () => {
@@ -17,6 +18,7 @@ describe('ReminderSettings — réglage du rappel de départ', () => {
 
     expect(settings.departureLead).toBeNull();
     expect(settings.atDeparture).toBe(false);
+    expect(settings.weekCheck).toBe(false);
   });
 
   it('règle séparément le rappel avant le départ et la question à l’heure de départ', () => {
@@ -24,6 +26,17 @@ describe('ReminderSettings — réglage du rappel de départ', () => {
 
     expect(settings.departureLead).toBeNull();
     expect(settings.atDeparture).toBe(true);
+  });
+
+  it('pose la question de fin de semaine sauf si elle est désactivée', () => {
+    expect(ReminderSettings.create({ departureLead: null, atDeparture: false }).weekCheck).toBe(
+      true,
+    );
+    expect(
+      ReminderSettings.create({ departureLead: null, atDeparture: false, weekCheck: false })
+        .weekCheck,
+    ).toBe(false);
+    expect(ReminderSettings.departureLead(Duration.ofMinutes(5)).weekCheck).toBe(true);
   });
 
   it('accepte un délai jusqu’à 2h', () => {
