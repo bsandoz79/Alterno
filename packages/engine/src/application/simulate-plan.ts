@@ -1,7 +1,7 @@
 import type { CalendarDate } from '../domain/calendar/calendar-date';
 import type { HoursCounter } from '../domain/counter/hours-counter';
 import type { RecoveryKind } from '../domain/counter/recovery-kind';
-import type { DatedDay, DatedPlan } from '../domain/planning/dated-plan';
+import type { DatedDay, DatedPlan, RecoveryPart } from '../domain/planning/dated-plan';
 import type { Plan } from '../domain/planning/plan';
 import { PlanGenerator } from '../domain/planning/plan-generator';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
@@ -11,10 +11,18 @@ import { InvalidValueError } from '../domain/shared/domain-error';
 import type { Duration } from '../domain/time/duration';
 import { paceStrategy, type PaceName } from './pace-name';
 
-/** Ce que l'utilisateur veut atteindre : un total d'heures, ou une récup à une date. */
+/**
+ * Ce que l'utilisateur veut atteindre : un total d'heures, ou une récup à une date
+ * (pour une demi-journée, la moitié prise en repos ; l'après-midi par défaut).
+ */
 export type SimulationObjective =
   | { readonly kind: 'hours'; readonly target: Duration }
-  | { readonly kind: 'recovery'; readonly date: CalendarDate; readonly recovery: RecoveryKind };
+  | {
+      readonly kind: 'recovery';
+      readonly date: CalendarDate;
+      readonly recovery: RecoveryKind;
+      readonly part?: RecoveryPart;
+    };
 
 /** Demande de simulation. */
 export interface SimulationRequest {
@@ -100,7 +108,11 @@ export class SimulatePlan {
       : {
           days,
           totalWorked: plan.totalWorked,
-          recovery: { date: objective.date, kind: objective.recovery },
+          recovery:
+            // La moitié n'a de sens que pour une demi-journée.
+            objective.recovery === 'half'
+              ? { date: objective.date, kind: 'half', part: objective.part ?? 'afternoon' }
+              : { date: objective.date, kind: 'full' },
         };
   }
 

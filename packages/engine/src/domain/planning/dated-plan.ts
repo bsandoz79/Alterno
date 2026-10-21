@@ -25,8 +25,13 @@ export interface DatedPlan {
   readonly isDefault?: boolean;
 }
 
-/** Récup posée à la fin d'un plan : sa date et son type. */
+/** Moitié de journée prise en repos lors d'une demi-journée de récup. */
+export type RecoveryPart = 'morning' | 'afternoon';
+
+/** Récup posée à la fin d'un plan : sa date, son type et, pour une demi-journée, la moitié en repos. */
 export interface PlannedRecovery {
   readonly date: CalendarDate;
   readonly kind: RecoveryKind;
+  /** Moitié en repos (demi-journée seulement) ; absente : l'après-midi (plans validés avant ALT-56). */
+  readonly part?: RecoveryPart;
 }

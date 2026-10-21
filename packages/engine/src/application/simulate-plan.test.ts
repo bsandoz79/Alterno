@@ -88,6 +88,29 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
 
     expect(simulation.recovery?.date.toIsoString()).toBe('2026-10-23');
     expect(simulation.recovery?.kind).toBe('half');
+    expect(simulation.recovery?.part).toBe('afternoon');
+  });
+
+  it('objectif demi-journée : le plan retient la moitié choisie (matin)', () => {
+    const simulation = simulate.execute({
+      days: nextWeek,
+      objective: { kind: 'recovery', date: friday, recovery: 'half', part: 'morning' },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+
+    expect(simulation.recovery?.part).toBe('morning');
+  });
+
+  it('objectif journée complète : pas de moitié', () => {
+    const simulation = simulate.execute({
+      days: nextWeek,
+      objective: { kind: 'recovery', date: friday, recovery: 'full', part: 'morning' },
+      pace: 'steady',
+      counter: HoursCounter.of(Duration.ofHours(7)),
+    });
+
+    expect(simulation.recovery?.part).toBeUndefined();
   });
 
   it('objectif d’heures : aucune récup dans le plan', () => {
