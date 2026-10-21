@@ -2,8 +2,10 @@ import { RECOVERY_LABELS, type RecoveryAnswer } from '@alterno/engine';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmButton } from '@/shared/components/confirm-button';
 import { MessageBox } from '@/shared/components/message-box';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { systemClock } from '@/shared/clock/system-clock';
 import { formatLongDate } from '@/shared/format/format-date';
 import { recoveryStatusText } from '@/shared/format/recovery-status';
 import { COLORS } from '@/shared/theme/colors';
@@ -30,7 +32,9 @@ const ANSWERS: readonly { readonly value: RecoveryAnswer; readonly label: string
  */
 export function RecoveryApprovalScreen() {
   const params = useLocalSearchParams();
-  const { recovery, answer, message } = useRecoveryApproval(parseAnswerParam(params.answer));
+  const { recovery, answer, message, cancel } = useRecoveryApproval(
+    parseAnswerParam(params.answer),
+  );
 
   if (recovery === undefined) {
     return <ScreenContainer title={TITLE} />;
@@ -39,6 +43,7 @@ export function RecoveryApprovalScreen() {
   if (recovery === null || status === null) {
     return (
       <ScreenContainer title={TITLE}>
+        {message === null ? null : <MessageBox message={message} />}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Aucune demande suivie</Text>
           <Text style={styles.text}>
@@ -77,6 +82,15 @@ export function RecoveryApprovalScreen() {
         ) : null}
       </View>
       {message === null ? null : <MessageBox message={message} />}
+      {/* Refusée ou plus nécessaire : on peut annuler la récup tant qu'elle n'est pas passée. */}
+      {recovery.date.isBefore(systemClock.today()) ? null : (
+        <ConfirmButton
+          label="Annuler la récup"
+          warning="Ce jour redevient une journée de travail, et les jours restants repassent à 7h. Les heures d’avance déjà faites restent au compteur."
+          confirmLabel="Annuler la récup"
+          onConfirm={cancel}
+        />
+      )}
     </ScreenContainer>
   );
 }
