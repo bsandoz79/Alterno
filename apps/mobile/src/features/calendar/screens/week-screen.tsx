@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
+import { RecoveryStatusLink } from '@/shared/components/recovery-status-link';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
@@ -62,6 +63,7 @@ export function WeekScreen() {
         schoolWeeks={schoolWeeks ?? SchoolWeeks.none()}
         recoveryDay={recoveryDay}
       />
+      <RecoveryStatusLink plan={plan} />
       <Link href="/ecole" style={styles.secondaryLink}>
         Marquer mes semaines d’école
       </Link>

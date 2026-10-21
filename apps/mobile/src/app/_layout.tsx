@@ -69,6 +69,7 @@ export default function RootLayout() {
           options={{ href: null, title: 'Calendrier annuel' }}
         />
         <Tabs.Screen name="jour/[date]" options={{ href: null, title: 'Détail du jour' }} />
+        <Tabs.Screen name="recup" options={{ href: null, title: 'Ma récup' }} />
       </Tabs>
     </RepositoriesProvider>
   );
