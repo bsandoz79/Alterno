@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import type { FormMessage } from '@/shared/components/message-box';
 import { systemClock } from '@/shared/clock/system-clock';
+import { usePlanCancellation } from '@/shared/hooks/use-plan-cancellation';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import {
@@ -20,6 +21,8 @@ export interface DayEditState {
   readonly preview: DayEditPreview;
   /** Enregistre le plan recalculé : il remplace le plan en cours. */
   readonly save: () => Promise<void>;
+  /** Enregistre la journée, puis annule la suite du plan (cas d'usage `CancelPlan`). */
+  readonly saveAndCancel: () => Promise<void>;
   readonly message: FormMessage | null;
 }
 
@@ -43,6 +46,7 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
   const { plans } = useRepositories();
   const [form, setForm] = useState<DayEditForm>(() => dayEditFormFrom(planned));
   const [message, setMessage] = useState<FormMessage | null>(null);
+  const { cancelPlan } = usePlanCancellation();
 
   const preview = useMemo(
     () =>
@@ -65,6 +69,19 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
     onSaved();
   }, [preview, plans, onSaved]);
 
+  const saveAndCancel = useCallback(async () => {
+    if (!preview.ok) {
+      return;
+    }
+    // La journée modifiée est gardée telle que saisie ; l'annulation commence le lendemain.
+    await cancelPlan(preview.outcome.plan, date.plusDays(1));
+    setMessage({
+      kind: 'success',
+      text: 'Journée enregistrée et plan annulé : la suite repasse à 7h par jour.',
+    });
+    onSaved();
+  }, [preview, cancelPlan, date, onSaved]);
+
   return {
     form,
     update: (changes) => {
@@ -73,6 +90,7 @@ export function useDayEdit({ context, date, planned, onSaved }: DayEditParams): 
     },
     preview,
     save,
+    saveAndCancel,
     message,
   };
 }

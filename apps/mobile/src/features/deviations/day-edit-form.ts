@@ -140,3 +140,14 @@ function recalculatedDays(
       : [{ date: day.date, before: previous.plan.worked, after: day.plan }];
   });
 }
+
+/**
+ * Le plan devient-il irréalisable avec cet écart (objectif hors d'atteinte même en journées maximales) ?
+ * Dans ce cas, l'écran propose d'annuler la suite du plan plutôt que de prendre le manque sur le compteur.
+ *
+ * @param preview - Aperçu du recalcul
+ * @returns `true` si l'alerte « objectif hors d'atteinte » est levée
+ */
+export function isOutOfReach(preview: DayEditPreview): boolean {
+  return preview.ok && preview.outcome.alerts.some((alert) => alert.kind === 'target-out-of-reach');
+}
