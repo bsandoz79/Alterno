@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MessageBox } from '@/shared/components/message-box';
+import { InfoTip } from '@/shared/components/info-tip';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
@@ -23,16 +24,17 @@ export function AnnualCalendarScreen() {
 
   return (
     <ScreenContainer title="Calendrier annuel" overline="Mon alternance">
-      <Text style={styles.intro}>
-        Facultatif : joins le calendrier d’alternance de ton école pour l’avoir sous la main. Tes
-        semaines d’école se marquent ensuite dans « Semaines d’école ».
-      </Text>
+      <InfoTip
+        title="Facultatif"
+        info="Joins le calendrier d’alternance de ton école pour l’avoir sous la main. Tes semaines d’école se marquent ensuite dans « Semaines d’école »."
+      />
 
       {calendar === undefined ? null : calendar === null ? (
         <View style={styles.card}>
-          <Text style={styles.cardText}>
-            {`Aucun calendrier joint. PDF ou image, ${formatFileSize(MAX_ATTACHMENT_BYTES)} maximum. Le fichier reste sur ton appareil.`}
-          </Text>
+          <InfoTip
+            title="Aucun calendrier joint"
+            info={`PDF ou image, ${formatFileSize(MAX_ATTACHMENT_BYTES)} maximum. Le fichier reste sur ton appareil.`}
+          />
           <Pressable style={styles.button} accessibilityRole="button" onPress={() => void attach()}>
             <Text style={styles.buttonLabel}>Joindre un fichier</Text>
           </Pressable>
@@ -56,23 +58,11 @@ export function AnnualCalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  intro: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.text,
-  },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
     padding: SPACING.lg,
     gap: SPACING.md,
-  },
-  cardText: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.text,
   },
   button: {
     height: 52,

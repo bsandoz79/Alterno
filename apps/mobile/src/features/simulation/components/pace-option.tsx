@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { InfoTip } from '@/shared/components/info-tip';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
@@ -20,6 +21,7 @@ const BAR_GAP = 3;
 
 /**
  * Carte de choix d'un rythme, avec un mini-graphique de l'effort jour après jour (maquette Simulation).
+ * Sa description s'affiche à la demande (icône « i »), le graphique suffisant à la reconnaître.
  * La largeur des barres s'adapte au nombre de jours : le graphique garde la même taille sur 1 semaine ou 1 mois.
  *
  * @param props - Titre, description, forme du graphique et sélection
@@ -38,8 +40,7 @@ export function PaceOption({ title, description, shape, selected, onSelect }: Pa
       onPress={onSelect}
     >
       <View style={styles.texts}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        <InfoTip title={title} info={description} titleStyle={styles.title} />
       </View>
       <View
         style={styles.bars}
@@ -84,11 +85,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 16,
     color: COLORS.text,
-  },
-  description: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.textMuted,
   },
   bars: {
     flexDirection: 'row',

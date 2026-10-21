@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { PeriodNavigator } from '@/shared/components/period-navigator';
+import { InfoTip } from '@/shared/components/info-tip';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { formatMonth } from '@/shared/format/format-date';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
@@ -30,10 +31,10 @@ export function SchoolWeeksScreen() {
 
   return (
     <ScreenContainer title="Semaines d’école" overline="Mon alternance">
-      <Text style={styles.intro}>
-        Appuie sur une semaine pour la marquer « école » : elle sera exclue des simulations et
-        affichée dans ton planning.
-      </Text>
+      <InfoTip
+        title="Appuie sur une semaine pour la marquer"
+        info="Une semaine « école » est exclue des simulations et affichée dans ton planning."
+      />
       <PeriodNavigator
         unit="Mois"
         label={formatMonth(month)}
@@ -76,12 +77,6 @@ export function SchoolWeeksScreen() {
 }
 
 const styles = StyleSheet.create({
-  intro: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.text,
-  },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.card,
