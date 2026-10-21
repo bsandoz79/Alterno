@@ -1,4 +1,4 @@
-import { CalendarDate, Duration } from '@alterno/engine';
+import { CalendarDate, Duration, TimeOfDay } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
 import { toPlanRecoveryRecord, withPlanRecovery } from './plan-recovery-record';
@@ -35,6 +35,33 @@ describe('Récup du plan enregistrée', () => {
     expect(
       withPlanRecovery(emptyPlan, { date: '2026-10-23', kind: 'half', part: 'soir' }).recovery,
     ).not.toHaveProperty('part');
+  });
+
+  it('relit le suivi de la demande (état, jour et heure)', () => {
+    const record = toPlanRecoveryRecord({
+      date: CalendarDate.fromIsoString('2026-10-30'),
+      kind: 'full',
+      approval: {
+        status: 'pending',
+        requestedOn: CalendarDate.fromIsoString('2026-10-19'),
+        requestedAt: TimeOfDay.of(9, 30),
+      },
+    });
+    const approval = withPlanRecovery(emptyPlan, record).recovery?.approval;
+
+    expect(approval?.status).toBe('pending');
+    expect(approval?.requestedOn.toIsoString()).toBe('2026-10-19');
+    expect(approval?.requestedAt.format()).toBe('9h30');
+  });
+
+  it('ignore un suivi absent ou incomplet (plan validé avant ALT-55)', () => {
+    const base = { date: '2026-10-30', kind: 'full' };
+
+    expect(withPlanRecovery(emptyPlan, base).recovery).not.toHaveProperty('approval');
+    expect(
+      withPlanRecovery(emptyPlan, { ...base, approvalStatus: 'pending', requestedOn: null })
+        .recovery,
+    ).not.toHaveProperty('approval');
   });
 
   it('ignore un type inconnu (donnée corrompue)', () => {

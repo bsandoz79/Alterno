@@ -73,6 +73,14 @@ const MIGRATIONS: readonly string[] = [
   `ALTER TABLE reminder_settings ADD COLUMN week_check INTEGER;`,
   // Version 11 : moitié de la demi-journée de récup en repos (NULL : l'après-midi, comme avant).
   `ALTER TABLE plan_recovery ADD COLUMN part TEXT;`,
+  // Version 12 : suivi de la demande de récup (état, jour et heure de la demande ; NULL : pas de suivi)
+  // et ses réglages (NULL : valeurs par défaut).
+  `ALTER TABLE plan_recovery ADD COLUMN approval_status TEXT;
+   ALTER TABLE plan_recovery ADD COLUMN requested_on TEXT;
+   ALTER TABLE plan_recovery ADD COLUMN requested_at_minutes INTEGER;
+   ALTER TABLE reminder_settings ADD COLUMN approval_check INTEGER;
+   ALTER TABLE reminder_settings ADD COLUMN approval_first_delay_days INTEGER;
+   ALTER TABLE reminder_settings ADD COLUMN approval_repeat_days INTEGER;`,
 ];
 
 /**

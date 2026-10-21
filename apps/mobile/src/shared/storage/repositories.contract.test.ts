@@ -185,6 +185,30 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       expect((await plans.loadCurrent())?.recovery?.part).toBe('morning');
     });
 
+    it('retrouve le suivi de la demande de récup', async () => {
+      const { plans } = await create();
+      const plan = recoveryPlanFor(WEEK);
+      const recovery = plan.recovery;
+      if (recovery === undefined) {
+        throw new Error('Le plan de test prépare une récup');
+      }
+      await plans.saveCurrent({
+        ...plan,
+        recovery: {
+          ...recovery,
+          approval: {
+            status: 'refused',
+            requestedOn: WEEK[0] ?? recovery.date,
+            requestedAt: TimeOfDay.of(9, 30),
+          },
+        },
+      });
+      const approval = (await plans.loadCurrent())?.recovery?.approval;
+
+      expect(approval?.status).toBe('refused');
+      expect(approval?.requestedAt.format()).toBe('9h30');
+    });
+
     it('oublie la récup quand le nouveau plan n’en prépare pas', async () => {
       const { plans } = await create();
       await plans.saveCurrent(recoveryPlanFor(WEEK));
@@ -369,6 +393,26 @@ describe.each(implementations)('Stockage %s', (_, create) => {
 
       expect((await reminders.load()).weekCheck).toBe(false);
       expect((await reminders.load()).atDeparture).toBe(true);
+    });
+
+    it('retrouve le suivi de la récup et ses délais', async () => {
+      const { reminders } = await create();
+      await reminders.save(
+        ReminderSettings.create({
+          departureLead: null,
+          atDeparture: true,
+          approvalCheck: false,
+          approvalFirstDelayDays: 3,
+          approvalRepeatDays: 2,
+        }),
+      );
+      const loaded = await reminders.load();
+
+      expect([
+        loaded.approvalCheck,
+        loaded.approvalFirstDelayDays,
+        loaded.approvalRepeatDays,
+      ]).toEqual([false, 3, 2]);
     });
 
     it('retrouve un rappel désactivé', async () => {

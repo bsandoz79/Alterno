@@ -32,7 +32,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(11);
+    expect(version?.user_version).toBe(12);
   });
 
   it('enregistre la date de chaque journée du plan (version 4)', async () => {

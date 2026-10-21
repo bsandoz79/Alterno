@@ -16,8 +16,13 @@ export class SqliteReminderSettingsRepository implements ReminderSettingsReposit
       departure_lead_minutes: number | null;
       at_departure: number | null;
       week_check: number | null;
+      approval_check: number | null;
+      approval_first_delay_days: number | null;
+      approval_repeat_days: number | null;
     }>(
-      'SELECT departure_lead_minutes, at_departure, week_check FROM reminder_settings WHERE id = 1',
+      `SELECT departure_lead_minutes, at_departure, week_check, approval_check,
+              approval_first_delay_days, approval_repeat_days
+       FROM reminder_settings WHERE id = 1`,
     );
     return row === null
       ? ReminderSettings.defaults()
@@ -26,6 +31,9 @@ export class SqliteReminderSettingsRepository implements ReminderSettingsReposit
           // SQLite n'a pas de booléen : 1 / 0, et NULL pour une colonne ajoutée après la ligne.
           atDeparture: toBoolean(row.at_departure),
           weekCheck: toBoolean(row.week_check),
+          approvalCheck: toBoolean(row.approval_check),
+          approvalFirstDelayDays: row.approval_first_delay_days,
+          approvalRepeatDays: row.approval_repeat_days,
         });
   }
 
@@ -33,12 +41,24 @@ export class SqliteReminderSettingsRepository implements ReminderSettingsReposit
   async save(settings: ReminderSettings): Promise<void> {
     const record = toReminderSettingsRecord(settings);
     await this.db.runAsync(
-      `INSERT INTO reminder_settings (id, departure_lead_minutes, at_departure, week_check)
-       VALUES (1, ?, ?, ?)
+      `INSERT INTO reminder_settings (id, departure_lead_minutes, at_departure, week_check,
+                                     approval_check, approval_first_delay_days,
+                                     approval_repeat_days)
+       VALUES (1, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (id) DO UPDATE SET departure_lead_minutes = excluded.departure_lead_minutes,
                                       at_departure = excluded.at_departure,
-                                      week_check = excluded.week_check`,
-      [record.departureLeadMinutes, toInteger(record.atDeparture), toInteger(record.weekCheck)],
+                                      week_check = excluded.week_check,
+                                      approval_check = excluded.approval_check,
+                                      approval_first_delay_days = excluded.approval_first_delay_days,
+                                      approval_repeat_days = excluded.approval_repeat_days`,
+      [
+        record.departureLeadMinutes,
+        toInteger(record.atDeparture),
+        toInteger(record.weekCheck),
+        toInteger(record.approvalCheck),
+        record.approvalFirstDelayDays ?? null,
+        record.approvalRepeatDays ?? null,
+      ],
     );
   }
 }
