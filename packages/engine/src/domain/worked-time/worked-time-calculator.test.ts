@@ -98,6 +98,38 @@ describe('WorkedTimeCalculator', () => {
     });
   });
 
+  describe('pause non prise (journée hors de la pause)', () => {
+    it('ne retire aucune pause quand on part avant : 7h30–9h07 = 1h37', () => {
+      const worked = calculator.compute('thursday', {
+        arrival: at('07:30'),
+        departure: at('09:07'),
+        lunchBreak: pause('12:15', '13:00'),
+      });
+
+      expect(worked.equals(Duration.ofHours(1, 37))).toBe(true);
+    });
+
+    it('ne retire aucune pause quand on arrive après : 14h00–18h00 = 4h', () => {
+      const worked = calculator.compute('monday', {
+        arrival: at('14:00'),
+        departure: at('18:00'),
+        lunchBreak: pause('12:00', '12:45'),
+      });
+
+      expect(worked.equals(Duration.ofHours(4))).toBe(true);
+    });
+
+    it('cas limite : partir pendant la pause, c’est ne pas l’avoir prise (8h00–12h30 = 4h30)', () => {
+      const worked = calculator.compute('monday', {
+        arrival: at('08:00'),
+        departure: at('12:30'),
+        lunchBreak: pause('12:15', '13:00'),
+      });
+
+      expect(worked.equals(Duration.ofHours(4, 30))).toBe(true);
+    });
+  });
+
   describe('cas limites', () => {
     it('renvoie zéro si la présence comptée est plus courte que la pause minimale', () => {
       const worked = calculator.compute('monday', {

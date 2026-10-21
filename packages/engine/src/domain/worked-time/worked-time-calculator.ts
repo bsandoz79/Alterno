@@ -33,7 +33,8 @@ export class WorkedTimeCalculator {
    * Règles appliquées :
    * - seule la présence comprise entre l'arrivée au plus tôt et le départ au plus tard est comptée
    *   (rien avant 7h30 ni après 18h15, 17h30 le vendredi) ;
-   * - la pause déjeuner est déduite selon `rules.lunchBreakPolicy` : par défaut, au moins la pause minimale.
+   * - la pause déjeuner est déduite selon `rules.lunchBreakPolicy` : par défaut, au moins la pause minimale ;
+   * - une pause qui n'a pas été prise (départ avant ou pendant la pause, arrivée pendant ou après) n'est pas déduite.
    *
    * @param day - Jour de la semaine (détermine les plages applicables)
    * @param input - Arrivée, départ et pause de la journée
@@ -59,9 +60,15 @@ export class WorkedTimeCalculator {
 
   /**
    * Durée de pause à retirer : la pause prise pendant la présence, portée au minimum si la règle l'impose.
+   * Une pause n'est prise que si l'on est présent avant et après : partir avant (ou pendant) la pause,
+   * ou arriver pendant (ou après), c'est ne pas l'avoir prise — rien n'est alors retiré.
    */
   private deductedBreak(presence: TimeSlot, lunchBreak: TimeSlot): Duration {
-    const actualBreak = lunchBreak.overlapDuration(presence);
+    const taken = presence.start.isBefore(lunchBreak.start) && presence.end.isAfter(lunchBreak.end);
+    if (!taken) {
+      return Duration.zero();
+    }
+    const actualBreak = lunchBreak.duration();
     const minimum = this.rules.minimumLunchBreak;
     if (this.rules.lunchBreakPolicy === 'minimum-enforced' && actualBreak.isLessThan(minimum)) {
       return minimum;
