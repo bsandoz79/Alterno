@@ -79,6 +79,7 @@ export {
 export { WeekCheckPlanner } from './reminders/week-check-planner';
 export { DefaultWeekPlanner } from './planning/default-week-planner';
 export { PlanCanceller } from './planning/plan-canceller';
+export { dayProgress, type DayProgress } from './planning/day-progress';
 export { WeekObjectiveAdvisor, type ObjectiveSuggestion } from './planning/week-objective-advisor';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';
 export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
