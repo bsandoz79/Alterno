@@ -1,4 +1,10 @@
-import type { CalendarDate, DatedDay, DatedPlan, SchoolWeeks } from '@alterno/engine';
+import type {
+  CalendarDate,
+  DatedDay,
+  DatedPlan,
+  PlannedRecovery,
+  SchoolWeeks,
+} from '@alterno/engine';
 
 const DAYS_PER_WEEK = 7;
 
@@ -6,13 +12,15 @@ const DAYS_PER_WEEK = 7;
  * Ce qu'affiche l'accueil :
  * - `no-plan` : aucun plan validé, on invite à simuler ;
  * - `work` : aujourd'hui est planifié (départ en grand, bouton « Signaler un changement ») ;
+ * - `recovery` : jour de repos compensatoire posé par le plan (journée ou demi-journée) ;
  * - `school` : journée d'école ;
  * - `before-plan` : le plan validé commence plus tard (aujourd'hui n'a pas été simulé) ;
- * - `off` : pas de plan aujourd'hui (récup, week-end, plan terminé), avec le prochain jour planifié.
+ * - `off` : pas de plan aujourd'hui (week-end, plan terminé), avec le prochain jour planifié.
  */
 export type TodayStatus =
   | { readonly kind: 'no-plan' }
   | { readonly kind: 'work'; readonly day: DatedDay }
+  | { readonly kind: 'recovery'; readonly recovery: PlannedRecovery }
   | { readonly kind: 'school' }
   | { readonly kind: 'before-plan'; readonly first: DatedDay }
   | { readonly kind: 'off'; readonly next: DatedDay | null };
@@ -37,6 +45,9 @@ export function todayStatus(
   const day = plan.days.find((candidate) => candidate.date.equals(today));
   if (day !== undefined) {
     return { kind: 'work', day };
+  }
+  if (plan.recovery?.date.equals(today) === true) {
+    return { kind: 'recovery', recovery: plan.recovery };
   }
   if (schoolWeeks.contains(today)) {
     return { kind: 'school' };
