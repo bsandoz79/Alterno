@@ -7,6 +7,7 @@ import {
   type TimeOfDay,
   type WorkRulesSettings,
   buildWorkRules,
+  laBrosseEtDupontSettings,
 } from '@alterno/engine';
 
 /** Les six heures d'un groupe de jours, telles que saisies (texte libre). */
@@ -18,7 +19,8 @@ export type DurationField =
   | 'expectedDailyWork'
   | 'fullDayRecovery'
   | 'halfDayRecovery'
-  | 'maximumDeficit';
+  | 'maximumDeficit'
+  | 'maximumCredit';
 
 /** Groupes de jours du formulaire. */
 export type DayGroup = 'mondayToThursday' | 'friday';
@@ -67,6 +69,7 @@ export const DURATION_LABELS: Readonly<Record<DurationField, string>> = {
   fullDayRecovery: 'Journée de récup',
   halfDayRecovery: 'Demi-journée de récup',
   maximumDeficit: 'Découvert autorisé',
+  maximumCredit: 'Plafond du compteur',
 };
 
 /** Champs de durée, dans l'ordre d'affichage. */
@@ -76,6 +79,7 @@ export const DURATION_FIELDS: readonly DurationField[] = [
   'fullDayRecovery',
   'halfDayRecovery',
   'maximumDeficit',
+  'maximumCredit',
 ];
 
 /**
@@ -93,6 +97,9 @@ export function toWorkRulesForm(settings: WorkRulesSettings): WorkRulesForm {
     fullDayRecovery: settings.fullDayRecovery.format(),
     halfDayRecovery: settings.halfDayRecovery.format(),
     maximumDeficit: settings.maximumDeficit.format(),
+    // Sans plafond enregistré, on affiche celui du preset : l'enregistrer le rendra explicite.
+    maximumCredit:
+      (settings.maximumCredit ?? laBrosseEtDupontSettings().maximumCredit)?.format() ?? '',
   };
 }
 
@@ -112,6 +119,7 @@ export function parseWorkRulesForm(form: WorkRulesForm): WorkRulesFormResult {
       fullDayRecovery: parseDuration(form, 'fullDayRecovery'),
       halfDayRecovery: parseDuration(form, 'halfDayRecovery'),
       maximumDeficit: parseDuration(form, 'maximumDeficit'),
+      maximumCredit: parseDuration(form, 'maximumCredit'),
     };
     // Les règles métier (ordre des heures, pause minimale…) sont vérifiées par le moteur, pas ici.
     buildWorkRules(settings);

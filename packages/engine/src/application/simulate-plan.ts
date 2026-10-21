@@ -6,9 +6,14 @@ import type { Plan } from '../domain/planning/plan';
 import { PlanGenerator } from '../domain/planning/plan-generator';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
 import { RecoveryPlanner, type RecoveryOutlook } from '../domain/planning/recovery-planner';
+import {
+  WeekObjectiveAdvisor,
+  type ObjectiveSuggestion,
+} from '../domain/planning/week-objective-advisor';
 import type { WorkRules } from '../domain/rules/work-rules';
 import { InvalidValueError } from '../domain/shared/domain-error';
 import type { Duration } from '../domain/time/duration';
+import type { TimeOfDay } from '../domain/time/time-of-day';
 import { paceStrategy, type PaceName } from './pace-name';
 
 /**
@@ -59,6 +64,7 @@ export type PaceComparison = Readonly<Record<PaceName, Simulation>>;
 export class SimulatePlan {
   private readonly generator: PlanGenerator;
   private readonly recoveryPlanner: RecoveryPlanner;
+  private readonly objectiveAdvisor: WeekObjectiveAdvisor;
 
   /**
    * @param rules - Règles horaires (réglages de l'utilisateur ou preset)
@@ -67,6 +73,34 @@ export class SimulatePlan {
   constructor(rules: WorkRules, preferences: PlanningPreferences = {}) {
     this.generator = new PlanGenerator(rules, preferences);
     this.recoveryPlanner = new RecoveryPlanner(rules, preferences);
+    this.objectiveAdvisor = new WeekObjectiveAdvisor(rules, preferences);
+  }
+
+  /**
+   * Objectif à proposer pour la période : le temps attendu moins ce qui est déjà fait
+   * cette semaine, et le maximum (horaires et plafond du compteur).
+   *
+   * @param plan - Plan en cours (heures des jours déjà passés), ou `null`
+   * @param days - Jours de la période, dans l'ordre
+   * @param counter - Compteur actuel
+   * @returns L'objectif proposé, ou `null` sans jour à planifier
+   */
+  suggestObjective(
+    plan: DatedPlan | null,
+    days: readonly CalendarDate[],
+    counter: HoursCounter,
+  ): ObjectiveSuggestion | null {
+    return this.objectiveAdvisor.suggest(plan, days, counter);
+  }
+
+  /**
+   * @param plan - Plan en cours, ou `null`
+   * @param today - Date du jour
+   * @param now - Heure actuelle
+   * @returns `true` si la journée d'aujourd'hui est finie (départ prévu passé) : la simulation part de demain
+   */
+  isDayOver(plan: DatedPlan | null, today: CalendarDate, now: TimeOfDay): boolean {
+    return this.objectiveAdvisor.isDayOver(plan, today, now);
   }
 
   /**

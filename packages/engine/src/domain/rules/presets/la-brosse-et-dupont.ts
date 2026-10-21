@@ -39,6 +39,8 @@ export function laBrosseEtDupontSettings(): WorkRulesSettings {
     fullDayRecovery: Duration.ofHours(7),
     halfDayRecovery: Duration.ofHours(3, 30),
     maximumDeficit: Duration.ofHours(4),
+    // Au-delà de 7h au compteur, les heures en plus ne sont plus comptées.
+    maximumCredit: Duration.ofHours(7),
   };
 }
 

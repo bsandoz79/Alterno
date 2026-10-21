@@ -1,4 +1,4 @@
-import { CalendarDate, HoursCounter } from '@alterno/engine';
+import { CalendarDate, Duration, HoursCounter } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_SIMULATION_FORM, toSimulationRequest } from './simulation-form';
@@ -9,14 +9,35 @@ const days = ['2026-10-19', '2026-10-20', '2026-10-21'].map((iso) =>
 const counter = HoursCounter.zero();
 
 describe('Formulaire de simulation', () => {
-  it('propose par défaut : semaine prochaine, 1 semaine, 35h, rythme régulier', () => {
+  it('propose par défaut : semaine prochaine, 1 semaine, objectif proposé, rythme régulier', () => {
     expect(DEFAULT_SIMULATION_FORM).toMatchObject({
       start: 'next-week',
       weeks: 1,
       objective: 'hours',
-      target: '35h',
+      target: '',
       pace: 'steady',
     });
+  });
+
+  it('sans objectif saisi, prend l’objectif proposé (reste à faire de la semaine)', () => {
+    const result = toSimulationRequest(
+      DEFAULT_SIMULATION_FORM,
+      days,
+      counter,
+      Duration.ofHours(21),
+    );
+
+    expect(
+      result.ok &&
+        result.request.objective.kind === 'hours' &&
+        result.request.objective.target.format(),
+    ).toBe('21h');
+  });
+
+  it('sans objectif saisi ni proposé, demande d’en saisir un', () => {
+    const result = toSimulationRequest(DEFAULT_SIMULATION_FORM, days, counter);
+
+    expect(result.ok ? '' : result.error).toMatch(/Objectif d’heures/);
   });
 
   it('lit un objectif d’heures', () => {

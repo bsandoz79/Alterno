@@ -6,6 +6,7 @@ import { ImpossiblePlanError } from '../domain/planning/impossible-plan-error';
 import { laBrosseEtDupontRules } from '../domain/rules/presets/la-brosse-et-dupont';
 import { InvalidValueError } from '../domain/shared/domain-error';
 import { Duration } from '../domain/time/duration';
+import { TimeOfDay } from '../domain/time/time-of-day';
 import { SimulatePlan } from './simulate-plan';
 
 const simulate = new SimulatePlan(laBrosseEtDupontRules());
@@ -111,6 +112,24 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
     });
 
     expect(simulation.recovery?.part).toBeUndefined();
+  });
+
+  it('propose l’objectif restant de la semaine et le maximum (mercredi : 21h, max 28h)', () => {
+    const suggestion = simulate.suggestObjective(null, nextWeek.slice(2), HoursCounter.zero());
+
+    expect([suggestion?.remaining.format(), suggestion?.maximum.format()]).toEqual(['21h', '28h']);
+  });
+
+  it('dit si la journée d’aujourd’hui est finie (départ prévu passé)', () => {
+    const plan = simulate.execute({
+      days: nextWeek,
+      objective: { kind: 'hours', target: Duration.ofHours(35) },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+    const departure = plan.days[0]?.plan.departure ?? TimeOfDay.of(16, 0);
+
+    expect(simulate.isDayOver(plan, nextWeek[0] ?? friday, departure)).toBe(true);
   });
 
   it('objectif d’heures : aucune récup dans le plan', () => {

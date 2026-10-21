@@ -12,6 +12,7 @@ describe('Formulaire des règles horaires', () => {
     expect(presetForm.minimumLunchBreak).toBe('0h45');
     expect(presetForm.halfDayRecovery).toBe('3h30');
     expect(presetForm.maximumDeficit).toBe('4h');
+    expect(presetForm.maximumCredit).toBe('7h');
   });
 
   it('relit un formulaire non modifié comme le preset', () => {
@@ -53,6 +54,14 @@ describe('Formulaire des règles horaires', () => {
 
     expect(none.ok && none.settings.maximumDeficit.isZero()).toBe(true);
     expect(negative.ok ? '' : negative.error).toMatch(/découvert/);
+  });
+
+  it('lit le plafond du compteur et refuse un plafond négatif', () => {
+    const five = parseWorkRulesForm({ ...presetForm, maximumCredit: '5h' });
+    const negative = parseWorkRulesForm({ ...presetForm, maximumCredit: '-1h' });
+
+    expect(five.ok && five.settings.maximumCredit?.format()).toBe('5h');
+    expect(negative.ok ? '' : negative.error).toMatch(/plafond/);
   });
 
   it('remonte les règles métier non respectées (heures dans le désordre)', () => {

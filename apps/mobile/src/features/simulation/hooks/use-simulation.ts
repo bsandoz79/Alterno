@@ -8,7 +8,9 @@ import {
   planningPeriodDays,
   type CalendarDate,
   type Clock,
+  type DatedPlan,
   type Duration,
+  type ObjectiveSuggestion,
   type PlanningPreferences,
   type PaceComparison,
   type RecoveryChoice,
@@ -30,8 +32,12 @@ import {
   type SimulationForm,
 } from '../simulation-form';
 
-/** Données chargées à l'ouverture de l'écran : règles (réglages ou preset), préférences, compteur et semaines d'école. */
+/**
+ * Données chargées à l'ouverture de l'écran : règles (réglages ou preset), préférences, compteur,
+ * semaines d'école et plan en cours (pour savoir ce qui est déjà fait cette semaine).
+ */
 interface SimulationContext {
+  readonly plan: DatedPlan | null;
   readonly rules: WorkRules;
   readonly preferences: PlanningPreferences;
   readonly counter: HoursCounter;
@@ -61,6 +67,8 @@ export interface SimulationState {
   readonly hoursToCatchUp: Duration | null;
   /** Avertissement si la récup choisie puise dans le découvert. */
   readonly deficitNotice: string | null;
+  /** Objectif proposé : déjà fait cette semaine, reste à faire et maximum ; `null` sans période valide. */
+  readonly suggestion: ObjectiveSuggestion | null;
   readonly outcome: SimulationOutcome | null;
   /** Valide la simulation affichée : elle devient le plan en cours. */
   readonly validate: () => Promise<void>;
@@ -90,9 +98,11 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
         preferences.load(),
         counter.load(),
         schoolWeeks.load(),
-      ]).then(([settings, savedPreferences, balance, markedWeeks]) => {
+        plans.loadCurrent(),
+      ]).then(([settings, savedPreferences, balance, markedWeeks, plan]) => {
         if (active) {
           setContext({
+            plan,
             rules: buildWorkRules(settings ?? laBrosseEtDupontSettings()),
             preferences: savedPreferences,
             counter: balance,
@@ -103,27 +113,35 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
       return () => {
         active = false;
       };
-    }, [workRules, preferences, counter, schoolWeeks]),
+    }, [workRules, preferences, counter, schoolWeeks, plans]),
   );
 
   const computed = useMemo(() => {
-    const empty = { recoveryChoices: [], hoursToCatchUp: null, deficitNotice: null };
+    const empty = {
+      recoveryChoices: [],
+      hoursToCatchUp: null,
+      deficitNotice: null,
+      suggestion: null,
+    };
     if (context === null) {
       return { ...empty, outcome: null };
     }
     let days: readonly CalendarDate[];
     let simulatePlan: SimulatePlan;
     try {
+      // Des préférences devenues incompatibles (règles modifiées depuis) lèvent une erreur affichée.
+      simulatePlan = new SimulatePlan(context.rules, context.preferences);
+      const today = clock.today();
       days = planningPeriodDays({
-        today: clock.today(),
+        today,
         start: form.start,
         weeks: form.weeks,
         rules: context.rules,
         // Les jours d'école sont exclus : on ne planifie que les jours en entreprise.
         schoolWeeks: context.schoolWeeks,
+        // Une fois le départ prévu passé, aujourd'hui compte comme fait : « cette semaine » part de demain.
+        todayDone: simulatePlan.isDayOver(context.plan, today, clock.currentTime()),
       });
-      // Des préférences devenues incompatibles (règles modifiées depuis) lèvent une erreur affichée.
-      simulatePlan = new SimulatePlan(context.rules, context.preferences);
     } catch (error) {
       return { ...empty, outcome: domainErrorOutcome(error) };
     }
@@ -131,12 +149,19 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
     // Calculés à part de la simulation : une récup impossible ne doit pas faire disparaître les jours.
     const recoveryChoices = simulatePlan.recoveryChoices(days, context.counter, form.recoveryKind);
     const recoveryDate = selectableRecoveryDate(recoveryChoices, form.recoveryDate);
+    const suggestion = simulatePlan.suggestObjective(context.plan, days, context.counter);
     const recovery = {
+      suggestion,
       recoveryChoices,
       hoursToCatchUp: simulatePlan.hoursToCatchUp(context.counter, form.recoveryKind),
       deficitNotice: deficitNotice(recoveryChoices, recoveryDate),
     };
-    const request = toSimulationRequest({ ...form, recoveryDate }, days, context.counter);
+    const request = toSimulationRequest(
+      { ...form, recoveryDate },
+      days,
+      context.counter,
+      suggestion?.remaining ?? null,
+    );
     if (!request.ok) {
       return { ...recovery, outcome: request };
     }

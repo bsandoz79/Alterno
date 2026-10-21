@@ -10,6 +10,7 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
+import { ObjectiveSuggestions } from '../components/objective-suggestions';
 import { PaceOption } from '../components/pace-option';
 import { PlanPreview } from '../components/plan-preview';
 import { RecoveryDayPicker } from '../components/recovery-day-picker';
@@ -55,6 +56,7 @@ export function SimulationScreen() {
     recoveryChoices,
     hoursToCatchUp,
     deficitNotice,
+    suggestion,
     outcome,
     validate,
     message,
@@ -104,13 +106,25 @@ export function SimulationScreen() {
         />
 
         {form.objective === 'hours' ? (
-          <TimeField
-            label="Objectif d’heures"
-            value={form.target}
-            onChange={(target) => {
-              update({ target });
-            }}
-          />
+          <>
+            {/* Champ vide : l'objectif proposé (reste à faire de la semaine) s'applique et s'affiche. */}
+            <TimeField
+              label="Objectif d’heures"
+              value={form.target === '' ? (suggestion?.remaining.format() ?? '') : form.target}
+              onChange={(target) => {
+                update({ target });
+              }}
+            />
+            {suggestion === null ? null : (
+              <ObjectiveSuggestions
+                suggestion={suggestion}
+                target={form.target === '' ? suggestion.remaining.format() : form.target}
+                onPick={(target) => {
+                  update({ target });
+                }}
+              />
+            )}
+          </>
         ) : (
           <>
             <Text style={styles.cardLabel}>Jour de récup</Text>

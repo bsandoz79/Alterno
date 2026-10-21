@@ -78,6 +78,7 @@ export {
 } from './reminders/departure-reminder-planner';
 export { WeekCheckPlanner } from './reminders/week-check-planner';
 export { DefaultWeekPlanner } from './planning/default-week-planner';
+export { WeekObjectiveAdvisor, type ObjectiveSuggestion } from './planning/week-objective-advisor';
 export { validatePlanningPreferences } from './planning/validate-planning-preferences';
 export type { PlanningPreferencesRepository } from './ports/planning-preferences-repository';
 export type {

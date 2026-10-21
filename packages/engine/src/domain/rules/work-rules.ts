@@ -33,6 +33,11 @@ export interface WorkRulesProps {
    * Aucun découvert si absent.
    */
   readonly maximumDeficit?: Duration;
+  /**
+   * Plafond du compteur : au-delà, les heures en plus ne sont plus comptées (7h chez La Brosse et Dupont).
+   * Aucun plafond si absent.
+   */
+  readonly maximumCredit?: Duration;
 }
 
 /**
@@ -50,7 +55,7 @@ export class WorkRules {
    * @param props - Paramètres des règles
    * @returns Les règles horaires
    * @throws {InvalidValueError} Si aucun jour n'est travaillé, si une durée n'est pas strictement positive,
-   *   si le découvert est négatif, si la pause minimale dépasse la plage de déjeuner
+   *   si le découvert ou le plafond du compteur est négatif, si la pause minimale dépasse la plage de déjeuner
    *   ou si le temps attendu est inatteignable un jour donné
    */
   static create(props: WorkRulesProps): WorkRules {
@@ -69,6 +74,9 @@ export class WorkRules {
     // Zéro est accepté : c'est une entreprise qui n'autorise aucun découvert.
     if (props.maximumDeficit?.isNegative() === true) {
       throw new InvalidValueError('Le découvert autorisé ne peut pas être négatif.');
+    }
+    if (props.maximumCredit?.isNegative() === true) {
+      throw new InvalidValueError('Le plafond du compteur ne peut pas être négatif.');
     }
 
     // Jours travaillés avec leurs horaires : construit en une passe pour ne jamais manipuler d'horaire absent.
@@ -123,6 +131,11 @@ export class WorkRules {
    */
   get maximumDeficit(): Duration {
     return this.props.maximumDeficit ?? Duration.zero();
+  }
+
+  /** Plafond du compteur, ou `null` s'il n'y en a pas. */
+  get maximumCredit(): Duration | null {
+    return this.props.maximumCredit ?? null;
   }
 
   /** Façon de déduire la pause déjeuner (par défaut, la pause minimale est toujours déduite). */

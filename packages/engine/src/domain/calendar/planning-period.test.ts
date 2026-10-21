@@ -36,6 +36,44 @@ describe('planningPeriodDays — jours travaillés d’une période de simulatio
     ).toEqual(['2026-10-14', '2026-10-15', '2026-10-16']);
   });
 
+  it('cette semaine, journée déjà finie : à partir de demain', () => {
+    expect(
+      isoDays(
+        planningPeriodDays({
+          today: wednesday,
+          start: 'this-week',
+          weeks: 1,
+          rules,
+          todayDone: true,
+        }),
+      ),
+    ).toEqual(['2026-10-15', '2026-10-16']);
+  });
+
+  it('semaine prochaine : la journée finie ne change rien', () => {
+    expect(
+      planningPeriodDays({
+        today: wednesday,
+        start: 'next-week',
+        weeks: 1,
+        rules,
+        todayDone: true,
+      }),
+    ).toHaveLength(5);
+  });
+
+  it('cas limite : vendredi soir, plus aucun jour cette semaine', () => {
+    expect(() =>
+      planningPeriodDays({
+        today: CalendarDate.fromIsoString('2026-10-16'),
+        start: 'this-week',
+        weeks: 1,
+        rules,
+        todayDone: true,
+      }),
+    ).toThrow(InvalidValueError);
+  });
+
   it('cette semaine sur 2 semaines : jours restants puis la semaine suivante complète', () => {
     expect(
       planningPeriodDays({ today: wednesday, start: 'this-week', weeks: 2, rules }),

@@ -1,6 +1,7 @@
 import {
   CalendarDate,
   parseBalance,
+  type Duration,
   type HoursCounter,
   type PaceName,
   type PeriodStart,
@@ -20,7 +21,7 @@ export interface SimulationForm {
   readonly start: PeriodStart;
   readonly weeks: PeriodWeeks;
   readonly objective: ObjectiveKind;
-  /** Objectif d'heures saisi (texte libre, ex. « 41h »). */
+  /** Objectif d'heures saisi (texte libre, ex. « 41h ») ; vide : l'objectif proposé (reste à faire). */
   readonly target: string;
   /** Jour de récup choisi (« AAAA-MM-JJ »), `null` tant qu'aucun n'est choisi. */
   readonly recoveryDate: string | null;
@@ -30,12 +31,12 @@ export interface SimulationForm {
   readonly pace: PaceName;
 }
 
-/** Valeurs de départ : la semaine prochaine, 35h (compteur neutre), rythme régulier. */
+/** Valeurs de départ : la semaine prochaine, objectif proposé (35h si rien n'est fait), rythme régulier. */
 export const DEFAULT_SIMULATION_FORM: SimulationForm = {
   start: 'next-week',
   weeks: 1,
   objective: 'hours',
-  target: '35h',
+  target: '',
   recoveryDate: null,
   recoveryKind: 'full',
   recoveryPart: 'afternoon',
@@ -53,12 +54,14 @@ export type SimulationRequestResult =
  * @param form - Contenu du formulaire
  * @param days - Jours travaillés de la période choisie
  * @param counter - Compteur actuel
+ * @param suggestedTarget - Objectif proposé (reste à faire de la semaine), utilisé si rien n'est saisi
  * @returns La demande, ou un message qui dit quoi corriger
  */
 export function toSimulationRequest(
   form: SimulationForm,
   days: readonly CalendarDate[],
   counter: HoursCounter,
+  suggestedTarget: Duration | null = null,
 ): SimulationRequestResult {
   const base = { days, pace: form.pace, counter };
   if (form.objective === 'recovery') {
@@ -77,6 +80,11 @@ export function toSimulationRequest(
         },
       },
     };
+  }
+  if (form.target.trim() === '') {
+    return suggestedTarget === null
+      ? { ok: false, error: 'Objectif d’heures : saisis un nombre d’heures (ex. 35h).' }
+      : { ok: true, request: { ...base, objective: { kind: 'hours', target: suggestedTarget } } };
   }
   try {
     return {

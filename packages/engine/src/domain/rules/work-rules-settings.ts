@@ -37,6 +37,8 @@ export interface WorkRulesSettings {
   readonly halfDayRecovery: Duration;
   /** Découvert autorisé au compteur (zéro : aucun découvert). */
   readonly maximumDeficit: Duration;
+  /** Plafond du compteur ; `null` ou absent : pas de plafond. */
+  readonly maximumCredit?: Duration | null;
 }
 
 /**
@@ -63,6 +65,7 @@ export function buildWorkRules(settings: WorkRulesSettings): WorkRules {
     fullDayRecovery: settings.fullDayRecovery,
     halfDayRecovery: settings.halfDayRecovery,
     maximumDeficit: settings.maximumDeficit,
+    ...(settings.maximumCredit == null ? {} : { maximumCredit: settings.maximumCredit }),
   });
 }
 
