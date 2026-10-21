@@ -27,6 +27,8 @@ export interface WorkRulesSettingsRecord {
   readonly halfDayRecovery: number;
   /** Absent des réglages enregistrés avant l'ajout du découvert (ALT-43). */
   readonly maximumDeficit?: number;
+  /** Plafond du compteur, en minutes ; absent avant ALT-61 (celui du preset s'applique), `null` : aucun. */
+  readonly maximumCredit?: number | null;
 }
 
 /**
@@ -44,6 +46,7 @@ export function toWorkRulesSettingsRecord(settings: WorkRulesSettings): WorkRule
     fullDayRecovery: settings.fullDayRecovery.toMinutes(),
     halfDayRecovery: settings.halfDayRecovery.toMinutes(),
     maximumDeficit: settings.maximumDeficit.toMinutes(),
+    maximumCredit: settings.maximumCredit?.toMinutes() ?? null,
   };
 }
 
@@ -67,6 +70,13 @@ export function fromWorkRulesSettingsRecord(record: WorkRulesSettingsRecord): Wo
       record.maximumDeficit === undefined
         ? laBrosseEtDupontSettings().maximumDeficit
         : Duration.ofMinutes(record.maximumDeficit),
+    // Même logique pour le plafond (ALT-61) : absent, celui du preset s'applique.
+    maximumCredit:
+      record.maximumCredit === undefined
+        ? (laBrosseEtDupontSettings().maximumCredit ?? null)
+        : record.maximumCredit === null
+          ? null
+          : Duration.ofMinutes(record.maximumCredit),
   };
 }
 
