@@ -1,13 +1,18 @@
 import { SchoolWeeks } from '@alterno/engine';
 import { Link } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
+import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
+import { MessageBox, type FormMessage } from '@/shared/components/message-box';
 import { RecoveryStatusLink } from '@/shared/components/recovery-status-link';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { usePlanCancellation } from '@/shared/hooks/use-plan-cancellation';
 import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
+import { canCancelPlan } from '@/shared/planning/cancellable';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
@@ -24,7 +29,9 @@ const TITLE = 'Mon planning';
  * @returns L'écran
  */
 export function WeekScreen() {
-  const plan = useCurrentPlan();
+  const { plan, reload } = useCurrentPlan();
+  const { cancelPlan } = usePlanCancellation();
+  const [message, setMessage] = useState<FormMessage | null>(null);
   const { schoolWeeks } = useSchoolWeeks();
   const recoveryDay = useRecoveryDay(plan);
   const today = systemClock.today();
@@ -64,6 +71,19 @@ export function WeekScreen() {
         recoveryDay={recoveryDay}
       />
       <RecoveryStatusLink plan={plan} />
+      {message === null ? null : <MessageBox message={message} />}
+      {canCancelPlan(plan, today) ? (
+        <ConfirmButton
+          label="Annuler le plan"
+          warning="À partir d’aujourd’hui, les jours repassent à 7h et la récup prévue est annulée. Les jours passés sont gardés, ainsi que les heures déjà au compteur."
+          confirmLabel="Annuler le plan"
+          onConfirm={async () => {
+            await cancelPlan(plan);
+            setMessage({ kind: 'success', text: 'Plan annulé : la semaine standard reprend.' });
+            reload();
+          }}
+        />
+      ) : null}
       <Link href="/ecole" style={styles.secondaryLink}>
         Marquer mes semaines d’école
       </Link>
