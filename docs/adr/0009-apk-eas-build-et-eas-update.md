@@ -16,6 +16,11 @@ Il faut une app installée sur le téléphone, sans passer par le Play Store, et
   `runtimeVersion` suit la `version` de l'app (`policy: appVersion`) : une mise à jour n'atteint que les APK
   de la même version, donc compatibles avec ses modules natifs.
 - `eas-cli` est lancé avec `npx eas-cli@latest`, sans l'ajouter aux dépendances du projet.
+- Mise à jour ALT-46 : la mise à jour EAS est **publiée automatiquement** après chaque merge sur `main`,
+  par le job `eas-update` du workflow CI (après le job `engine`, pour ne jamais publier un code qui échoue).
+  `expo/expo-github-action@v8` installe `eas-cli` et se connecte avec le secret `EXPO_TOKEN` ;
+  `eas update --channel preview --environment preview --non-interactive`, avec le titre du commit en message.
+  Un changement natif (nouveau module, nouvelle `version`) demande toujours un `eas build` manuel.
 - Icône de notification blanche (96 px) tirée de l'icône monochrome, couleur rouge de la charte.
 
 ## Alternatives envisagées
