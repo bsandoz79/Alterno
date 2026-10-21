@@ -102,7 +102,8 @@ export class DeviationReplanner {
     if (wanted.isGreaterThan(reachable)) {
       alerts.push({
         kind: 'target-out-of-reach',
-        message: `Objectif hors d’atteinte : il manque ${wanted.minus(reachable).format()} sur la période.`,
+        // Le manque n'est pas perdu : il sera pris sur le compteur (et peut dépasser le découvert).
+        message: `Objectif hors d’atteinte : il manque ${wanted.minus(reachable).format()} sur la période, elles seront prises sur ton compteur.`,
       });
     }
     if (wanted.isLessThan(reachable)) {

@@ -4,6 +4,8 @@ import {
   HoursCounter,
   SchoolWeeks,
   SimulatePlan,
+  TimeOfDay,
+  TimeSlot,
   laBrosseEtDupontRules,
   type DatedPlan,
 } from '@alterno/engine';
@@ -48,15 +50,18 @@ describe('selectWeek — semaine affichée dans la grille', () => {
     expect(week.total.format()).toBe('41h');
   });
 
-  it('affiche la première semaine à venir si le plan commence plus tard', () => {
-    expect(selectWeek(twoWeeks, date('2026-10-14')).monday.toIsoString()).toBe('2026-10-19');
+  it('affiche la semaine d’aujourd’hui même si le plan commence plus tard (semaine vide)', () => {
+    const week = selectWeek(twoWeeks, date('2026-10-14'));
+
+    expect(week.monday.toIsoString()).toBe('2026-10-12');
+    expect(week.total.isZero()).toBe(true);
   });
 
-  it('affiche la dernière semaine si le plan est terminé', () => {
-    expect(selectWeek(twoWeeks, date('2026-11-10')).monday.toIsoString()).toBe('2026-10-26');
+  it('affiche la semaine d’aujourd’hui, pas l’ancienne, quand le plan est terminé', () => {
+    expect(selectWeek(twoWeeks, date('2026-11-10')).monday.toIsoString()).toBe('2026-11-09');
   });
 
-  it('laisse vide un jour sans plan (jour de récup)', () => {
+  it('marque le jour de récup du plan, et lui seul', () => {
     const withRecovery = simulate.execute({
       days: ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].map(date),
       objective: { kind: 'recovery', date: date('2026-10-23'), recovery: 'full' },
@@ -67,6 +72,8 @@ describe('selectWeek — semaine affichée dans la grille', () => {
 
     expect(friday?.date.toIsoString()).toBe('2026-10-23');
     expect(friday?.day).toBeNull();
+    expect(friday?.recovery).toBe('full');
+    expect(selectWeek(withRecovery, date('2026-10-19')).columns[0]?.recovery).toBeNull();
   });
 });
 
@@ -115,6 +122,37 @@ describe('dayBlocks — blocs d’une journée dans la grille', () => {
     expect(blocks[1]).toMatchObject({ label: '12h15 – 13h00' });
     expect(blocks[1]?.top).toBeCloseTo(4.25 / 9);
   });
+
+  it('dessine un seul bloc, sans pause, pour une journée finie avant la pause', () => {
+    const morningOnly = {
+      day: 'thursday' as const,
+      arrival: TimeOfDay.of(7, 30),
+      lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(13, 0)),
+      departure: TimeOfDay.of(9, 7),
+      worked: Duration.ofHours(1, 37),
+    };
+
+    const blocks = dayBlocks(morningOnly, { start: 7, end: 10 });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ kind: 'work', label: '7h30 – 9h07' });
+    expect(blocks[0]?.top).toBeCloseTo(0.5 / 3);
+    expect((blocks[0]?.top ?? 0) + (blocks[0]?.height ?? 0)).toBeLessThanOrEqual(1);
+  });
+
+  it('dessine un seul bloc pour une journée commencée après la pause', () => {
+    const afternoonOnly = {
+      day: 'monday' as const,
+      arrival: TimeOfDay.of(14, 0),
+      lunchBreak: TimeSlot.between(TimeOfDay.of(12, 0), TimeOfDay.of(12, 45)),
+      departure: TimeOfDay.of(18, 0),
+      worked: Duration.ofHours(4),
+    };
+
+    expect(dayBlocks(afternoonOnly, { start: 14, end: 18 }).map((block) => block.label)).toEqual([
+      '14h00 – 18h00',
+    ]);
+  });
 });
 
 describe('dayKind — ce qu’affiche la case d’un jour', () => {
@@ -132,9 +170,15 @@ describe('dayKind — ce qu’affiche la case d’un jour', () => {
     expect(monday && dayKind(monday, schoolWeeks)).toBe('school');
   });
 
-  it('affiche « récup » pour un autre jour sans plan', () => {
+  it('n’affiche « récup » que le jour de récup du plan', () => {
+    const recovery = { date: date('2026-11-13'), recovery: 'half' as const, day: null };
+
+    expect(dayKind(recovery, schoolWeeks)).toBe('recovery');
+  });
+
+  it('n’affiche rien de particulier pour un autre jour sans plan', () => {
     const monday = weekAt(twoWeeks, date('2026-11-09')).columns[0];
 
-    expect(monday && dayKind(monday, schoolWeeks)).toBe('off');
+    expect(monday && dayKind(monday, schoolWeeks)).toBe('none');
   });
 });

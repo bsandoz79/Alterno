@@ -7,7 +7,7 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { dayBlocks, dayKind, gridHours, type WeekView } from '../week-view';
+import { dayBlocks, dayKind, gridHours, type WeekColumn, type WeekView } from '../week-view';
 
 const HOUR_HEIGHT = 46;
 
@@ -63,71 +63,91 @@ export function WeekGrid({ week, today, schoolWeeks }: WeekGridProps) {
             </Text>
           ))}
         </View>
-        {week.columns.map(({ date, day }) => (
-          // Appui sur un jour planifié : ouvre son détail pour le modifier.
-          <Pressable
-            key={date.toIsoString()}
-            style={({ pressed }) => [styles.column, pressed && styles.columnPressed]}
-            disabled={day === null}
-            accessibilityRole="button"
-            accessibilityLabel={`Détail du ${formatShortDate(date)}`}
-            onPress={() => {
-              router.push({ pathname: '/jour/[date]', params: { date: date.toIsoString() } });
-            }}
-          >
-            {Array.from({ length: hourCount }, (_, index) => (
-              <View key={index} style={[styles.hourLine, { top: index * HOUR_HEIGHT }]} />
-            ))}
-            {day === null ? (
-              dayKind({ date, day }, schoolWeeks) === 'school' ? (
-                <View style={[styles.block, styles.schoolBlock, { top: 0, height }]}>
-                  <Text style={styles.schoolText}>École</Text>
-                </View>
+        {week.columns.map((column) => {
+          const { date, day } = column;
+          const kind = dayKind(column, schoolWeeks);
+          return (
+            // Appui sur un jour planifié : ouvre son détail pour le modifier.
+            <Pressable
+              key={date.toIsoString()}
+              style={({ pressed }) => [styles.column, pressed && styles.columnPressed]}
+              disabled={day === null}
+              accessibilityRole="button"
+              accessibilityLabel={`Détail du ${formatShortDate(date)}`}
+              onPress={() => {
+                router.push({ pathname: '/jour/[date]', params: { date: date.toIsoString() } });
+              }}
+            >
+              {Array.from({ length: hourCount }, (_, index) => (
+                <View key={index} style={[styles.hourLine, { top: index * HOUR_HEIGHT }]} />
+              ))}
+              {day === null ? (
+                kind === 'school' ? (
+                  <View style={[styles.block, styles.schoolBlock, { top: 0, height }]}>
+                    <Text style={styles.schoolText}>École</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.emptyDay}>{kind === 'recovery' ? 'Récup' : '—'}</Text>
+                )
               ) : (
-                <Text style={styles.emptyDay}>—</Text>
-              )
-            ) : (
-              dayBlocks(day.plan, hours).map((block) => (
-                <View
-                  key={`${block.kind}-${block.label}`}
-                  style={[
-                    styles.block,
-                    block.kind === 'work' ? styles.workBlock : styles.lunchBlock,
-                    { top: block.top * height, height: block.height * height },
-                  ]}
-                  accessibilityLabel={`${formatShortDate(date)} : ${block.kind === 'work' ? 'travail' : 'pause'} ${block.label}`}
-                >
-                  {block.height * height >= 30 ? (
-                    <Text
-                      style={[
-                        styles.blockText,
-                        block.kind === 'work' ? styles.workText : styles.lunchText,
-                      ]}
-                    >
-                      {block.label.replace(' – ', '\n')}
-                    </Text>
-                  ) : null}
-                </View>
-              ))
-            )}
-          </Pressable>
-        ))}
+                dayBlocks(day.plan, hours).map((block) => (
+                  <View
+                    key={`${block.kind}-${block.label}`}
+                    style={[
+                      styles.block,
+                      block.kind === 'work' ? styles.workBlock : styles.lunchBlock,
+                      { top: block.top * height, height: block.height * height },
+                    ]}
+                    accessibilityLabel={`${formatShortDate(date)} : ${block.kind === 'work' ? 'travail' : 'pause'} ${block.label}`}
+                  >
+                    {block.height * height >= 30 ? (
+                      <Text
+                        style={[
+                          styles.blockText,
+                          block.kind === 'work' ? styles.workText : styles.lunchText,
+                        ]}
+                      >
+                        {block.label.replace(' – ', '\n')}
+                      </Text>
+                    ) : null}
+                  </View>
+                ))
+              )}
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.footerRow}>
         <View style={{ width: RULER_WIDTH }} />
-        {week.columns.map(({ date, day }) => (
-          <Text key={date.toIsoString()} style={styles.footerText}>
-            {day !== null
-              ? day.plan.worked.format()
-              : dayKind({ date, day }, schoolWeeks) === 'school'
-                ? 'école'
-                : 'récup'}
+        {week.columns.map((column) => (
+          <Text key={column.date.toIsoString()} style={styles.footerText}>
+            {footerLabel(column, dayKind(column, schoolWeeks))}
           </Text>
         ))}
       </View>
     </View>
   );
+}
+
+/**
+ * Texte sous une colonne : temps prévu, récup, école, ou tiret pour un jour sans plan.
+ *
+ * @param column - Colonne de la semaine
+ * @param kind - Ce qu'affiche la case
+ * @returns Le texte à afficher
+ */
+function footerLabel(column: WeekColumn, kind: ReturnType<typeof dayKind>): string {
+  switch (kind) {
+    case 'work':
+      return column.day?.plan.worked.format() ?? '—';
+    case 'recovery':
+      return column.recovery === 'half' ? '½ récup' : 'récup';
+    case 'school':
+      return 'école';
+    case 'none':
+      return '—';
+  }
 }
 
 const styles = StyleSheet.create({
