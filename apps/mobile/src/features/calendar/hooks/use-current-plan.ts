@@ -8,13 +8,15 @@ import { useRepositories } from '@/shared/storage/repositories-context';
 export type CurrentPlanState = DatedPlan | null | undefined;
 
 /**
- * Charge le plan en cours à chaque affichage de l'écran (il a pu être validé entre-temps dans Simulation).
+ * Charge le plan en cours à chaque affichage de l'écran (il a pu être validé entre-temps dans Simulation),
+ * et après une annulation.
  *
- * @returns Le plan en cours, `null` s'il n'y en a pas, `undefined` pendant le chargement
+ * @returns Le plan en cours (`null` s'il n'y en a pas, `undefined` pendant le chargement) et l'action de rechargement
  */
-export function useCurrentPlan(): CurrentPlanState {
+export function useCurrentPlan(): { readonly plan: CurrentPlanState; readonly reload: () => void } {
   const { plans } = useRepositories();
   const [plan, setPlan] = useState<CurrentPlanState>(undefined);
+  const [version, setVersion] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,8 +29,14 @@ export function useCurrentPlan(): CurrentPlanState {
       return () => {
         active = false;
       };
-    }, [plans]),
+      // `version` relance le chargement après une annulation, sans quitter l'écran.
+    }, [plans, version]),
   );
 
-  return plan;
+  return {
+    plan,
+    reload: () => {
+      setVersion((current) => current + 1);
+    },
+  };
 }

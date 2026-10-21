@@ -9,7 +9,7 @@ import {
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
-import { dayEditFormFrom, previewDayEdit, type DayEditForm } from './day-edit-form';
+import { dayEditFormFrom, isOutOfReach, previewDayEdit, type DayEditForm } from './day-edit-form';
 
 const rules = laBrosseEtDupontRules();
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
@@ -48,6 +48,17 @@ describe('dayEditFormFrom — formulaire pré-rempli avec le plan du jour', () =
       departure: '16h57',
       pace: 'steady',
     });
+  });
+});
+
+describe('isOutOfReach — le plan devient-il irréalisable ?', () => {
+  it('oui quand le départ du lundi à 9h07 ne peut plus être rattrapé sur la semaine', () => {
+    expect(isOutOfReach(preview({ departure: '9h07' }))).toBe(true);
+  });
+
+  it('non pour un petit écart rattrapable, ni pour une saisie invalide', () => {
+    expect(isOutOfReach(preview({ departure: '16h07' }))).toBe(false);
+    expect(isOutOfReach(preview({ departure: 'midi' }))).toBe(false);
   });
 });
 

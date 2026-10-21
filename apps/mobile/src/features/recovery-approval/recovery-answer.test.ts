@@ -27,7 +27,7 @@ describe('Réponse au suivi de la récup', () => {
     });
     expect(answerConfirmation('refused', friday)).toEqual({
       kind: 'info',
-      text: 'Récup du ven. 30 oct. refusée. Pour retravailler ce jour-là, refais une simulation.',
+      text: 'Récup du ven. 30 oct. refusée. Tu peux l’annuler ci-dessous : ce jour redeviendra une journée de travail.',
     });
     expect(answerConfirmation('not-yet', friday)).toEqual({
       kind: 'info',

@@ -34,7 +34,7 @@ export function answerConfirmation(
     case 'refused':
       return {
         kind: 'info',
-        text: `Récup du ${day} refusée. Pour retravailler ce jour-là, refais une simulation.`,
+        text: `Récup du ${day} refusée. Tu peux l’annuler ci-dessous : ce jour redeviendra une journée de travail.`,
       };
     case 'not-yet':
       return { kind: 'info', text: 'D’accord, Alterno te redemandera plus tard.' };

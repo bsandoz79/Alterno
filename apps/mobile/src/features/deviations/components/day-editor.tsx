@@ -2,6 +2,7 @@ import type { PaceName } from '@alterno/engine';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmButton } from '@/shared/components/confirm-button';
 import { MessageBox } from '@/shared/components/message-box';
 import { SegmentedControl } from '@/shared/components/segmented-control';
 import { TimeField } from '@/shared/components/time-field';
@@ -9,7 +10,7 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { FIELD_LABELS } from '../day-edit-form';
+import { FIELD_LABELS, isOutOfReach } from '../day-edit-form';
 import { useDayEdit, type DayEditParams } from '../hooks/use-day-edit';
 import { CHANGE_KINDS, changeFields, type ChangeKind } from '../report-change';
 import { RecalculationPreview } from './recalculation-preview';
@@ -36,7 +37,9 @@ interface DayEditorProps extends DayEditParams {
  * @returns L'éditeur
  */
 export function DayEditor({ change, ...params }: DayEditorProps) {
-  const { form, update, preview, save, message } = useDayEdit(params);
+  const { form, update, preview, save, saveAndCancel, message } = useDayEdit(params);
+  // Plan devenu irréalisable : deux choix, garder (le manque va au compteur) ou annuler la suite.
+  const outOfReach = isOutOfReach(preview);
   const [showAll, setShowAll] = useState(false);
   const fields = changeFields(showAll ? null : change);
   const question = CHANGE_KINDS.find((choice) => choice.kind === change)?.question;
@@ -87,8 +90,18 @@ export function DayEditor({ change, ...params }: DayEditorProps) {
         disabled={!preview.ok}
         onPress={() => void save()}
       >
-        <Text style={styles.saveLabel}>Enregistrer et recalculer</Text>
+        <Text style={styles.saveLabel}>
+          {outOfReach ? 'Garder et prendre sur le compteur' : 'Enregistrer et recalculer'}
+        </Text>
       </Pressable>
+      {outOfReach ? (
+        <ConfirmButton
+          label="Annuler le plan"
+          warning="La journée est enregistrée telle que saisie, puis les jours suivants repassent à 7h et la récup prévue est annulée."
+          confirmLabel="Enregistrer et annuler"
+          onConfirm={saveAndCancel}
+        />
+      ) : null}
     </>
   );
 }

@@ -3,6 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { FormMessage } from '@/shared/components/message-box';
+import { usePlanCancellation } from '@/shared/hooks/use-plan-cancellation';
+import { formatShortDate } from '@/shared/format/format-date';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import { answerConfirmation } from '../recovery-answer';
@@ -15,6 +17,8 @@ export interface RecoveryApprovalState {
   readonly answer: (answer: RecoveryAnswer) => Promise<void>;
   /** Confirmation après une réponse. */
   readonly message: FormMessage | null;
+  /** Annule la récup (cas d'usage `CancelRecovery`) puis recharge l'écran. */
+  readonly cancel: () => Promise<void>;
 }
 
 /**
@@ -30,6 +34,7 @@ export function useRecoveryApproval(
   const { plans } = useRepositories();
   const [recovery, setRecovery] = useState<PlannedRecovery | null | undefined>(undefined);
   const [message, setMessage] = useState<FormMessage | null>(null);
+  const { cancelRecovery } = usePlanCancellation();
 
   useFocusEffect(
     useCallback(() => {
@@ -66,5 +71,19 @@ export function useRecoveryApproval(
     }
   }, [answerFromNotification, answer]);
 
-  return { recovery, answer, message };
+  const cancel = useCallback(async () => {
+    const cancelledDate = recovery?.date;
+    await cancelRecovery();
+    setRecovery(null);
+    setMessage(
+      cancelledDate === undefined
+        ? null
+        : {
+            kind: 'success',
+            text: `Récup annulée : le ${formatShortDate(cancelledDate)} redevient une journée de travail, la suite du plan repasse à 7h par jour.`,
+          },
+    );
+  }, [cancelRecovery, recovery]);
+
+  return { recovery, answer, message, cancel };
 }
