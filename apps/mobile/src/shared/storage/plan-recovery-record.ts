@@ -3,15 +3,22 @@ import {
   type DatedPlan,
   type PlannedRecovery,
   type RecoveryKind,
+  type RecoveryPart,
 } from '@alterno/engine';
 
-/** Récup du plan sous forme de données brutes : date « AAAA-MM-JJ » et type (`full` ou `half`). */
+/**
+ * Récup du plan sous forme de données brutes : date « AAAA-MM-JJ », type (`full` ou `half`)
+ * et, pour une demi-journée, la moitié en repos (`morning` ou `afternoon`).
+ */
 export interface PlanRecoveryRecord {
   readonly date: string;
   readonly kind: string;
+  /** Absente des récups enregistrées avant ALT-56. */
+  readonly part?: string | null;
 }
 
 const RECOVERY_KINDS: readonly RecoveryKind[] = ['full', 'half'];
+const RECOVERY_PARTS: readonly RecoveryPart[] = ['morning', 'afternoon'];
 
 /**
  * Convertit la récup du plan en données brutes.
@@ -20,7 +27,7 @@ const RECOVERY_KINDS: readonly RecoveryKind[] = ['full', 'half'];
  * @returns Ses données à enregistrer
  */
 export function toPlanRecoveryRecord(recovery: PlannedRecovery): PlanRecoveryRecord {
-  return { date: recovery.date.toIsoString(), kind: recovery.kind };
+  return { date: recovery.date.toIsoString(), kind: recovery.kind, part: recovery.part ?? null };
 }
 
 /**
@@ -37,5 +44,11 @@ export function withPlanRecovery(plan: DatedPlan, record: PlanRecoveryRecord | n
   if (record === null || kind === undefined) {
     return plan;
   }
-  return { ...plan, recovery: { date: CalendarDate.fromIsoString(record.date), kind } };
+  // Une moitié absente ou illisible n'est pas gardée : l'après-midi s'applique alors par défaut.
+  const part = RECOVERY_PARTS.find((candidate) => candidate === record.part);
+  const date = CalendarDate.fromIsoString(record.date);
+  return {
+    ...plan,
+    recovery: part === undefined ? { date, kind } : { date, kind, part },
+  };
 }

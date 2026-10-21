@@ -71,6 +71,8 @@ const MIGRATIONS: readonly string[] = [
   `ALTER TABLE reminder_settings ADD COLUMN at_departure INTEGER;`,
   // Version 10 : question de fin de semaine (1 / 0 ; NULL pour un réglage enregistré avant : activée).
   `ALTER TABLE reminder_settings ADD COLUMN week_check INTEGER;`,
+  // Version 11 : moitié de la demi-journée de récup en repos (NULL : l'après-midi, comme avant).
+  `ALTER TABLE plan_recovery ADD COLUMN part TEXT;`,
 ];
 
 /**

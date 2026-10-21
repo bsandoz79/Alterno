@@ -10,6 +10,7 @@ import {
   laBrosseEtDupontRules,
   laBrosseEtDupontSettings,
   type DatedPlan,
+  type RecoveryPart,
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
@@ -101,18 +102,21 @@ const describePlan = (plan: DatedPlan | null): string[] =>
         `total ${plan.totalWorked.format()}`,
         plan.recovery === undefined
           ? 'sans récup'
-          : `récup ${plan.recovery.date.toIsoString()} ${plan.recovery.kind}`,
+          : `récup ${plan.recovery.date.toIsoString()} ${plan.recovery.kind} ${plan.recovery.part ?? ''}`,
       ];
 
 /** Plan qui prépare une récup le dernier jour de la période. */
-const recoveryPlanFor = (days: readonly CalendarDate[]): DatedPlan => {
+const recoveryPlanFor = (
+  days: readonly CalendarDate[],
+  part: RecoveryPart = 'afternoon',
+): DatedPlan => {
   const last = days.at(-1);
   if (last === undefined) {
     throw new Error('Période de test vide');
   }
   return simulate.execute({
     days,
-    objective: { kind: 'recovery', date: last, recovery: 'half' },
+    objective: { kind: 'recovery', date: last, recovery: 'half', part },
     pace: 'steady',
     counter: HoursCounter.zero(),
   });
@@ -172,6 +176,13 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await plans.saveCurrent(plan);
 
       expect(describePlan(await plans.loadCurrent())).toEqual(describePlan(plan));
+    });
+
+    it('retrouve la moitié de journée prise en repos (matin)', async () => {
+      const { plans } = await create();
+      await plans.saveCurrent(recoveryPlanFor(WEEK, 'morning'));
+
+      expect((await plans.loadCurrent())?.recovery?.part).toBe('morning');
     });
 
     it('oublie la récup quand le nouveau plan n’en prépare pas', async () => {
