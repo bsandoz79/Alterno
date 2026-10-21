@@ -7,7 +7,8 @@ import type { DayPlan } from './plan';
  * - `before-start` : pas encore arrivé ; toute la journée reste à faire ;
  * - `working` : au travail ; temps restant avant le départ prévu, pause déduite ;
  * - `lunch` : pendant la pause ; elle finit à `lunchEnd`, puis il reste `remaining` ;
- * - `overtime` : départ prévu atteint ou dépassé, de `beyond`.
+ * - `overtime` : départ prévu atteint ou dépassé, de `beyond` ;
+ * - `day-over` : bien après le départ prévu : la journée est terminée (on est sans doute parti).
  */
 export type DayProgress =
   | { readonly kind: 'before-start'; readonly arrival: TimeOfDay; readonly remaining: Duration }
@@ -18,7 +19,14 @@ export type DayProgress =
       readonly departure: TimeOfDay;
       readonly remaining: Duration;
     }
-  | { readonly kind: 'overtime'; readonly departure: TimeOfDay; readonly beyond: Duration };
+  | { readonly kind: 'overtime'; readonly departure: TimeOfDay; readonly beyond: Duration }
+  | { readonly kind: 'day-over'; readonly departure: TimeOfDay };
+
+/**
+ * Délai après le départ prévu au-delà duquel la journée est considérée comme terminée :
+ * passé ce délai, afficher « +6h43 au-delà du départ » le soir n'a plus de sens.
+ */
+export const DEFAULT_DAY_OVER_AFTER = Duration.ofHours(1);
 
 /**
  * Temps restant à travailler aujourd'hui, à la minute près : le temps prévu moins ce qui est déjà fait.
@@ -26,14 +34,22 @@ export type DayProgress =
  *
  * @param day - Journée prévue
  * @param now - Heure actuelle (fournie par l'horloge)
+ * @param dayOverAfter - Délai après le départ prévu au bout duquel la journée est terminée (1h par défaut)
  * @returns L'avancement de la journée
  */
-export function dayProgress(day: DayPlan, now: TimeOfDay): DayProgress {
+export function dayProgress(
+  day: DayPlan,
+  now: TimeOfDay,
+  dayOverAfter: Duration = DEFAULT_DAY_OVER_AFTER,
+): DayProgress {
   if (now.isBefore(day.arrival)) {
     return { kind: 'before-start', arrival: day.arrival, remaining: day.worked };
   }
   if (!now.isBefore(day.departure)) {
-    return { kind: 'overtime', departure: day.departure, beyond: day.departure.durationUntil(now) };
+    const beyond = day.departure.durationUntil(now);
+    return beyond.isLessThan(dayOverAfter)
+      ? { kind: 'overtime', departure: day.departure, beyond }
+      : { kind: 'day-over', departure: day.departure };
   }
   const remaining = atLeastZero(day.worked.minus(workedSoFar(day, now)));
   const { lunchBreak } = day;
