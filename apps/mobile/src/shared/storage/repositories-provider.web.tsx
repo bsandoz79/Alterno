@@ -3,6 +3,7 @@ import { useMemo, type ReactNode } from 'react';
 
 import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
+import { BrowserPersonalDataEraser } from './browser/browser-personal-data-eraser';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
 import { BrowserReminderSettingsRepository } from './browser/browser-reminder-settings-repository';
@@ -40,6 +41,7 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
       // Le réglage est gardé sur le web, mais aucun rappel n'y est programmé (pas de notifications).
       reminders: new BrowserReminderSettingsRepository(window.localStorage),
       notifier: new SilentNotifier(),
+      eraser: new BrowserPersonalDataEraser(window.localStorage),
     };
   }, []);
   return <RepositoriesContext value={repositories}>{children}</RepositoriesContext>;

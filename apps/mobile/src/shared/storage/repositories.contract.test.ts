@@ -18,6 +18,7 @@ import { SilentNotifier } from '../notifications/silent-notifier';
 import type { PickedDocument } from './annual-calendar-store';
 import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
+import { BrowserPersonalDataEraser } from './browser/browser-personal-data-eraser';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
 import { BrowserReminderSettingsRepository } from './browser/browser-reminder-settings-repository';
 import { BrowserPlanningPreferencesRepository } from './browser/browser-planning-preferences-repository';
@@ -27,6 +28,7 @@ import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
+import { SqlitePersonalDataEraser } from './sqlite/sqlite-personal-data-eraser';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
 import { SqliteReminderSettingsRepository } from './sqlite/sqlite-reminder-settings-repository';
 import { SqlitePlanningPreferencesRepository } from './sqlite/sqlite-planning-preferences-repository';
@@ -55,6 +57,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         annualCalendar: new SqliteAnnualCalendarStore(db, createMemoryDocumentFiles()),
         reminders: new SqliteReminderSettingsRepository(db),
         notifier: new SilentNotifier(),
+        eraser: new SqlitePersonalDataEraser(db),
       };
     },
   ],
@@ -71,6 +74,7 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         annualCalendar: new BrowserAnnualCalendarStore(storage),
         reminders: new BrowserReminderSettingsRepository(storage),
         notifier: new SilentNotifier(),
+        eraser: new BrowserPersonalDataEraser(storage),
       });
     },
   ],
@@ -421,6 +425,41 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       await reminders.save(ReminderSettings.disabled());
 
       expect((await reminders.load()).departureLead).toBeNull();
+    });
+  });
+
+  describe('effacement de toutes les données (RGPD)', () => {
+    it('remet chaque donnée à son état initial, comme au premier lancement', async () => {
+      const repositories = await create();
+      await repositories.plans.saveCurrent(recoveryPlanFor(WEEK));
+      await repositories.counter.save(HoursCounter.of(Duration.ofHours(3)));
+      await repositories.workRules.save({
+        ...laBrosseEtDupontSettings(),
+        expectedDailyWork: Duration.ofHours(8),
+      });
+      await repositories.preferences.save({ days: { monday: { arrival: TimeOfDay.of(8, 30) } } });
+      await repositories.schoolWeeks.save(SchoolWeeks.of(datesFrom(['2026-11-02'])));
+      await repositories.annualCalendar.attach(
+        {
+          uri: 'file:///cache/calendrier.pdf',
+          name: 'calendrier.pdf',
+          mimeType: 'application/pdf',
+          size: 100,
+          dataUrl: 'data:application/pdf;base64,JVBERi0=',
+        },
+        CalendarDate.fromIsoString('2026-10-21'),
+      );
+      await repositories.reminders.save(ReminderSettings.disabled());
+
+      await repositories.eraser.eraseAll();
+
+      expect(await repositories.plans.loadCurrent()).toBeNull();
+      expect((await repositories.counter.load()).balance.isZero()).toBe(true);
+      expect(await repositories.workRules.load()).toBeNull();
+      expect(await repositories.preferences.load()).toEqual({});
+      expect((await repositories.schoolWeeks.load()).mondays()).toEqual([]);
+      expect(await repositories.annualCalendar.load()).toBeNull();
+      expect((await repositories.reminders.load()).departureLead?.format()).toBe('0h15');
     });
   });
 });
