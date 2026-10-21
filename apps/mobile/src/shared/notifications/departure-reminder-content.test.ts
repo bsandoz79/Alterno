@@ -39,6 +39,21 @@ describe('Rappel de départ', () => {
     });
   });
 
+  it('en fin de semaine, demande si la semaine s’est passée comme prévu, avec les boutons Oui / Corriger', () => {
+    const check: DepartureReminder = {
+      ...reminder,
+      kind: 'week-check',
+      at: TimeOfDay.of(18, 15),
+    };
+
+    expect(departureReminderContent(check)).toEqual({
+      title: 'Fin de semaine',
+      body: 'Ta semaine s’est passée comme prévu ?',
+      data: { url: '/semaine' },
+      categoryIdentifier: 'weekcheck',
+    });
+  });
+
   it('se déclenche à l’heure locale du rappel, ce jour-là', () => {
     const time = departureReminderTime(reminder);
 
