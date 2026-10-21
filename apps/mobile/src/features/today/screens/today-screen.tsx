@@ -17,12 +17,13 @@ import { RADIUS, SPACING } from '@/shared/theme/spacing';
 import { DepartureCard } from '../components/departure-card';
 import { ReportChangeCard } from '../components/report-change-card';
 import { RestOfWeek } from '../components/rest-of-week';
+import { TimeLeftBanner } from '../components/time-left-banner';
 import { useTodayPlan } from '../hooks/use-today-plan';
 import { recoveryNotice, type RecoveryNotice } from '../recovery-notice';
 import { restOfWeek, todayStatus } from '../today-view';
 
 /**
- * Écran « Aujourd'hui » (accueil) : l'heure de départ prévue en grand, le bouton
+ * Écran « Aujourd'hui » (accueil) : le temps restant à travailler (petit bandeau), l'heure de départ prévue en grand, le bouton
  * « Signaler un changement » et le reste de la semaine. On n'ouvre l'app que pour ça :
  * le plan est considéré comme suivi, seuls les écarts se déclarent. Sans plan validé,
  * la semaine standard est suivie, et un encadré le signale.
@@ -44,6 +45,7 @@ export function TodayScreen() {
 
   return (
     <ScreenContainer title="Aujourd'hui" overline={overline}>
+      {status.kind === 'work' ? <TimeLeftBanner day={status.day.plan} /> : null}
       {plan === null ? null : <DefaultPlanNotice plan={plan} />}
       {status.kind === 'work' ? (
         <>
