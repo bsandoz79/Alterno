@@ -22,6 +22,8 @@ export interface PlanningPeriodRequest {
   readonly rules: WorkRules;
   /** Semaines d'école à exclure ; aucune si absent. */
   readonly schoolWeeks?: SchoolWeeks;
+  /** `true` si la journée d'aujourd'hui est finie (départ prévu passé) : « cette semaine » part de demain. */
+  readonly todayDone?: boolean;
 }
 
 /**
@@ -36,13 +38,14 @@ export interface PlanningPeriodRequest {
  *   (« cette semaine » demandé un samedi) ou si la période ne contient que des jours d'école
  */
 export function planningPeriodDays(request: PlanningPeriodRequest): readonly CalendarDate[] {
-  const { today, start, weeks, rules, schoolWeeks } = request;
+  const { today, start, weeks, rules, schoolWeeks, todayDone = false } = request;
   if (!Number.isInteger(weeks) || weeks < 1) {
     throw new InvalidValueError('La période doit durer au moins une semaine.');
   }
   const thisMonday = today.startOfWeek();
   const firstMonday = start === 'next-week' ? thisMonday.plusDays(DAYS_PER_WEEK) : thisMonday;
-  const from = start === 'next-week' ? firstMonday : today;
+  const firstDayLeft = todayDone ? today.plusDays(1) : today;
+  const from = start === 'next-week' ? firstMonday : firstDayLeft;
   const end = firstMonday.plusDays(DAYS_PER_WEEK * weeks);
 
   const days: CalendarDate[] = [];
