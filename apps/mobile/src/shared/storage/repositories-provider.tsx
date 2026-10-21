@@ -1,4 +1,8 @@
-import { ScheduleDepartureReminders, type ReminderScheduling } from '@alterno/engine';
+import {
+  PlanWithDefaultWeek,
+  ScheduleDepartureReminders,
+  type ReminderScheduling,
+} from '@alterno/engine';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useMemo, type ReactNode } from 'react';
 
@@ -42,7 +46,8 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
 
 /**
  * Crée les dépôts une seule fois à partir de la base ouverte par `SQLiteProvider`.
- * Le dépôt du plan est décoré : chaque plan enregistré reprogramme les rappels de départ
+ * Le dépôt du plan est décoré deux fois : faute de plan validé, il donne la semaine standard
+ * (`PlanWithDefaultWeek`), et chaque plan enregistré reprogramme les rappels de départ
  * (cas d'usage `ScheduleDepartureReminders`). Le réglage des rappels, lui, est validé
  * depuis son écran, qui affiche le résultat de la reprogrammation.
  */
@@ -50,7 +55,14 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
   const db = useSQLiteContext();
   const { repositories, reschedule } = useMemo(() => {
     const sql = fromExpoDatabase(db);
-    const plans = new SqlitePlanRepository(sql);
+    const workRules = new SqliteWorkRulesSettingsRepository(sql);
+    const preferences = new SqlitePlanningPreferencesRepository(sql);
+    const schoolWeeks = new SqliteSchoolWeeksRepository(sql);
+    const plans = new PlanWithDefaultWeek(
+      new SqlitePlanRepository(sql),
+      { workRules, preferences, schoolWeeks },
+      systemClock,
+    );
     const reminders = new SqliteReminderSettingsRepository(sql);
     const notifier = createNotifier();
     const scheduler = new ScheduleDepartureReminders(plans, reminders, notifier, systemClock);
@@ -58,9 +70,9 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
     const all: Repositories = {
       plans: new ReschedulingPlanRepository(plans, rescheduleReminders),
       counter: new SqliteCounterRepository(sql),
-      workRules: new SqliteWorkRulesSettingsRepository(sql),
-      preferences: new SqlitePlanningPreferencesRepository(sql),
-      schoolWeeks: new SqliteSchoolWeeksRepository(sql),
+      workRules,
+      preferences,
+      schoolWeeks,
       annualCalendar: new SqliteAnnualCalendarStore(sql, expoDocumentFiles),
       reminders,
       notifier,
