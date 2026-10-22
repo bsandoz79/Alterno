@@ -21,3 +21,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0014](0014-mes-donnees-export-et-effacement.md) | « Mes données » : export JSON et effacement, sans serveur |
 | [0015](0015-partir-plus-tard-ou-arriver-plus-tot.md) | Partir plus tard ou arriver plus tôt : bout de journée choisi par jour |
 | [0016](0016-garder-son-heure-d-arrivee-au-recalcul.md) | Garder son heure d'arrivée quand un recalcul la repousse |
+| [0017](0017-etirer-les-blocs-d-une-journee.md) | Étirer les blocs d'une journée (simulation et semaine) |
