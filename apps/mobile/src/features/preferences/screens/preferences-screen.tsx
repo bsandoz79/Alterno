@@ -5,6 +5,7 @@ import { MessageBox } from '@/shared/components/message-box';
 import { BrandSwitch } from '@/shared/components/brand-switch';
 import { InfoTip } from '@/shared/components/info-tip';
 import { ScreenContainer } from '@/shared/components/screen-container';
+import { SegmentedControl } from '@/shared/components/segmented-control';
 import { SettingsSection } from '@/shared/components/settings-section';
 import { TimeField } from '@/shared/components/time-field';
 import { COLORS } from '@/shared/theme/colors';
@@ -12,11 +13,16 @@ import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { usePlanningPreferences } from '../hooks/use-planning-preferences';
-import { FIELD_LABELS, PREFERENCE_DAYS, PREFERENCE_DAY_LABELS } from '../preferences-form';
+import {
+  FIELD_LABELS,
+  FLEXIBLE_END_OPTIONS,
+  PREFERENCE_DAYS,
+  PREFERENCE_DAY_LABELS,
+} from '../preferences-form';
 
 /**
  * Écran « Préférences par jour » : habitudes par défaut (arrivée, pause), puis, pour chaque jour,
- * arrivée, pause, départ au plus tard et « 7h pile ». Un champ vide reprend l'habitude par défaut.
+ * arrivée, pause, arrivée au plus tôt, départ au plus tard, façon d'ajouter des heures et « 7h pile ». Un champ vide reprend l'habitude par défaut.
  *
  * @returns L'écran
  */
@@ -56,7 +62,7 @@ export function PreferencesScreen() {
 
           <InfoTip
             title="Préférences par jour"
-            info="Pour chaque jour, laisse vide pour garder tes habitudes."
+            info="Pour chaque jour, laisse vide pour garder tes habitudes. « Heures en plus » : partir plus tard garde ton arrivée, arriver plus tôt garde ton départ d’une journée de 7h (et l’inverse quand il faut moins d’heures). Arrivée au plus tôt et départ au plus tard bornent la journée : pour un vendredi court, mets ton arrivée habituelle et 15h30."
           />
 
           {PREFERENCE_DAYS.map((day) => {
@@ -88,12 +94,30 @@ export function PreferencesScreen() {
                   }}
                 />
                 <TimeField
+                  label={FIELD_LABELS.earliestArrival}
+                  value={values.earliestArrival}
+                  placeholder="—"
+                  onChange={(value) => {
+                    updateDay(day, 'earliestArrival', value);
+                  }}
+                />
+                <TimeField
                   label={FIELD_LABELS.latestDeparture}
                   value={values.latestDeparture}
                   placeholder="—"
                   onChange={(value) => {
                     updateDay(day, 'latestDeparture', value);
                   }}
+                />
+                <Text style={styles.switchLabel}>Heures en plus</Text>
+                <SegmentedControl
+                  options={FLEXIBLE_END_OPTIONS}
+                  selected={values.flexibleEnd}
+                  onChange={(value) => {
+                    updateDay(day, 'flexibleEnd', value);
+                  }}
+                  accessibilityLabel={`${PREFERENCE_DAY_LABELS[day]} : heures en plus`}
+                  onSurface
                 />
                 <View style={styles.switchRow}>
                   <Text style={styles.switchLabel}>Journée à 7h pile</Text>

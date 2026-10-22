@@ -110,6 +110,106 @@ describe('Préférences par jour', () => {
     });
   });
 
+  describe('heures en plus : partir plus tard ou arriver plus tôt', () => {
+    it('par défaut, le lundi garde son arrivée et part plus tard (7h24 : 8h00 – 16h09)', () => {
+      const plan = generatorWith({}).planForTotalHours(WEEK, h(37));
+
+      expect(plan.days[0]?.arrival.format()).toBe('8h00');
+      expect(plan.days[0]?.departure.format()).toBe('16h09');
+    });
+
+    it('« arriver plus tôt » le lundi : le départ reste à 16h00, l’arrivée avance à 7h51 (7h24)', () => {
+      const plan = generatorWith({
+        days: { monday: { flexibleEnd: 'arrival' } },
+      }).planForTotalHours(WEEK, h(37));
+
+      expect(plan.days[0]?.arrival.format()).toBe('7h51');
+      expect(plan.days[0]?.departure.format()).toBe('16h00');
+      expect(plan.days[1]?.arrival.format()).toBe('8h00');
+      expectConsistent(plan);
+    });
+
+    it('« arriver plus tôt » : une fois à 7h30, le reste repousse le départ (8h12 : 7h30 – 16h27)', () => {
+      const plan = generatorWith({
+        days: { monday: { flexibleEnd: 'arrival' } },
+      }).planForTotalHours(WEEK, h(41));
+
+      expect(plan.days[0]?.arrival.format()).toBe('7h30');
+      expect(plan.days[0]?.departure.format()).toBe('16h27');
+      expectConsistent(plan);
+    });
+
+    it('« arriver plus tôt » avec des heures en moins : arrivée plus tard, départ gardé (6h25 : 8h55 – 16h05)', () => {
+      const plan = generatorWith({
+        defaults: { arrival: at('08:20'), lunchBreak: TimeSlot.between(at('12:15'), at('13:00')) },
+        days: { thursday: { flexibleEnd: 'arrival' } },
+      }).planForTotalHours(['thursday'], h(6, 25));
+
+      expect(plan.days[0]?.arrival.format()).toBe('8h55');
+      expect(plan.days[0]?.departure.format()).toBe('16h05');
+      expectConsistent(plan);
+    });
+
+    it('« arriver plus tôt » : le départ gardé ne dépasse pas le départ au plus tard (7h : 8h15 – 17h00)', () => {
+      const plan = generatorWith({
+        days: {
+          monday: {
+            arrival: at('09:00'),
+            lunchBreak: TimeSlot.between(at('12:00'), at('13:45')),
+            latestDeparture: at('17:00'),
+            flexibleEnd: 'arrival',
+          },
+        },
+      }).planForTotalHours(['monday'], h(7));
+
+      expect(plan.days[0]?.arrival.format()).toBe('8h15');
+      expect(plan.days[0]?.departure.format()).toBe('17h00');
+      expectConsistent(plan);
+    });
+  });
+
+  describe('arrivée au plus tôt', () => {
+    const shortFriday: PlanningPreferences = {
+      defaults: { arrival: at('08:20'), lunchBreak: TimeSlot.between(at('12:15'), at('13:00')) },
+      days: { friday: { earliestArrival: at('08:20'), latestDeparture: at('15:30') } },
+    };
+
+    it('vendredi court : 8h20 – 15h30 sans arriver plus tôt, le manque va sur les autres jours (35h)', () => {
+      const plan = generatorWith(shortFriday).planForTotalHours(WEEK, h(35));
+      const friday = plan.days[4];
+
+      expect(friday?.arrival.format()).toBe('8h20');
+      expect(friday?.departure.format()).toBe('15h30');
+      expect(friday?.worked.format()).toBe('6h25');
+      expect(plan.days.slice(0, 4).map((day) => day.worked.format())).toEqual([
+        '7h09',
+        '7h09',
+        '7h09',
+        '7h08',
+      ]);
+      expect(plan.totalWorked.equals(h(35))).toBe(true);
+      expectConsistent(plan);
+    });
+
+    it('réduit le maximum de la semaine en conséquence', () => {
+      const generator = generatorWith(shortFriday);
+
+      expect(generator.maximumTotal(['friday']).format()).toBe('6h25');
+    });
+
+    it('refuse une arrivée au plus tôt avant la plage d’arrivée', () => {
+      expect(() => generatorWith({ days: { friday: { earliestArrival: at('07:00') } } })).toThrow(
+        /vendredi.*7h00/,
+      );
+    });
+
+    it('refuse une arrivée au plus tôt après l’arrivée habituelle du jour', () => {
+      expect(() =>
+        generatorWith({ days: { friday: { arrival: at('08:00'), earliestArrival: at('08:20') } } }),
+      ).toThrow(/vendredi.*8h20.*8h00/);
+    });
+  });
+
   describe('préférences incohérentes avec les règles', () => {
     it('refuse une arrivée après le début de la plage fixe', () => {
       expect(() => generatorWith({ days: { monday: { arrival: at('09:30') } } })).toThrow(
