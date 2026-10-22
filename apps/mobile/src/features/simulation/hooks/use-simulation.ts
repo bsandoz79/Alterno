@@ -25,6 +25,7 @@ import { systemClock } from '@/shared/clock/system-clock';
 import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
+import { counterWarning, type CounterWarning } from '../counter-warning';
 import { deficitNotice, selectableRecoveryDate } from '../recovery-choices';
 import {
   DEFAULT_SIMULATION_FORM,
@@ -70,6 +71,8 @@ export interface SimulationState {
   /** Objectif proposé : déjà fait cette semaine, reste à faire et maximum ; `null` sans période valide. */
   readonly suggestion: ObjectiveSuggestion | null;
   readonly outcome: SimulationOutcome | null;
+  /** Avertissement si le plan proposé fait baisser le compteur (objectif d'heures). */
+  readonly counterWarning: CounterWarning | null;
   /** Valide la simulation affichée : elle devient le plan en cours. */
   readonly validate: () => Promise<void>;
   /** Message affiché après la validation. */
@@ -122,6 +125,7 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
       hoursToCatchUp: null,
       deficitNotice: null,
       suggestion: null,
+      counterWarning: null,
     };
     if (context === null) {
       return { ...empty, outcome: null };
@@ -155,6 +159,7 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
       recoveryChoices,
       hoursToCatchUp: simulatePlan.hoursToCatchUp(context.counter, form.recoveryKind),
       deficitNotice: deficitNotice(recoveryChoices, recoveryDate),
+      counterWarning: null,
     };
     const request = toSimulationRequest(
       { ...form, recoveryDate },
@@ -173,7 +178,13 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
         comparison,
         simulation: comparison[form.pace],
       };
-      return { ...recovery, outcome };
+      const warning = counterWarning({
+        objective: form.objective,
+        effect: simulatePlan.counterEffect(outcome.simulation),
+        counter: context.counter,
+        targetWithoutLoss: simulatePlan.targetWithoutLoss(days),
+      });
+      return { ...recovery, outcome, counterWarning: warning };
     } catch (error) {
       return { ...recovery, outcome: domainErrorOutcome(error) };
     }

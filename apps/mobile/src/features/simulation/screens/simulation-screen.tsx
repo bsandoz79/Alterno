@@ -60,6 +60,7 @@ export function SimulationScreen() {
     outcome,
     validate,
     message,
+    counterWarning,
   } = useSimulation();
   const shapes = outcome?.ok === true ? paceShapes(outcome.comparison) : null;
 
@@ -206,14 +207,32 @@ export function SimulationScreen() {
       {outcome === null ? null : outcome.ok ? (
         <>
           <PlanPreview simulation={outcome.simulation} />
+          {counterWarning === null ? null : (
+            <MessageBox message={{ kind: 'error', text: counterWarning.text }} />
+          )}
           {message === null ? null : <MessageBox message={message} />}
           <Pressable
             style={styles.validateButton}
             accessibilityRole="button"
             onPress={() => void validate()}
           >
-            <Text style={styles.validateLabel}>Valider ce plan</Text>
+            <Text style={styles.validateLabel}>
+              {counterWarning === null ? 'Valider ce plan' : 'Valider quand même'}
+            </Text>
           </Pressable>
+          {counterWarning === null ? null : (
+            <Pressable
+              style={styles.adjustButton}
+              accessibilityRole="button"
+              onPress={() => {
+                update({ target: counterWarning.adjustedTarget.format() });
+              }}
+            >
+              <Text style={styles.adjustLabel}>
+                {`Ajuster le plan (${counterWarning.adjustedTarget.format()})`}
+              </Text>
+            </Pressable>
+          )}
         </>
       ) : (
         <View style={styles.error} accessibilityLiveRegion="polite">
@@ -265,6 +284,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 16,
     color: COLORS.text,
+  },
+  adjustButton: {
+    minHeight: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  adjustLabel: {
+    fontFamily: FONTS.extraBold,
+    fontSize: 15,
+    color: COLORS.primary,
   },
   validateButton: {
     height: 58,
