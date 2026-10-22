@@ -1,7 +1,7 @@
 import { WEEKDAY_LABELS, type Weekday } from '../rules/weekday';
 import type { WorkRules } from '../rules/work-rules';
 import { InvalidValueError } from '../shared/domain-error';
-import type { Duration } from '../time/duration';
+import { Duration } from '../time/duration';
 import { PlanValidator } from '../validation/plan-validator';
 import { WorkedTimeCalculator, type WorkedDayInput } from '../worked-time/worked-time-calculator';
 import type { PaceStrategy } from './pace/pace-strategy';
@@ -46,6 +46,49 @@ export class FixedDaysPlanner {
     pace: PaceStrategy,
     fixed: ReadonlyMap<number, WorkedDayInput>,
   ): Plan {
+    const worked = this.fixedWorked(days, fixed);
+    return withChosenTimes(this.generator.planForTotalHours(days, target, pace, worked), fixed);
+  }
+
+  /**
+   * Comme `plan`, mais sans refuser un objectif hors d'atteinte : les autres jours vont alors
+   * à leur minimum (ou maximum), et le total s'écarte de l'objectif. Sert à modifier la semaine,
+   * où l'on peut faire plus ou moins que le plan : l'écart va au compteur, comme un écart déclaré.
+   *
+   * @param days - Jours de la période, dans l'ordre
+   * @param target - Objectif d'heures visé
+   * @param pace - Rythme pour répartir le reste
+   * @param fixed - Horaires choisis, par position dans la période
+   * @returns Le plan dont le total est le plus proche de l'objectif
+   * @throws {InvalidValueError} Si des horaires choisis enfreignent une règle ou sortent de la période
+   */
+  closestPlan(
+    days: readonly Weekday[],
+    target: Duration,
+    pace: PaceStrategy,
+    fixed: ReadonlyMap<number, WorkedDayInput>,
+  ): Plan {
+    const worked = this.fixedWorked(days, fixed);
+    const fixedTotal = [...worked.values()].reduce(
+      (sum, value) => sum.plus(value),
+      Duration.zero(),
+    );
+    const others = days.filter((_day, index) => !worked.has(index));
+    const minimum = fixedTotal.plus(this.generator.minimumTotal(others));
+    const maximum = fixedTotal.plus(this.generator.maximumTotal(others));
+    const reachable = target.isGreaterThan(maximum)
+      ? maximum
+      : target.isLessThan(minimum)
+        ? minimum
+        : target;
+    return withChosenTimes(this.generator.planForTotalHours(days, reachable, pace, worked), fixed);
+  }
+
+  /** Temps travaillé des jours choisis, après vérification de leurs horaires. */
+  private fixedWorked(
+    days: readonly Weekday[],
+    fixed: ReadonlyMap<number, WorkedDayInput>,
+  ): ReadonlyMap<number, Duration> {
     const worked = new Map<number, Duration>();
     fixed.forEach((times, index) => {
       const day = days[index];
@@ -60,15 +103,17 @@ export class FixedDaysPlanner {
       }
       worked.set(index, this.workedTime.compute(day, times));
     });
-
-    const generated = this.generator.planForTotalHours(days, target, pace, worked);
-    // Le générateur a respecté le temps des jours choisis ; on remet leurs horaires exacts.
-    return {
-      ...generated,
-      days: generated.days.map((day, index) => {
-        const times = fixed.get(index);
-        return times === undefined ? day : { ...day, ...times };
-      }),
-    };
+    return worked;
   }
+}
+
+/** Le générateur a respecté le temps des jours choisis ; on remet leurs horaires exacts. */
+function withChosenTimes(generated: Plan, fixed: ReadonlyMap<number, WorkedDayInput>): Plan {
+  return {
+    ...generated,
+    days: generated.days.map((day, index) => {
+      const times = fixed.get(index);
+      return times === undefined ? day : { ...day, ...times };
+    }),
+  };
 }

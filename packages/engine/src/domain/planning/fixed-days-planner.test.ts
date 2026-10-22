@@ -98,4 +98,47 @@ describe('FixedDaysPlanner — jours aux horaires choisis, le reste réparti', (
       ),
     ).toThrow(InvalidValueError);
   });
+
+  describe('plan le plus proche (modification de la semaine)', () => {
+    it('vendredi seul étiré au-delà de l’objectif : les horaires choisis sont gardés, le total dépasse', () => {
+      const plan = planner.closestPlan(
+        ['friday'],
+        Duration.ofHours(5, 5),
+        new SteadyPace(),
+        new Map([[0, times('09:00', '16:15')]]),
+      );
+
+      expect(plan.days[0]?.departure.format()).toBe('16h15');
+      expect(plan.totalWorked.format()).toBe('6h30');
+    });
+
+    it('les autres jours vont à leur minimum quand le surplus est trop grand', () => {
+      const plan = planner.closestPlan(
+        ['thursday', 'friday'],
+        Duration.ofHours(10),
+        new SteadyPace(),
+        new Map([[1, times('08:00', '17:30')]]),
+      );
+
+      expect(plan.days[0]?.worked.format()).toBe('5h');
+      expect(plan.totalWorked.format()).toBe('13h45');
+    });
+
+    it('les autres jours vont à leur maximum quand le manque est trop grand', () => {
+      const plan = planner.closestPlan(
+        ['thursday', 'friday'],
+        Duration.ofHours(20),
+        new SteadyPace(),
+        new Map([[1, times('09:00', '15:30')]]),
+      );
+
+      expect(plan.days[0]?.worked.format()).toBe('10h');
+    });
+
+    it('objectif atteignable : identique au plan exact', () => {
+      const exact = planner.closestPlan(WEEK, Duration.ofHours(35), new SteadyPace(), new Map());
+
+      expect(exact.totalWorked.format()).toBe('35h');
+    });
+  });
 });

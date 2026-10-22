@@ -60,14 +60,25 @@ describe('EditPlanDays — étirer des jours du plan dans la semaine', () => {
     ).toThrow(InvalidValueError);
   });
 
-  it('dit ce qui manque quand les jours à venir ne suffisent plus', () => {
-    expect(() =>
-      edit.execute({
-        plan: week,
-        today: date('2026-10-30'),
-        fixedDays: [day('2026-10-30', '09:00', '15:30')],
-      }),
-    ).toThrow(/il manque 1h15/);
+  it('vendredi seul raccourci : les horaires sont gardés, le plan finit 1h15 sous l’objectif', () => {
+    const edited = edit.execute({
+      plan: week,
+      today: date('2026-10-30'),
+      fixedDays: [day('2026-10-30', '09:00', '15:30')],
+    });
+
+    expect(edited.days[4]?.plan.departure.format()).toBe('15h30');
+    expect(week.totalWorked.minus(edited.totalWorked).format()).toBe('1h15');
+  });
+
+  it('vendredi seul étiré : le plan dépasse l’objectif (le surplus ira au compteur)', () => {
+    const edited = edit.execute({
+      plan: week,
+      today: date('2026-10-30'),
+      fixedDays: [day('2026-10-30', '08:00', '17:30')],
+    });
+
+    expect(edited.totalWorked.minus(week.totalWorked).format()).toBe('1h45');
   });
 
   it('garde la récup du plan', () => {
