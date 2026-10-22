@@ -7,7 +7,8 @@ import { laBrosseEtDupontRules } from '../domain/rules/presets/la-brosse-et-dupo
 import { InvalidValueError } from '../domain/shared/domain-error';
 import { Duration } from '../domain/time/duration';
 import { TimeOfDay } from '../domain/time/time-of-day';
-import { SimulatePlan } from './simulate-plan';
+import { TimeSlot } from '../domain/time/time-slot';
+import { SimulatePlan, type FixedDay } from './simulate-plan';
 
 const simulate = new SimulatePlan(laBrosseEtDupontRules());
 const nextWeek = ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].map((iso) =>
@@ -230,6 +231,59 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
 
     it('propose 35h pour ne rien perdre sur la semaine', () => {
       expect(simulate.targetWithoutLoss(nextWeek).format()).toBe('35h');
+    });
+  });
+
+  describe('jours aux horaires choisis', () => {
+    const monday = nextWeek[0];
+    const lunch = TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(13, 0));
+    const request = (fixedDays: readonly FixedDay[]) => ({
+      days: nextWeek,
+      objective: { kind: 'hours' as const, target: Duration.ofHours(35) },
+      counter: HoursCounter.zero(),
+      fixedDays,
+    });
+
+    it('garde le lundi de 9h00 à 16h00 et répartit le reste, pour chaque rythme', () => {
+      if (monday === undefined) {
+        throw new Error('Semaine de test vide');
+      }
+      const comparison = simulate.compare(
+        request([
+          {
+            date: monday,
+            arrival: TimeOfDay.of(9, 0),
+            lunchBreak: lunch,
+            departure: TimeOfDay.of(16, 0),
+          },
+        ]),
+      );
+
+      expect(comparison.steady.days.map((day) => day.plan.worked.format())).toEqual([
+        '6h15',
+        '7h12',
+        '7h11',
+        '7h11',
+        '7h11',
+      ]);
+      expect(comparison.fast.days[0]?.plan.arrival.format()).toBe('9h00');
+      expect(comparison.late.totalWorked.format()).toBe('35h');
+    });
+
+    it('refuse un jour choisi hors de la période', () => {
+      expect(() =>
+        simulate.execute({
+          ...request([
+            {
+              date: friday.plusDays(3),
+              arrival: TimeOfDay.of(8, 0),
+              lunchBreak: lunch,
+              departure: TimeOfDay.of(16, 0),
+            },
+          ]),
+          pace: 'steady',
+        }),
+      ).toThrow(InvalidValueError);
     });
   });
 });

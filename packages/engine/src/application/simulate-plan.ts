@@ -4,7 +4,7 @@ import type { RecoveryKind } from '../domain/counter/recovery-kind';
 import type { DatedDay, DatedPlan, RecoveryPart } from '../domain/planning/dated-plan';
 import type { Plan } from '../domain/planning/plan';
 import { PlanCounterEffect } from '../domain/planning/plan-counter-effect';
-import { PlanGenerator } from '../domain/planning/plan-generator';
+import { FixedDaysPlanner } from '../domain/planning/fixed-days-planner';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
 import { RecoveryPlanner, type RecoveryOutlook } from '../domain/planning/recovery-planner';
 import {
@@ -15,6 +15,7 @@ import type { WorkRules } from '../domain/rules/work-rules';
 import { InvalidValueError } from '../domain/shared/domain-error';
 import type { Duration } from '../domain/time/duration';
 import type { TimeOfDay } from '../domain/time/time-of-day';
+import type { WorkedDayInput } from '../domain/worked-time/worked-time-calculator';
 import { paceStrategy, type PaceName } from './pace-name';
 
 /**
@@ -38,6 +39,16 @@ export interface SimulationRequest {
   readonly pace: PaceName;
   /** Compteur actuel (utilisé pour une récup). */
   readonly counter: HoursCounter;
+  /**
+   * Journées modifiées à la main dans l'aperçu : elles gardent leur temps, le reste de l'objectif
+   * est réparti sur les autres jours. Prises en compte pour un objectif d'heures seulement.
+   */
+  readonly fixedDays?: readonly FixedDay[];
+}
+
+/** Journée dont l'utilisateur a choisi les horaires (bloc étiré), à la minute près. */
+export interface FixedDay extends WorkedDayInput {
+  readonly date: CalendarDate;
 }
 
 /** Journée simulée : sa date et ses horaires. */
@@ -63,7 +74,7 @@ export type PaceComparison = Readonly<Record<PaceName, Simulation>>;
  * en appels aux services du domaine, et rattache chaque journée planifiée à sa date.
  */
 export class SimulatePlan {
-  private readonly generator: PlanGenerator;
+  private readonly fixedDaysPlanner: FixedDaysPlanner;
   private readonly recoveryPlanner: RecoveryPlanner;
   private readonly objectiveAdvisor: WeekObjectiveAdvisor;
   private readonly counterEffectCalculator: PlanCounterEffect;
@@ -73,10 +84,10 @@ export class SimulatePlan {
    * @param preferences - Préférences par jour ; habitudes par défaut si absentes
    */
   constructor(rules: WorkRules, preferences: PlanningPreferences = {}) {
-    this.generator = new PlanGenerator(rules, preferences);
     this.recoveryPlanner = new RecoveryPlanner(rules, preferences);
     this.objectiveAdvisor = new WeekObjectiveAdvisor(rules, preferences);
     this.counterEffectCalculator = new PlanCounterEffect(rules);
+    this.fixedDaysPlanner = new FixedDaysPlanner(rules, preferences);
   }
 
   /**
@@ -129,7 +140,8 @@ export class SimulatePlan {
    *
    * @param request - Période, objectif, rythme et compteur
    * @returns Les journées datées et leur total
-   * @throws {InvalidValueError} Si la récup tombe le premier jour de la période (aucun jour pour la préparer)
+   * @throws {InvalidValueError} Si la récup tombe le premier jour de la période (aucun jour pour la préparer),
+   *   ou si une journée modifiée est hors de la période ou de ses bornes
    * @throws {ImpossiblePlanError} Si l'objectif est hors d'atteinte
    */
   execute(request: SimulationRequest): Simulation {
@@ -149,7 +161,12 @@ export class SimulatePlan {
     const weekdays = dates.map((date) => date.weekday());
     const plan: Plan =
       objective.kind === 'hours'
-        ? this.generator.planForTotalHours(weekdays, objective.target, pace)
+        ? this.fixedDaysPlanner.plan(
+            weekdays,
+            objective.target,
+            pace,
+            fixedPositions(dates, request.fixedDays ?? []),
+          )
         : this.recoveryPlanner.planForRecovery(weekdays, counter, objective.recovery, pace);
 
     const days = dates.flatMap((date, index) => {
@@ -218,4 +235,24 @@ export class SimulatePlan {
   hoursToCatchUp(counter: HoursCounter, recovery: RecoveryKind): Duration {
     return this.recoveryPlanner.hoursToCatchUp(counter, recovery);
   }
+}
+
+/**
+ * Traduit les journées modifiées (datées) en positions dans la période, comme l'attend le générateur.
+ *
+ * @throws {InvalidValueError} Si une date n'est pas dans la période
+ */
+function fixedPositions(
+  dates: readonly CalendarDate[],
+  fixedDays: readonly FixedDay[],
+): ReadonlyMap<number, WorkedDayInput> {
+  return new Map(
+    fixedDays.map(({ date, ...times }) => {
+      const index = dates.findIndex((candidate) => candidate.equals(date));
+      if (index === -1) {
+        throw new InvalidValueError(`Le ${date.toIsoString()} ne fait pas partie de la période.`);
+      }
+      return [index, times] as const;
+    }),
+  );
 }
