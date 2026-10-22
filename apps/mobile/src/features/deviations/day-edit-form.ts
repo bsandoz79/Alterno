@@ -4,6 +4,7 @@ import {
   InvalidValueError,
   TimeSlot,
   parseClockTime,
+  type ArrivalChoice,
   type CalendarDate,
   type DatedDeviationOutcome,
   type DatedPlan,
@@ -23,10 +24,17 @@ export interface DayEditForm {
   readonly departure: string;
   /** Rythme pour répartir le rattrapage sur les jours suivants (choisi à chaque modification). */
   readonly pace: PaceName;
+  /** Quand le recalcul repousse une arrivée : garder le recalcul, son heure habituelle ou une heure choisie. */
+  readonly arrivalChoice: ArrivalChoiceName;
+  /** Heure choisie, telle que tapée (utilisée seulement avec `chosen`). */
+  readonly chosenArrival: string;
 }
 
+/** Choix proposé quand le recalcul repousse l'arrivée de certains jours. */
+export type ArrivalChoiceName = 'recalculated' | 'preferred' | 'chosen';
+
 /** Champ horaire du formulaire. */
-export type TimeFieldName = Exclude<keyof DayEditForm, 'pace'>;
+export type TimeFieldName = 'arrival' | 'lunchStart' | 'lunchEnd' | 'departure';
 
 /** Libellés des heures, dans le formulaire et les messages d'erreur. */
 export const FIELD_LABELS: Readonly<Record<TimeFieldName, string>> = {
@@ -51,6 +59,10 @@ export type DayEditPreview =
       readonly ok: true;
       readonly outcome: DatedDeviationOutcome;
       readonly recalculated: readonly RecalculatedDay[];
+      /** Effet du choix d'arrivée par rapport au recalcul (positif : en plus, pour le compteur). */
+      readonly extra: Duration;
+      /** Heure choisie illisible ou hors plage : le recalcul est gardé et ce message s'affiche. */
+      readonly arrivalError: string | null;
     }
   | { readonly ok: false; readonly error: string };
 
@@ -76,6 +88,8 @@ export function dayEditFormFrom(day: DayPlan): DayEditForm {
     lunchEnd: day.lunchBreak.end.format(),
     departure: day.departure.format(),
     pace: 'steady',
+    arrivalChoice: 'recalculated',
+    chosenArrival: '',
   };
 }
 
@@ -93,19 +107,49 @@ export function previewDayEdit(input: DayEditInput): DayEditPreview {
       lunchBreak: TimeSlot.between(time(form, 'lunchStart'), time(form, 'lunchEnd')),
       departure: time(form, 'departure'),
     };
-    const outcome = new DeclareDeviation(input.rules, input.preferences).execute({
-      plan,
-      date,
-      actual,
-      pace: form.pace,
-    });
-    return { ok: true, outcome, recalculated: recalculatedDays(plan, outcome.plan, date) };
+    const declare = new DeclareDeviation(input.rules, input.preferences);
+    const request = { plan, date, actual, pace: form.pace };
+    const recalculated = declare.execute(request);
+    let outcome = recalculated;
+    let arrivalError: string | null = null;
+    if (form.arrivalChoice !== 'recalculated' && recalculated.lateArrivals.length > 0) {
+      // Une heure choisie invalide ne doit pas masquer le recalcul : on le garde et on signale l'heure.
+      try {
+        outcome = declare.execute({ ...request, arrival: arrivalChoiceOf(form) });
+      } catch (error) {
+        if (!(error instanceof DomainError)) {
+          throw error;
+        }
+        arrivalError = error.message;
+      }
+    }
+    return {
+      ok: true,
+      outcome,
+      recalculated: recalculatedDays(plan, outcome.plan, date),
+      extra: outcome.plan.totalWorked.minus(recalculated.plan.totalWorked),
+      arrivalError,
+    };
   } catch (error) {
     // Erreurs métier (heures incohérentes, pause à l'envers…) : affichées telles quelles.
     if (error instanceof DomainError) {
       return { ok: false, error: error.message };
     }
     throw error;
+  }
+}
+
+/** Traduit le choix de l'écran pour le moteur. */
+function arrivalChoiceOf(form: DayEditForm): ArrivalChoice {
+  if (form.arrivalChoice === 'preferred') {
+    return { kind: 'preferred' };
+  }
+  try {
+    return { kind: 'chosen', arrival: parseClockTime(form.chosenArrival) };
+  } catch {
+    throw new InvalidValueError(
+      `Arrivée choisie : « ${form.chosenArrival.trim()} » n’est pas une heure valide (ex. 8h30).`,
+    );
   }
 }
 
