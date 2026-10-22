@@ -15,13 +15,19 @@ export interface ObjectiveSuggestion {
   readonly remaining: Duration;
   /** Le plus que l'on puisse faire : limité par les horaires et par le plafond du compteur. */
   readonly maximum: Duration;
+  /**
+   * Objectif qui ramène un compteur négatif à 0 sur la période (reste à faire + retard),
+   * `null` si le compteur n'est pas négatif.
+   */
+  readonly backToZero: Duration | null;
 }
 
 /**
  * Propose l'objectif d'une simulation commencée en cours de semaine : le temps attendu
  * (35h chez La Brosse et Dupont) moins ce qui est déjà fait, plutôt qu'un objectif fixe
  * devenu irréalisable sur les jours restants. Propose aussi le maximum : ce qui remplit
- * le compteur jusqu'à son plafond, sans dépasser les départs au plus tard.
+ * le compteur jusqu'à son plafond, sans dépasser les départs au plus tard, et, si le compteur
+ * est négatif, l'objectif qui le ramène à 0 sur la période.
  */
 export class WeekObjectiveAdvisor {
   private readonly generator: PlanGenerator;
@@ -82,7 +88,15 @@ export class WeekObjectiveAdvisor {
     // Les heures au-delà du plafond ne comptent plus : inutile de proposer de les faire.
     const capped =
       cap === null ? feasible : remaining.plus(atLeastZero(cap.minus(counter.balance)));
-    return { done, remaining, maximum: capped.isGreaterThan(feasible) ? feasible : capped };
+    // En retard au compteur : faire le reste de la période, plus le retard (−1h → 36h sur une semaine).
+    // Pas plafonné aux horaires : si c'est trop, la simulation dira combien il manque (passer à 2 semaines).
+    const backToZero = counter.balance.isNegative() ? remaining.plus(counter.balance.abs()) : null;
+    return {
+      done,
+      remaining,
+      maximum: capped.isGreaterThan(feasible) ? feasible : capped,
+      backToZero,
+    };
   }
 
   /** Jours travaillés de la semaine de `first`, avant lui. */

@@ -131,6 +131,29 @@ describe('WeekObjectiveAdvisor — objectif proposé selon ce qui est déjà fai
     );
   });
 
+  describe('revenir à 0 quand le compteur est négatif', () => {
+    const nextWeek = dates('2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30');
+    const twoWeeks = [
+      ...nextWeek,
+      ...dates('2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06'),
+    ];
+    const backToZero = (period: readonly CalendarDate[], balance: Duration): string | undefined =>
+      advisor.suggest(null, period, HoursCounter.of(balance))?.backToZero?.format();
+
+    it('à −1h, propose 36h sur une semaine', () => {
+      expect(backToZero(nextWeek, Duration.ofHours(-1))).toBe('36h');
+    });
+
+    it('à −1h30, propose 71h30 sur deux semaines', () => {
+      expect(backToZero(twoWeeks, Duration.ofHours(-1, -30))).toBe('71h30');
+    });
+
+    it('ne propose rien quand le compteur est à zéro ou positif', () => {
+      expect(backToZero(nextWeek, Duration.zero())).toBeUndefined();
+      expect(backToZero(nextWeek, Duration.ofHours(2))).toBeUndefined();
+    });
+  });
+
   it('ne propose rien sans jour à planifier', () => {
     expect(describeSuggestion(null, [], 0)).toBe('rien');
   });
