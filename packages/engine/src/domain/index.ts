@@ -42,6 +42,7 @@ export type {
   PlanningPreferences,
 } from './planning/planning-preferences';
 export { ImpossiblePlanError } from './planning/impossible-plan-error';
+export { PlanCounterEffect } from './planning/plan-counter-effect';
 export { PlanGenerator } from './planning/plan-generator';
 export { RecoveryPlanner, type RecoveryOutlook } from './planning/recovery-planner';
 export type { PaceStrategy } from './planning/pace/pace-strategy';

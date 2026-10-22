@@ -3,6 +3,7 @@ import type { HoursCounter } from '../domain/counter/hours-counter';
 import type { RecoveryKind } from '../domain/counter/recovery-kind';
 import type { DatedDay, DatedPlan, RecoveryPart } from '../domain/planning/dated-plan';
 import type { Plan } from '../domain/planning/plan';
+import { PlanCounterEffect } from '../domain/planning/plan-counter-effect';
 import { PlanGenerator } from '../domain/planning/plan-generator';
 import type { PlanningPreferences } from '../domain/planning/planning-preferences';
 import { RecoveryPlanner, type RecoveryOutlook } from '../domain/planning/recovery-planner';
@@ -65,6 +66,7 @@ export class SimulatePlan {
   private readonly generator: PlanGenerator;
   private readonly recoveryPlanner: RecoveryPlanner;
   private readonly objectiveAdvisor: WeekObjectiveAdvisor;
+  private readonly counterEffectCalculator: PlanCounterEffect;
 
   /**
    * @param rules - Règles horaires (réglages de l'utilisateur ou preset)
@@ -74,6 +76,7 @@ export class SimulatePlan {
     this.generator = new PlanGenerator(rules, preferences);
     this.recoveryPlanner = new RecoveryPlanner(rules, preferences);
     this.objectiveAdvisor = new WeekObjectiveAdvisor(rules, preferences);
+    this.counterEffectCalculator = new PlanCounterEffect(rules);
   }
 
   /**
@@ -91,6 +94,24 @@ export class SimulatePlan {
     counter: HoursCounter,
   ): ObjectiveSuggestion | null {
     return this.objectiveAdvisor.suggest(plan, days, counter);
+  }
+
+  /**
+   * Effet du plan simulé sur le compteur, pour avertir avant de valider un plan qui le fait baisser.
+   *
+   * @param simulation - Plan simulé
+   * @returns L'écart signé que ses journées apportent au compteur (hors récup)
+   */
+  counterEffect(simulation: Simulation): Duration {
+    return this.counterEffectCalculator.of(simulation);
+  }
+
+  /**
+   * @param days - Jours de la période
+   * @returns L'objectif qui laisse le compteur inchangé (7h par jour)
+   */
+  targetWithoutLoss(days: readonly CalendarDate[]): Duration {
+    return this.counterEffectCalculator.targetWithoutLoss(days.length);
   }
 
   /**

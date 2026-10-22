@@ -214,4 +214,22 @@ describe('SimulatePlan — cas d’usage de l’écran Simulation', () => {
       }),
     ).toThrow(ImpossiblePlanError);
   });
+
+  describe('effet sur le compteur', () => {
+    const planOf = (hours: number, minutes = 0) =>
+      simulate.execute({
+        days: nextWeek,
+        objective: { kind: 'hours', target: Duration.ofHours(hours, minutes) },
+        pace: 'steady',
+        counter: HoursCounter.zero(),
+      });
+
+    it('un plan de 33h55 sur la semaine retire 1h05 au compteur', () => {
+      expect(simulate.counterEffect(planOf(33, 55)).format({ signed: true })).toBe('-1h05');
+    });
+
+    it('propose 35h pour ne rien perdre sur la semaine', () => {
+      expect(simulate.targetWithoutLoss(nextWeek).format()).toBe('35h');
+    });
+  });
 });
