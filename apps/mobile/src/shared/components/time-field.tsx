@@ -11,21 +11,23 @@ interface TimeFieldProps {
   readonly onChange: (value: string) => void;
   /** Texte grisé affiché quand le champ est vide (ex. la valeur par défaut). */
   readonly placeholder?: string;
+  /** Champ plus large, pour une date (JJ/MM/AAAA). */
+  readonly wide?: boolean;
 }
 
 /**
- * Ligne « libellé — champ » pour saisir une heure (7h30) ou une durée (0h45).
+ * Ligne « libellé — champ » pour saisir une heure (7h30), une durée (0h45) ou une date (`wide`).
  * Saisie libre : la validation se fait à l'enregistrement, avec un message qui nomme le champ.
  *
  * @param props - Libellé, valeur et action de modification
  * @returns Le champ
  */
-export function TimeField({ label, value, onChange, placeholder }: TimeFieldProps) {
+export function TimeField({ label, value, onChange, placeholder, wide = false }: TimeFieldProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, wide && styles.wideInput]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
@@ -63,5 +65,8 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extraBold,
     fontSize: 17,
     color: COLORS.text,
+  },
+  wideInput: {
+    width: 136,
   },
 });
