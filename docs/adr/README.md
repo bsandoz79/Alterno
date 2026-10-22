@@ -20,3 +20,4 @@ Nommage : `0001-titre-court.md`. Une décision remplacée n'est pas supprimée :
 | [0013](0013-annuler-un-plan-ou-sa-recup.md) | Annuler un plan ou sa récup : journées standard, sans vider le dépôt |
 | [0014](0014-mes-donnees-export-et-effacement.md) | « Mes données » : export JSON et effacement, sans serveur |
 | [0015](0015-partir-plus-tard-ou-arriver-plus-tot.md) | Partir plus tard ou arriver plus tôt : bout de journée choisi par jour |
+| [0016](0016-garder-son-heure-d-arrivee-au-recalcul.md) | Garder son heure d'arrivée quand un recalcul la repousse |
