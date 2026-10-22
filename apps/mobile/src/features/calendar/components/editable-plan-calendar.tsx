@@ -7,7 +7,7 @@ import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { useWeekEdit } from '../hooks/use-week-edit';
-import { isStretchable } from '../week-edit';
+import { isStretchable, weekEditVerdict } from '../week-edit';
 import { PlanCalendar } from './plan-calendar';
 
 /** Propriétés du calendrier modifiable. */
@@ -23,7 +23,7 @@ interface EditablePlanCalendarProps {
 /**
  * Calendrier du plan avec le bouton « Modifier » : en mode modification, les blocs des jours à venir
  * s'étirent, le reste du plan est recalculé à chaque lâcher, et l'écran dit si le plan tient
- * ou ce qui manque avant d'enregistrer.
+ * ou de combien il dépasse (ou manque) l'objectif, écart qui ira au compteur.
  *
  * @param props - Plan, date du jour, semaines d'école, jour de récup et action après enregistrement
  * @returns Le calendrier et ses commandes
@@ -62,12 +62,7 @@ export function EditablePlanCalendar({
       ) : (
         <>
           {!hasEdits ? null : edit.preview.ok ? (
-            <MessageBox
-              message={{
-                kind: 'success',
-                text: `Le plan tient : ${edit.preview.plan.totalWorked.format()}, jours étirés compris.`,
-              }}
-            />
+            <MessageBox message={weekEditVerdict(plan, edit.preview.plan)} />
           ) : (
             <>
               <MessageBox message={{ kind: 'error', text: edit.preview.error }} />
