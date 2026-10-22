@@ -16,15 +16,20 @@ interface ObjectiveSuggestionsProps {
 
 /**
  * Objectifs proposés sous le champ « Objectif d'heures » : le reste à faire de la semaine
- * (temps attendu moins ce qui est déjà fait) et le maximum (horaires et plafond du compteur).
+ * (temps attendu moins ce qui est déjà fait), le maximum (horaires et plafond du compteur) et,
+ * si le compteur est négatif, l'objectif qui le ramène à 0 sur la période.
  *
  * @param props - Proposition, objectif affiché et action de choix
- * @returns Les deux propositions, précédées de ce qui est déjà fait
+ * @returns Les propositions, précédées de ce qui est déjà fait
  */
 export function ObjectiveSuggestions({ suggestion, target, onPick }: ObjectiveSuggestionsProps) {
   const choices = [
     { label: 'Reste à faire', value: suggestion.remaining.format() },
     { label: 'Maximum', value: suggestion.maximum.format() },
+    // Compteur négatif : le reste à faire plus le retard, pour finir la période à 0.
+    ...(suggestion.backToZero === null
+      ? []
+      : [{ label: 'Revenir à 0', value: suggestion.backToZero.format() }]),
   ];
   return (
     <View style={styles.container}>
@@ -66,10 +71,13 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: SPACING.sm,
   },
   chip: {
-    flex: 1,
+    // Deux par ligne au plus : avec « Revenir à 0 », la troisième passe dessous.
+    flexGrow: 1,
+    flexBasis: '45%',
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.primarySoft,

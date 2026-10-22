@@ -5,9 +5,11 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import { DefaultPlanNotice } from '@/shared/components/default-plan-notice';
+import { BackToZeroLink } from '@/shared/components/back-to-zero-link';
 import { RecoveryStatusLink } from '@/shared/components/recovery-status-link';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { formatLongDate, formatShortDate } from '@/shared/format/format-date';
+import { useCounterBalance } from '@/shared/hooks/use-counter-balance';
 import { useRecoveryDay } from '@/shared/hooks/use-recovery-day';
 import { useSchoolWeeks } from '@/shared/hooks/use-school-weeks';
 import { COLORS } from '@/shared/theme/colors';
@@ -34,6 +36,7 @@ export function TodayScreen() {
   const plan = useTodayPlan();
   const { schoolWeeks } = useSchoolWeeks();
   const recoveryDay = useRecoveryDay(plan);
+  const counter = useCounterBalance();
   const today = systemClock.today();
   const overline = formatLongDate(today);
 
@@ -87,6 +90,7 @@ export function TodayScreen() {
         </Notice>
       )}
       {rest.length === 0 ? null : <RestOfWeek days={rest} />}
+      <BackToZeroLink counter={counter} />
       {plan === null ? null : <RecoveryStatusLink plan={plan} />}
     </ScreenContainer>
   );

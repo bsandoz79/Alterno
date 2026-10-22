@@ -1,11 +1,13 @@
 import type { RecoveryPart } from '@alterno/engine';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { systemClock } from '@/shared/clock/system-clock';
 import { MessageBox } from '@/shared/components/message-box';
 import { ScreenContainer } from '@/shared/components/screen-container';
 import { SegmentedControl } from '@/shared/components/segmented-control';
 import { TimeField } from '@/shared/components/time-field';
+import { isBackToZeroRequest } from '@/shared/planning/back-to-zero';
 import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
@@ -49,6 +51,8 @@ const PACES = [
  * @returns L'écran
  */
 export function SimulationScreen() {
+  // « objectif=zero » : ouvert depuis « Faire un plan pour revenir à 0 » (Aujourd'hui ou Compteur).
+  const objectiveParam = useLocalSearchParams().objectif;
   const {
     context,
     form,
@@ -65,7 +69,7 @@ export function SimulationScreen() {
     unlock,
     unlockAll,
     undoLastEdit,
-  } = useSimulation();
+  } = useSimulation(systemClock, isBackToZeroRequest(objectiveParam));
   // Jours modifiés dans l'aperçu, pour un objectif d'heures : on dit si le plan tient ou ce qui manque.
   const hasEdits = form.objective === 'hours' && Object.keys(form.editedDays).length > 0;
   const shapes = outcome?.ok === true ? paceShapes(outcome.comparison) : null;
