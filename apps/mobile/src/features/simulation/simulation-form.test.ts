@@ -1,4 +1,4 @@
-import { CalendarDate, Duration, HoursCounter } from '@alterno/engine';
+import { CalendarDate, Duration, HoursCounter, TimeOfDay, TimeSlot } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_SIMULATION_FORM, toSimulationRequest } from './simulation-form';
@@ -97,5 +97,29 @@ describe('Formulaire de simulation', () => {
 
   it('propose par défaut l’après-midi en repos pour une demi-journée', () => {
     expect(DEFAULT_SIMULATION_FORM.recoveryPart).toBe('afternoon');
+  });
+
+  it('transmet les jours modifiés de la période pour un objectif d’heures, pas pour une récup', () => {
+    const times = {
+      arrival: TimeOfDay.of(8, 0),
+      lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(13, 0)),
+      departure: TimeOfDay.of(16, 0),
+    };
+    const editedDays = { '2026-10-19': times, '2026-11-02': times };
+    const hours = toSimulationRequest(
+      { ...DEFAULT_SIMULATION_FORM, target: '35h', editedDays },
+      days,
+      counter,
+    );
+    const recovery = toSimulationRequest(
+      { ...DEFAULT_SIMULATION_FORM, objective: 'recovery', recoveryDate: '2026-10-21', editedDays },
+      days,
+      counter,
+    );
+
+    expect(hours.ok && hours.request.fixedDays?.map((day) => day.date.toIsoString())).toEqual([
+      '2026-10-19',
+    ]);
+    expect(recovery.ok && recovery.request.fixedDays).toBeUndefined();
   });
 });

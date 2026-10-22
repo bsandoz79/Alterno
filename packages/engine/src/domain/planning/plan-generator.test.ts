@@ -10,6 +10,7 @@ import { PlanValidator } from '../validation/plan-validator';
 import { WorkedTimeCalculator } from '../worked-time/worked-time-calculator';
 import { ImpossiblePlanError } from './impossible-plan-error';
 import { FastPace } from './pace/fast-pace';
+import { SteadyPace } from './pace/steady-pace';
 import type { Plan } from './plan';
 import { PlanGenerator } from './plan-generator';
 
@@ -139,6 +140,86 @@ describe('PlanGenerator — objectif d’heures', () => {
 
     it('refuse un objectif trop bas en indiquant le minimum', () => {
       expect(() => generator.planForTotalHours(WEEK, h(20))).toThrow(/minimum 24h30/);
+    });
+  });
+
+  describe('jours fixés (modifiés à la main)', () => {
+    const steady = new SteadyPace();
+    const fixed = (entries: readonly [number, Duration][]): ReadonlyMap<number, Duration> =>
+      new Map(entries);
+
+    it('lundi raccourci à 5h : les 30h restantes vont sur les autres jours (7h30 chacun)', () => {
+      const plan = generator.planForTotalHours(WEEK, h(35), steady, fixed([[0, h(5)]]));
+
+      expect(plan.days.map((day) => day.worked.format())).toEqual([
+        '5h',
+        '7h30',
+        '7h30',
+        '7h30',
+        '7h30',
+      ]);
+      expect(plan.totalWorked.equals(h(35))).toBe(true);
+      expectConsistent(plan);
+    });
+
+    it('lundi et mardi rallongés à 9h : les 17h restantes vont sur mercredi, jeudi et vendredi', () => {
+      const plan = generator.planForTotalHours(
+        WEEK,
+        h(35),
+        steady,
+        fixed([
+          [0, h(9)],
+          [1, h(9)],
+        ]),
+      );
+
+      expect(plan.days.map((day) => day.worked.format())).toEqual([
+        '9h',
+        '9h',
+        '5h40',
+        '5h40',
+        '5h40',
+      ]);
+      expectConsistent(plan);
+    });
+
+    it('trop raccourci : dit combien il manque même en journées maximales ailleurs', () => {
+      const shortDays = fixed([
+        [0, h(5)],
+        [1, h(5)],
+        [2, h(5)],
+        [3, h(5)],
+      ]);
+
+      expect(() => generator.planForTotalHours(WEEK, h(35), steady, shortDays)).toThrow(
+        /il manque 5h45/,
+      );
+    });
+
+    it('trop rallongé : dit le minimum que les autres jours imposent', () => {
+      const longDays = fixed([
+        [0, h(10)],
+        [1, h(10)],
+        [2, h(10)],
+      ]);
+
+      expect(() => generator.planForTotalHours(WEEK, h(35), steady, longDays)).toThrow(
+        /minimum 39h30/,
+      );
+    });
+
+    it('refuse une journée fixée hors des bornes du jour', () => {
+      const tooLong = (): Plan =>
+        generator.planForTotalHours(WEEK, h(35), steady, fixed([[0, h(10, 30)]]));
+
+      expect(tooLong).toThrow(InvalidValueError);
+      expect(tooLong).toThrow(/lundi.*10h30.*5h.*10h/);
+    });
+
+    it('refuse un jour fixé absent de la période', () => {
+      expect(() => generator.planForTotalHours(WEEK, h(35), steady, fixed([[5, h(7)]]))).toThrow(
+        InvalidValueError,
+      );
     });
   });
 

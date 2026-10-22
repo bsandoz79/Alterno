@@ -10,6 +10,8 @@ import {
   type SimulationRequest,
 } from '@alterno/engine';
 
+import { fixedDaysIn, type EditedDays } from '@/shared/planning/edited-days';
+
 /** Objectif choisi à l'écran. */
 export type ObjectiveKind = 'hours' | 'recovery';
 
@@ -29,6 +31,8 @@ export interface SimulationForm {
   /** Moitié prise en repos, pour une demi-journée. */
   readonly recoveryPart: RecoveryPart;
   readonly pace: PaceName;
+  /** Journées raccourcies ou rallongées dans l'aperçu (objectif d'heures) : verrouillées. */
+  readonly editedDays: EditedDays;
 }
 
 /** Valeurs de départ : la semaine prochaine, objectif proposé (35h si rien n'est fait), rythme régulier. */
@@ -41,6 +45,7 @@ export const DEFAULT_SIMULATION_FORM: SimulationForm = {
   recoveryKind: 'full',
   recoveryPart: 'afternoon',
   pace: 'steady',
+  editedDays: {},
 };
 
 /** Résultat de la lecture du formulaire. */
@@ -81,15 +86,20 @@ export function toSimulationRequest(
       },
     };
   }
+  // Les journées modifiées ne valent que pour un objectif d'heures : une récup a son propre calcul.
+  const hoursBase = { ...base, fixedDays: fixedDaysIn(form.editedDays, days) };
   if (form.target.trim() === '') {
     return suggestedTarget === null
       ? { ok: false, error: 'Objectif d’heures : saisis un nombre d’heures (ex. 35h).' }
-      : { ok: true, request: { ...base, objective: { kind: 'hours', target: suggestedTarget } } };
+      : {
+          ok: true,
+          request: { ...hoursBase, objective: { kind: 'hours', target: suggestedTarget } },
+        };
   }
   try {
     return {
       ok: true,
-      request: { ...base, objective: { kind: 'hours', target: parseBalance(form.target) } },
+      request: { ...hoursBase, objective: { kind: 'hours', target: parseBalance(form.target) } },
     };
   } catch {
     return {

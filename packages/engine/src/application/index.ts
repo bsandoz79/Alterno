@@ -11,6 +11,7 @@ export {
   type Simulation,
   type SimulationObjective,
   type SimulationRequest,
+  type FixedDay,
 } from './simulate-plan';
 export {
   DeclareDeviation,
@@ -29,4 +30,5 @@ export {
   ScheduleDepartureReminders,
   type ReminderScheduling,
 } from './schedule-departure-reminders';
+export { EditPlanDays, type PlanDaysEdit } from './edit-plan-days';
 export { ValidatePlan } from './validate-plan';

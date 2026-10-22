@@ -17,14 +17,14 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import { PlanCalendar } from '../components/plan-calendar';
+import { EditablePlanCalendar } from '../components/editable-plan-calendar';
 import { useCurrentPlan } from '../hooks/use-current-plan';
 
 const TITLE = 'Mon planning';
 
 /**
  * Écran « Semaine » : le plan validé (ou, à défaut, la semaine standard), semaine par semaine
- * (grille façon EDT EPSI) ou mois par mois.
+ * (grille façon EDT EPSI) ou mois par mois. « Modifier » permet d'étirer les jours à venir.
  *
  * @returns L'écran
  */
@@ -61,12 +61,16 @@ export function WeekScreen() {
   return (
     <ScreenContainer title={TITLE}>
       <DefaultPlanNotice plan={plan} />
-      <PlanCalendar
+      <EditablePlanCalendar
         key={planKey}
         plan={plan}
         today={today}
         schoolWeeks={schoolWeeks ?? SchoolWeeks.none()}
         recoveryDay={recoveryDay}
+        onSaved={() => {
+          setMessage({ kind: 'success', text: 'Semaine modifiée.' });
+          reload();
+        }}
       />
       <RecoveryStatusLink plan={plan} />
       {message === null ? null : <MessageBox message={message} />}
