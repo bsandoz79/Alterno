@@ -17,6 +17,7 @@ import {
   type SchoolWeeks,
   type Simulation,
   type WorkRules,
+  type WorkedDayInput,
 } from '@alterno/engine';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
@@ -26,6 +27,7 @@ import type { FormMessage } from '@/shared/components/message-box';
 import { useRepositories } from '@/shared/storage/repositories-context';
 
 import { counterWarning, type CounterWarning } from '../counter-warning';
+import { setDayTimes, unlockDay, type EditedDays } from '@/shared/planning/edited-days';
 import { deficitNotice, selectableRecoveryDate } from '../recovery-choices';
 import {
   DEFAULT_SIMULATION_FORM,
@@ -77,6 +79,14 @@ export interface SimulationState {
   readonly validate: () => Promise<void>;
   /** Message affiché après la validation. */
   readonly message: FormMessage | null;
+  /** Retient les horaires choisis pour un jour de l'aperçu (bloc étiré), qui devient verrouillé. */
+  readonly setTimes: (date: CalendarDate, times: WorkedDayInput) => void;
+  /** Débloque un jour : le rythme le répartit de nouveau. */
+  readonly unlock: (date: CalendarDate) => void;
+  /** Débloque tous les jours modifiés (« répartir aussi sur les jours modifiés »). */
+  readonly unlockAll: () => void;
+  /** Annule la dernière modification d'un jour, `null` s'il n'y a rien à annuler. */
+  readonly undoLastEdit: (() => void) | null;
 }
 
 /**
@@ -91,6 +101,8 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
   const [context, setContext] = useState<SimulationContext | null>(null);
   const [form, setForm] = useState<SimulationForm>(DEFAULT_SIMULATION_FORM);
   const [message, setMessage] = useState<FormMessage | null>(null);
+  // Journées modifiées avant la dernière modification : pour revenir en arrière si le plan ne tient plus.
+  const [previousEdits, setPreviousEdits] = useState<EditedDays | null>(null);
 
   // Rechargé à chaque retour sur l'écran : les règles ou les préférences ont pu changer entre-temps.
   useFocusEffect(
@@ -199,15 +211,37 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
     setMessage({ kind: 'success', text: 'Plan validé.' });
   }, [outcome, plans, clock]);
 
+  const update = (changes: Partial<SimulationForm>): void => {
+    setForm((current) => ({ ...current, ...changes }));
+    setMessage(null);
+  };
+  const changeEdits = (editedDays: EditedDays): void => {
+    setPreviousEdits(form.editedDays);
+    update({ editedDays });
+  };
+
   return {
     context,
     form,
-    update: (changes) => {
-      setForm((current) => ({ ...current, ...changes }));
-      setMessage(null);
-    },
+    update,
     validate,
     message,
+    setTimes: (date, times) => {
+      changeEdits(setDayTimes(form.editedDays, date, times));
+    },
+    unlock: (date) => {
+      changeEdits(unlockDay(form.editedDays, date));
+    },
+    unlockAll: () => {
+      changeEdits({});
+    },
+    undoLastEdit:
+      previousEdits === null
+        ? null
+        : () => {
+            setPreviousEdits(null);
+            update({ editedDays: previousEdits });
+          },
     ...computed,
   };
 }

@@ -61,7 +61,13 @@ export function SimulationScreen() {
     validate,
     message,
     counterWarning,
+    setTimes,
+    unlock,
+    unlockAll,
+    undoLastEdit,
   } = useSimulation();
+  // Jours modifiés dans l'aperçu, pour un objectif d'heures : on dit si le plan tient ou ce qui manque.
+  const hasEdits = form.objective === 'hours' && Object.keys(form.editedDays).length > 0;
   const shapes = outcome?.ok === true ? paceShapes(outcome.comparison) : null;
 
   return (
@@ -206,7 +212,27 @@ export function SimulationScreen() {
       <Text style={styles.sectionTitle}>Plan proposé</Text>
       {outcome === null ? null : outcome.ok ? (
         <>
-          <PlanPreview simulation={outcome.simulation} />
+          <PlanPreview
+            simulation={outcome.simulation}
+            {...(form.objective === 'hours' && context !== null
+              ? {
+                  editing: {
+                    edited: form.editedDays,
+                    rules: context.rules,
+                    onChange: setTimes,
+                    onUnlock: unlock,
+                  },
+                }
+              : {})}
+          />
+          {hasEdits ? (
+            <MessageBox
+              message={{
+                kind: 'success',
+                text: `Le plan tient : ${outcome.simulation.totalWorked.format()}, jours modifiés compris.`,
+              }}
+            />
+          ) : null}
           {counterWarning === null ? null : (
             <MessageBox message={{ kind: 'error', text: counterWarning.text }} />
           )}
@@ -235,9 +261,27 @@ export function SimulationScreen() {
           )}
         </>
       ) : (
-        <View style={styles.error} accessibilityLiveRegion="polite">
-          <Text style={styles.errorText}>{outcome.error}</Text>
-        </View>
+        <>
+          <View style={styles.error} accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>{outcome.error}</Text>
+          </View>
+          {hasEdits ? (
+            <>
+              {undoLastEdit === null ? null : (
+                <Pressable
+                  style={styles.adjustButton}
+                  accessibilityRole="button"
+                  onPress={undoLastEdit}
+                >
+                  <Text style={styles.adjustLabel}>Annuler la dernière modification</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.adjustButton} accessibilityRole="button" onPress={unlockAll}>
+                <Text style={styles.adjustLabel}>Répartir aussi sur les jours modifiés</Text>
+              </Pressable>
+            </>
+          ) : null}
+        </>
       )}
     </ScreenContainer>
   );
