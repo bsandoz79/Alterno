@@ -7,6 +7,7 @@ import { laBrosseEtDupontRules } from '../domain/rules/presets/la-brosse-et-dupo
 import { InvalidValueError } from '../domain/shared/domain-error';
 import { Duration } from '../domain/time/duration';
 import { TimeOfDay } from '../domain/time/time-of-day';
+import { TimeSlot } from '../domain/time/time-slot';
 import { DeclareDeviation } from './declare-deviation';
 import { SimulatePlan } from './simulate-plan';
 
@@ -149,5 +150,66 @@ describe('DeclareDeviation — modifier un jour du plan et recalculer la suite',
 
     expect(outcome.plan.recovery?.date.toIsoString()).toBe('2026-10-21');
     expect(outcome.plan.recovery?.kind).toBe('full');
+  });
+
+  describe('arrivée repoussée par le recalcul', () => {
+    const preferences = {
+      defaults: { arrival: at('08:20'), lunchBreak: TimeSlot.between(at('12:15'), at('13:00')) },
+    };
+    const withPreferences = new DeclareDeviation(rules, preferences);
+    const short = new SimulatePlan(rules, preferences).execute({
+      days: ['2026-10-21', '2026-10-22', '2026-10-23'].map(date),
+      objective: { kind: 'hours', target: Duration.ofHours(21) },
+      pace: 'steady',
+      counter: HoursCounter.zero(),
+    });
+    const leftLate = {
+      arrival: at('08:20'),
+      lunchBreak: TimeSlot.between(at('12:15'), at('13:00')),
+      departure: at('17:15'),
+    };
+
+    it('signale le jeudi : arrivée à 8h50 au lieu de 8h20', () => {
+      const outcome = withPreferences.execute({
+        plan: short,
+        date: date('2026-10-21'),
+        actual: leftLate,
+        pace: 'steady',
+      });
+
+      expect(
+        outcome.lateArrivals.map(({ date: day, planned, preferred }) => [
+          day.toIsoString(),
+          planned.format(),
+          preferred.format(),
+        ]),
+      ).toEqual([['2026-10-22', '8h50', '8h20']]);
+      expect(outcome.plan.days[1]?.plan.arrival.format()).toBe('8h50');
+    });
+
+    it('garde 8h20 sur demande : le plan dépasse l’objectif de 30 min, le jeudi reste signalé', () => {
+      const outcome = withPreferences.execute({
+        plan: short,
+        date: date('2026-10-21'),
+        actual: leftLate,
+        pace: 'steady',
+        arrival: { kind: 'preferred' },
+      });
+
+      expect(outcome.plan.days[1]?.plan.arrival.format()).toBe('8h20');
+      expect(outcome.plan.totalWorked.minus(short.totalWorked).format()).toBe('0h30');
+      expect(outcome.lateArrivals).toHaveLength(1);
+    });
+
+    it('ne signale rien quand aucune arrivée n’est repoussée', () => {
+      const outcome = declare.execute({
+        plan: week,
+        date: date('2026-10-19'),
+        actual: { ...monday.plan, departure: at('16:07') },
+        pace: 'steady',
+      });
+
+      expect(outcome.lateArrivals).toEqual([]);
+    });
   });
 });
