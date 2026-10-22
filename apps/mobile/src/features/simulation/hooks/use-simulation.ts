@@ -20,7 +20,7 @@ import {
   type WorkedDayInput,
 } from '@alterno/engine';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { systemClock } from '@/shared/clock/system-clock';
 import type { FormMessage } from '@/shared/components/message-box';
@@ -94,9 +94,13 @@ export interface SimulationState {
  * les préférences, le compteur et les semaines d'école, puis recalcule le plan à chaque changement du formulaire.
  *
  * @param clock - Horloge (l'horloge système par défaut ; une horloge fixe en test)
+ * @param startWithBackToZero - Ouvert depuis « Faire un plan pour revenir à 0 » : l'objectif est pré-rempli
  * @returns L'état de l'écran
  */
-export function useSimulation(clock: Clock = systemClock): SimulationState {
+export function useSimulation(
+  clock: Clock = systemClock,
+  startWithBackToZero = false,
+): SimulationState {
   const { workRules, preferences, counter, plans, schoolWeeks } = useRepositories();
   const [context, setContext] = useState<SimulationContext | null>(null);
   const [form, setForm] = useState<SimulationForm>(DEFAULT_SIMULATION_FORM);
@@ -203,6 +207,15 @@ export function useSimulation(clock: Clock = systemClock): SimulationState {
   }, [context, form, clock]);
 
   const { outcome } = computed;
+  // Une seule fois, dès que la proposition est calculée : ensuite, l'utilisateur garde la main.
+  const backToZeroApplied = useRef(false);
+  const backToZero = computed.suggestion?.backToZero ?? null;
+  useEffect(() => {
+    if (startWithBackToZero && !backToZeroApplied.current && backToZero !== null) {
+      backToZeroApplied.current = true;
+      setForm((current) => ({ ...current, objective: 'hours', target: backToZero.format() }));
+    }
+  }, [startWithBackToZero, backToZero]);
   const validate = useCallback(async () => {
     if (outcome?.ok !== true) {
       return;

@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 
+import { BackToZeroLink } from '@/shared/components/back-to-zero-link';
 import { MessageBox } from '@/shared/components/message-box';
 import { ReminderSettingsCard } from '@/features/reminders/components/reminder-settings-card';
 import { ScreenContainer } from '@/shared/components/screen-container';
@@ -29,6 +30,7 @@ export function CounterScreen() {
       {counter === null || status === null ? null : (
         <>
           <BalanceCard counter={counter} status={status} />
+          <BackToZeroLink counter={counter} />
           {upcoming === null ? null : <UpcomingBalanceCard upcoming={upcoming} />}
           <RecalibrateCard
             input={input}
