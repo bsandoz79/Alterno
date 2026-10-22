@@ -13,6 +13,7 @@ import { RADIUS, SPACING } from '@/shared/theme/spacing';
 import { FIELD_LABELS, isOutOfReach } from '../day-edit-form';
 import { useDayEdit, type DayEditParams } from '../hooks/use-day-edit';
 import { CHANGE_KINDS, changeFields, type ChangeKind } from '../report-change';
+import { ArrivalChoiceCard } from './arrival-choice-card';
 import { RecalculationPreview } from './recalculation-preview';
 
 const PACE_OPTIONS: readonly { readonly value: PaceName; readonly label: string }[] = [
@@ -29,7 +30,7 @@ interface DayEditorProps extends DayEditParams {
 
 /**
  * Formulaire « Modifier ce jour » : horaires réels pré-remplis avec le plan, rythme du rattrapage,
- * aperçu du recalcul à chaque saisie, puis enregistrement.
+ * choix de l'arrivée si le recalcul la repousse, aperçu du recalcul à chaque saisie, puis enregistrement.
  * Ouvert depuis « Signaler un changement », il n'affiche que l'heure concernée (saisie rapide),
  * avec un lien pour corriger les autres heures si besoin.
  *
@@ -40,6 +41,8 @@ export function DayEditor({ change, ...params }: DayEditorProps) {
   const { form, update, preview, save, saveAndCancel, message } = useDayEdit(params);
   // Plan devenu irréalisable : deux choix, garder (le manque va au compteur) ou annuler la suite.
   const outOfReach = isOutOfReach(preview);
+  // Une heure d'arrivée choisie invalide bloque l'enregistrement, le temps de la corriger.
+  const canSave = preview.ok && preview.arrivalError === null;
   const [showAll, setShowAll] = useState(false);
   const fields = changeFields(showAll ? null : change);
   const question = CHANGE_KINDS.find((choice) => choice.kind === change)?.question;
@@ -80,14 +83,15 @@ export function DayEditor({ change, ...params }: DayEditorProps) {
         />
       </View>
 
+      {preview.ok ? <ArrivalChoiceCard preview={preview} form={form} update={update} /> : null}
       <RecalculationPreview preview={preview} />
       {message === null ? null : <MessageBox message={message} />}
 
       <Pressable
-        style={[styles.saveButton, !preview.ok && styles.saveButtonDisabled]}
+        style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
         accessibilityRole="button"
-        accessibilityState={{ disabled: !preview.ok }}
-        disabled={!preview.ok}
+        accessibilityState={{ disabled: !canSave }}
+        disabled={!canSave}
         onPress={() => void save()}
       >
         <Text style={styles.saveLabel}>

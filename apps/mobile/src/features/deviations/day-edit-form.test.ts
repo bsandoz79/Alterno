@@ -6,6 +6,9 @@ import {
   laBrosseEtDupontRules,
   type DatedDay,
   type DatedPlan,
+  type PlanningPreferences,
+  TimeOfDay,
+  TimeSlot,
 } from '@alterno/engine';
 import { describe, expect, it } from 'vitest';
 
@@ -47,6 +50,8 @@ describe('dayEditFormFrom — formulaire pré-rempli avec le plan du jour', () =
       lunchEnd: '13h00',
       departure: '16h57',
       pace: 'steady',
+      arrivalChoice: 'recalculated',
+      chosenArrival: '',
     });
   });
 });
@@ -111,5 +116,63 @@ describe('previewDayEdit — aperçu du recalcul avant enregistrement', () => {
     const result = preview({ arrival: '17h00', departure: '16h00' });
 
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('previewDayEdit — garder son heure d’arrivée quand le recalcul la repousse', () => {
+  const at = (value: string): TimeOfDay => TimeOfDay.parse(value);
+  const preferences: PlanningPreferences = {
+    defaults: { arrival: at('08:20'), lunchBreak: TimeSlot.between(at('12:15'), at('13:00')) },
+  };
+  // Cas vécu : 21h du mercredi au vendredi, parti à 17h15 le mercredi.
+  const short = new SimulatePlan(rules, preferences).execute({
+    days: ['2026-10-21', '2026-10-22', '2026-10-23'].map(date),
+    objective: { kind: 'hours', target: Duration.ofHours(21) },
+    pace: 'steady',
+    counter: HoursCounter.zero(),
+  });
+  const leftLate = (changes: Partial<DayEditForm>) =>
+    previewDayEdit({
+      plan: short,
+      date: date('2026-10-21'),
+      form: { ...dayEditFormFrom(mondayOf(short).plan), departure: '17h15', ...changes },
+      rules,
+      preferences,
+    });
+  const okOf = (result: ReturnType<typeof leftLate>) => {
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    return result;
+  };
+
+  it('signale le jeudi (8h50 au lieu de 8h20) sans rien changer par défaut', () => {
+    const result = okOf(leftLate({}));
+
+    expect(result.outcome.lateArrivals.map((late) => late.planned.format())).toEqual(['8h50']);
+    expect(result.extra.format()).toBe('0h');
+    expect(result.arrivalError).toBeNull();
+  });
+
+  it('garde 8h20 : 30 min de plus que l’objectif', () => {
+    const result = okOf(leftLate({ arrivalChoice: 'preferred' }));
+
+    expect(result.outcome.plan.days[1]?.plan.arrival.format()).toBe('8h20');
+    expect(result.extra.format()).toBe('0h30');
+  });
+
+  it('heure choisie 8h30 : 20 min de plus', () => {
+    const result = okOf(leftLate({ arrivalChoice: 'chosen', chosenArrival: '8h30' }));
+
+    expect(result.extra.format()).toBe('0h20');
+  });
+
+  it('heure choisie illisible ou hors plage : le recalcul reste affiché avec un message', () => {
+    const unreadable = okOf(leftLate({ arrivalChoice: 'chosen', chosenArrival: 'tôt' }));
+    const tooEarly = okOf(leftLate({ arrivalChoice: 'chosen', chosenArrival: '7h00' }));
+
+    expect(unreadable.arrivalError).toMatch(/Arrivée choisie.*tôt/);
+    expect(unreadable.outcome.plan.days[1]?.plan.arrival.format()).toBe('8h50');
+    expect(tooEarly.arrivalError).toMatch(/jeudi.*7h00/);
   });
 });

@@ -15,6 +15,7 @@ export {
 export {
   DeclareDeviation,
   type DatedDeviationOutcome,
+  type DatedLateArrival,
   type DeviationRequest,
 } from './declare-deviation';
 export { paceStrategy, type PaceName } from './pace-name';
