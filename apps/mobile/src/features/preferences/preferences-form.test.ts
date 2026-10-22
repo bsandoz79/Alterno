@@ -24,6 +24,55 @@ describe('Formulaire des préférences par jour', () => {
     });
   });
 
+  it('lit l’arrivée au plus tôt et « arriver plus tôt » (vendredi court)', () => {
+    const result = parsePreferencesForm(
+      {
+        ...emptyForm,
+        days: {
+          ...emptyForm.days,
+          friday: {
+            ...EMPTY_DAY_FORM,
+            earliestArrival: '8h00',
+            latestDeparture: '15h30',
+            flexibleEnd: 'arrival',
+          },
+        },
+      },
+      rules,
+    );
+
+    expect(result.ok && result.preferences.days?.friday).toEqual({
+      earliestArrival: TimeOfDay.of(8, 0),
+      latestDeparture: TimeOfDay.of(15, 30),
+      flexibleEnd: 'arrival',
+    });
+  });
+
+  it('remplit l’arrivée au plus tôt et le bout de journée qui bouge depuis les préférences', () => {
+    const form = toPreferencesForm({
+      days: { friday: { earliestArrival: TimeOfDay.of(8, 0), flexibleEnd: 'arrival' } },
+    });
+
+    expect(form.days.friday).toEqual({
+      ...EMPTY_DAY_FORM,
+      earliestArrival: '8h00',
+      flexibleEnd: 'arrival',
+    });
+  });
+
+  it('refuse une arrivée au plus tôt après l’arrivée habituelle', () => {
+    const result = parsePreferencesForm(
+      {
+        ...emptyForm,
+        days: { ...emptyForm.days, friday: { ...EMPTY_DAY_FORM, earliestArrival: '8h20' } },
+      },
+      rules,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error).toMatch(/vendredi.*8h20.*8h00/);
+  });
+
   it('ne garde que les champs remplis pour chaque jour', () => {
     const result = parsePreferencesForm(
       { ...emptyForm, days: { ...emptyForm.days, monday: { ...EMPTY_DAY_FORM, arrival: '8h30' } } },

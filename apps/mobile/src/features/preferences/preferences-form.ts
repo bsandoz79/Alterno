@@ -5,6 +5,7 @@ import {
   parseClockTime,
   validatePlanningPreferences,
   type DayPreferences,
+  type FlexibleEnd,
   type PlanningPreferences,
   type TimeOfDay,
   type WorkRules,
@@ -37,7 +38,10 @@ export interface DayPreferencesForm {
   readonly arrival: string;
   readonly lunchStart: string;
   readonly lunchEnd: string;
+  readonly earliestArrival: string;
   readonly latestDeparture: string;
+  /** Bout de journée qui bouge quand il faut plus ou moins d'heures (départ par défaut). */
+  readonly flexibleEnd: FlexibleEnd;
   readonly exactlyExpected: boolean;
 }
 
@@ -52,7 +56,9 @@ export const EMPTY_DAY_FORM: DayPreferencesForm = {
   arrival: '',
   lunchStart: '',
   lunchEnd: '',
+  earliestArrival: '',
   latestDeparture: '',
+  flexibleEnd: 'departure',
   exactlyExpected: false,
 };
 
@@ -61,8 +67,18 @@ export const FIELD_LABELS = {
   arrival: 'Arrivée',
   lunchStart: 'Début de pause',
   lunchEnd: 'Fin de pause',
+  earliestArrival: 'Arrivée au plus tôt',
   latestDeparture: 'Départ au plus tard',
 } as const;
+
+/** Choix « Heures en plus » : le bout de journée qui bouge, avec son libellé. */
+export const FLEXIBLE_END_OPTIONS: readonly {
+  readonly value: FlexibleEnd;
+  readonly label: string;
+}[] = [
+  { value: 'departure', label: 'Partir plus tard' },
+  { value: 'arrival', label: 'Arriver plus tôt' },
+];
 
 /** Résultat de la lecture du formulaire. */
 export type PreferencesFormResult =
@@ -132,7 +148,9 @@ function toDayForm(day: DayPreferences | undefined): DayPreferencesForm {
     arrival: day?.arrival?.format() ?? '',
     lunchStart: day?.lunchBreak?.start.format() ?? '',
     lunchEnd: day?.lunchBreak?.end.format() ?? '',
+    earliestArrival: day?.earliestArrival?.format() ?? '',
     latestDeparture: day?.latestDeparture?.format() ?? '',
+    flexibleEnd: day?.flexibleEnd ?? 'departure',
     exactlyExpected: day?.exactlyExpected === true,
   };
 }
@@ -149,6 +167,7 @@ function readDay(label: string, form: DayPreferencesForm): DayPreferences {
   const optionalTime = (field: keyof typeof FIELD_LABELS, value: string): TimeOfDay | null =>
     value.trim() === '' ? null : readTime(label, FIELD_LABELS[field], value);
   const arrival = optionalTime('arrival', form.arrival);
+  const earliestArrival = optionalTime('earliestArrival', form.earliestArrival);
   const latestDeparture = optionalTime('latestDeparture', form.latestDeparture);
   const lunchStart = optionalTime('lunchStart', form.lunchStart);
   const lunchEnd = optionalTime('lunchEnd', form.lunchEnd);
@@ -157,7 +176,10 @@ function readDay(label: string, form: DayPreferencesForm): DayPreferences {
     ...(lunchStart === null || lunchEnd === null
       ? {}
       : { lunchBreak: TimeSlot.between(lunchStart, lunchEnd) }),
+    ...(earliestArrival === null ? {} : { earliestArrival }),
     ...(latestDeparture === null ? {} : { latestDeparture }),
+    // « Partir plus tard » est le comportement par défaut : seul le choix inverse est enregistré.
+    ...(form.flexibleEnd === 'arrival' ? { flexibleEnd: 'arrival' as const } : {}),
     ...(form.exactlyExpected ? { exactlyExpected: true } : {}),
   };
 }

@@ -267,7 +267,12 @@ describe.each(implementations)('Stockage %s', (_, create) => {
         days: {
           monday: { arrival: TimeOfDay.of(8, 30) },
           wednesday: { latestDeparture: TimeOfDay.of(17, 0), exactlyExpected: true },
-          friday: { lunchBreak: TimeSlot.between(TimeOfDay.of(12, 0), TimeOfDay.of(12, 45)) },
+          thursday: { flexibleEnd: 'arrival' as const },
+          friday: {
+            lunchBreak: TimeSlot.between(TimeOfDay.of(12, 0), TimeOfDay.of(12, 45)),
+            earliestArrival: TimeOfDay.of(8, 15),
+            latestDeparture: TimeOfDay.of(15, 30),
+          },
         },
       };
       await preferences.save(saved);

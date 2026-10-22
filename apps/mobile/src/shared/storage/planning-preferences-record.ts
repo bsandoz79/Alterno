@@ -14,7 +14,10 @@ interface DayPreferencesRecord {
   readonly arrival?: number;
   readonly lunchStart?: number;
   readonly lunchEnd?: number;
+  readonly earliestArrival?: number;
   readonly latestDeparture?: number;
+  /** Absent : le départ bouge (partir plus tard), comportement par défaut. */
+  readonly flexibleEnd?: 'arrival';
   readonly exactlyExpected?: boolean;
 }
 
@@ -100,9 +103,13 @@ function toDayRecord(day: DayPreferences): DayPreferencesRecord {
           lunchStart: day.lunchBreak.start.toMinutesSinceMidnight(),
           lunchEnd: day.lunchBreak.end.toMinutesSinceMidnight(),
         }),
+    ...(day.earliestArrival === undefined
+      ? {}
+      : { earliestArrival: day.earliestArrival.toMinutesSinceMidnight() }),
     ...(day.latestDeparture === undefined
       ? {}
       : { latestDeparture: day.latestDeparture.toMinutesSinceMidnight() }),
+    ...(day.flexibleEnd === 'arrival' ? { flexibleEnd: 'arrival' as const } : {}),
     ...(day.exactlyExpected === true ? { exactlyExpected: true } : {}),
   };
 }
@@ -113,9 +120,13 @@ function fromDayRecord(record: DayPreferencesRecord): DayPreferences {
     ...(record.lunchStart === undefined || record.lunchEnd === undefined
       ? {}
       : { lunchBreak: TimeSlot.between(timeAt(record.lunchStart), timeAt(record.lunchEnd)) }),
+    ...(record.earliestArrival === undefined
+      ? {}
+      : { earliestArrival: timeAt(record.earliestArrival) }),
     ...(record.latestDeparture === undefined
       ? {}
       : { latestDeparture: timeAt(record.latestDeparture) }),
+    ...(record.flexibleEnd === 'arrival' ? { flexibleEnd: 'arrival' as const } : {}),
     ...(record.exactlyExpected === true ? { exactlyExpected: true } : {}),
   };
 }
