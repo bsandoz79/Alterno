@@ -52,6 +52,34 @@ export function previewWeekEdit(input: WeekEditInput): WeekEditPreview {
   }
 }
 
+/** Verdict affiché sous la semaine modifiée. */
+export interface WeekEditVerdict {
+  readonly kind: 'success' | 'info';
+  readonly text: string;
+}
+
+/**
+ * Dit si le plan modifié tient l'objectif, ou de combien il le dépasse (ou le manque).
+ * L'écart n'est pas une erreur (ALT-69) : il ira au compteur, comme pour un écart déclaré.
+ *
+ * @param original - Plan avant modification (son total est l'objectif)
+ * @param edited - Plan avec les jours étirés
+ * @returns Le message, en vert si le plan tient
+ */
+export function weekEditVerdict(original: DatedPlan, edited: DatedPlan): WeekEditVerdict {
+  const gap = edited.totalWorked.minus(original.totalWorked);
+  const total = edited.totalWorked.format();
+  if (gap.isZero()) {
+    return { kind: 'success', text: `Le plan tient : ${total}, jours étirés compris.` };
+  }
+  return {
+    kind: 'info',
+    text: gap.isNegative()
+      ? `${gap.abs().format()} de moins que le plan (${total}), pris sur ton compteur.`
+      : `${gap.format({ signed: true })} au-delà du plan (${total}), pour ton compteur.`,
+  };
+}
+
 /**
  * Seuls les jours planifiés à venir s'étirent : les jours passés sont déjà faits (et au compteur).
  *

@@ -20,7 +20,9 @@ export interface PlanDaysEdit {
 /**
  * Cas d'usage « Modifier la semaine » : des blocs étirés dans l'EDT deviennent des jours aux horaires
  * choisis, et le reste de l'objectif du plan est réparti sur les autres jours à venir (rythme régulier).
- * Les jours passés ne bougent pas : ils sont déjà faits.
+ * Les jours passés ne bougent pas : ils sont déjà faits. Quand les autres jours ne peuvent plus
+ * compenser (ALT-69), les horaires choisis sont gardés et le plan dépasse (ou manque) l'objectif :
+ * l'écart ira au compteur, comme pour un écart déclaré.
  *
  * Il ne fait que calculer : l'écran affiche l'aperçu, puis l'enregistrement passe par `ValidatePlan`.
  */
@@ -37,9 +39,8 @@ export class EditPlanDays {
 
   /**
    * @param edit - Plan, date du jour et jours étirés
-   * @returns Le plan modifié ; même total que le plan reçu
+   * @returns Le plan modifié ; même total que le plan reçu, sauf si les autres jours ne peuvent pas compenser
    * @throws {InvalidValueError} Si un jour étiré est passé, hors du plan, ou enfreint une règle
-   * @throws {ImpossiblePlanError} Si les autres jours à venir ne peuvent pas compléter l'objectif
    */
   execute({ plan, today, fixedDays }: PlanDaysEdit): DatedPlan {
     const past = plan.days.filter((day) => day.date.isBefore(today));
@@ -57,7 +58,7 @@ export class EditPlanDays {
 
     // L'objectif du plan est gardé : les jours passés sont faits, le reste se partage entre les jours à venir.
     const doneTotal = past.reduce((sum, day) => sum.plus(day.plan.worked), Duration.zero());
-    const replanned = this.planner.plan(
+    const replanned = this.planner.closestPlan(
       upcoming.map((day) => day.date.weekday()),
       plan.totalWorked.minus(doneTotal),
       new SteadyPace(),

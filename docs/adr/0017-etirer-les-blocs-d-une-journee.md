@@ -52,3 +52,13 @@ tient ou ce qui manque.
 
 - Sur Android, le défilement de l'écran pourrait gêner le glissement. Les poignées refusent de céder
   le geste (`onPanResponderTerminationRequest`), et le mode « Modifier » évite les gestes involontaires.
+
+## Mise à jour — ALT-69 : dépasser le plan dans la semaine
+
+Dans la semaine, quand les autres jours à venir ne peuvent plus compenser (par exemple, il ne reste
+que le vendredi), `EditPlanDays` ne refuse plus. Il passe par `FixedDaysPlanner.closestPlan` : les
+horaires choisis sont gardés, les autres jours vont à leur minimum ou à leur maximum, et le total
+dépasse l'objectif (ou reste en dessous). L'écran affiche l'écart, qui ira au compteur, comme pour un
+écart déclaré : « +1h05 au-delà du plan (20h), pour ton compteur ».
+
+La simulation, elle, reste stricte : son objectif est ce que l'utilisateur demande.

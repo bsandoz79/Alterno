@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { setDayTimes } from '@/shared/planning/edited-days';
 
-import { isStretchable, previewWeekEdit, stretchGridHours } from './week-edit';
+import { isStretchable, previewWeekEdit, stretchGridHours, weekEditVerdict } from './week-edit';
 
 const rules = laBrosseEtDupontRules();
 const date = (iso: string): CalendarDate => CalendarDate.fromIsoString(iso);
@@ -48,13 +48,48 @@ describe('previewWeekEdit — aperçu de la semaine après avoir étiré des jou
     ]);
   });
 
-  it('dit ce qui manque quand les jours à venir ne suffisent plus', () => {
+  it('vendredi seul raccourci : les horaires sont gardés, le plan finit sous l’objectif', () => {
     const result = preview(
       setDayTimes({}, date('2026-10-30'), times('09:00', '15:30')),
       '2026-10-30',
     );
 
-    expect(result.ok ? '' : result.error).toMatch(/il manque 1h15/);
+    expect(result.ok && result.plan.totalWorked.format()).toBe('33h45');
+  });
+
+  it('signale une règle enfreinte (arrivée après le début de la plage fixe)', () => {
+    const result = preview(
+      setDayTimes({}, date('2026-10-30'), times('09:30', '15:30')),
+      '2026-10-30',
+    );
+
+    expect(result.ok ? '' : result.error).toMatch(/vendredi/);
+  });
+});
+
+describe('weekEditVerdict — le plan tient-il ?', () => {
+  const edited = (hours: number, minutes = 0) => ({
+    ...week,
+    totalWorked: Duration.ofHours(hours, minutes),
+  });
+
+  it('même total : le plan tient', () => {
+    expect(weekEditVerdict(week, edited(35))).toEqual({
+      kind: 'success',
+      text: 'Le plan tient : 35h, jours étirés compris.',
+    });
+  });
+
+  it('plus que le plan : le surplus ira au compteur', () => {
+    expect(weekEditVerdict(week, edited(36, 45)).text).toBe(
+      '+1h45 au-delà du plan (36h45), pour ton compteur.',
+    );
+  });
+
+  it('moins que le plan : le manque sera pris sur le compteur', () => {
+    expect(weekEditVerdict(week, edited(33, 45)).text).toBe(
+      '1h15 de moins que le plan (33h45), pris sur ton compteur.',
+    );
   });
 });
 
