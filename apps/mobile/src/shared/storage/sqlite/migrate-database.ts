@@ -81,6 +81,22 @@ const MIGRATIONS: readonly string[] = [
    ALTER TABLE reminder_settings ADD COLUMN approval_check INTEGER;
    ALTER TABLE reminder_settings ADD COLUMN approval_first_delay_days INTEGER;
    ALTER TABLE reminder_settings ADD COLUMN approval_repeat_days INTEGER;`,
+  // Version 13 : historique (ALT-52). Journées passées, une ligne par date (horaires NULL pour une récup
+  // ou l'école), et début du contrat (une seule ligne).
+  `CREATE TABLE day_archive (
+     date TEXT PRIMARY KEY,
+     kind TEXT NOT NULL,
+     worked_minutes INTEGER NOT NULL,
+     expected_minutes INTEGER NOT NULL,
+     arrival INTEGER,
+     lunch_start INTEGER,
+     lunch_end INTEGER,
+     departure INTEGER
+   );
+   CREATE TABLE contract (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     start TEXT NOT NULL
+   );`,
 ];
 
 /**

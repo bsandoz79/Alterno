@@ -13,7 +13,9 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { BrowserAnnualCalendarStore } from '@/shared/storage/browser/browser-annual-calendar-store';
+import { BrowserContractStartRepository } from '@/shared/storage/browser/browser-contract-start-repository';
 import { BrowserCounterRepository } from '@/shared/storage/browser/browser-counter-repository';
+import { BrowserDayArchiveRepository } from '@/shared/storage/browser/browser-day-archive-repository';
 import { BrowserPersonalDataEraser } from '@/shared/storage/browser/browser-personal-data-eraser';
 import { BrowserPlanRepository } from '@/shared/storage/browser/browser-plan-repository';
 import { BrowserPlanningPreferencesRepository } from '@/shared/storage/browser/browser-planning-preferences-repository';
@@ -46,6 +48,8 @@ const createSources = () => {
     annualCalendar: new BrowserAnnualCalendarStore(storage),
     reminders: new BrowserReminderSettingsRepository(storage),
     eraser: new BrowserPersonalDataEraser(storage),
+    archive: new BrowserDayArchiveRepository(storage),
+    contractStart: new BrowserContractStartRepository(storage),
     notifier,
   };
 };
@@ -76,6 +80,16 @@ describe('Mes données — export et effacement (RGPD)', () => {
       date('2026-10-01'),
     );
 
+    await sources.contractStart.save(date('2026-10-01'));
+    await sources.archive.save([
+      {
+        date: date('2026-10-16'),
+        kind: 'work',
+        worked: Duration.ofHours(8),
+        expected: Duration.ofHours(7),
+      },
+    ]);
+
     const exported = await exportMyData(sources, date('2026-10-21'));
 
     expect(exported).toMatchObject({
@@ -93,6 +107,8 @@ describe('Mes données — export et effacement (RGPD)', () => {
         addedOn: '2026-10-01',
       },
       reminders: { departureLeadMinutes: null, atDeparture: false },
+      contractStart: '2026-10-01',
+      history: [{ date: '2026-10-16', kind: 'work', worked: 480, expected: 420, arrival: null }],
     });
     expect(exported.plan?.days.map((day) => day.date)).toEqual(['2026-10-19', '2026-10-20']);
     expect(exported.plan?.recovery).toMatchObject({

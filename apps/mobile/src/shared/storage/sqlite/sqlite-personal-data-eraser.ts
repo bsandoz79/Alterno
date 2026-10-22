@@ -14,6 +14,8 @@ const PERSONAL_TABLES = [
   'school_week',
   'annual_calendar',
   'reminder_settings',
+  'day_archive',
+  'contract',
 ] as const;
 
 /** Effacement des données dans la base SQLite (Android). Le schéma, lui, est gardé. */

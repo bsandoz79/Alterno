@@ -1,5 +1,8 @@
 import type {
+  Archiving,
+  ContractStartRepository,
   CounterRepository,
+  DayArchiveRepository,
   Notifier,
   PlanRepository,
   PlanningPreferencesRepository,
@@ -34,4 +37,10 @@ export interface Repositories {
   readonly notifier: Notifier;
   /** Effacement de toutes les données (page « Mes données »). */
   readonly eraser: PersonalDataEraser;
+  /** Journées passées gardées pour l'historique. */
+  readonly archive: DayArchiveRepository;
+  /** Début du contrat d'alternance. */
+  readonly contractStart: ContractStartRepository;
+  /** Archivage des journées passées (avant de lire l'historique). */
+  readonly archiving: Archiving;
 }
