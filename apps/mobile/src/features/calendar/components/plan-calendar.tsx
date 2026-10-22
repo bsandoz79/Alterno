@@ -10,7 +10,7 @@ import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
 import { useCalendarNavigation, type CalendarMode } from '../hooks/use-calendar-navigation';
 import { MonthGrid } from './month-grid';
-import { WeekGrid } from './week-grid';
+import { WeekGrid, type GridEditing } from './week-grid';
 
 /** Propriétés du calendrier du plan. */
 interface PlanCalendarProps {
@@ -19,16 +19,25 @@ interface PlanCalendarProps {
   readonly schoolWeeks: SchoolWeeks;
   /** Horaires du jour de récup du plan, s'il y en a un. */
   readonly recoveryDay: RecoveryDay | null;
+  /** Présent en mode « Modifier » : les blocs à venir s'étirent. */
+  readonly editing?: GridEditing;
 }
 
 /**
  * Calendrier du plan validé : choix semaine / mois, flèches pour se déplacer, grille et total.
  * Séparé de l'écran pour que le hook de navigation ne s'exécute qu'une fois le plan chargé.
  *
- * @param props - Plan validé, date du jour, semaines d'école et horaires du jour de récup
+ * @param props - Plan validé, date du jour, semaines d'école, horaires du jour de récup
+ *   et, en mode « Modifier », de quoi étirer les blocs
  * @returns Le calendrier
  */
-export function PlanCalendar({ plan, today, schoolWeeks, recoveryDay }: PlanCalendarProps) {
+export function PlanCalendar({
+  plan,
+  today,
+  schoolWeeks,
+  recoveryDay,
+  editing,
+}: PlanCalendarProps) {
   const navigation = useCalendarNavigation(plan, today);
   const { week, month } = navigation;
   const previousWeek = navigation.weekNavigation.previous;
@@ -68,7 +77,13 @@ export function PlanCalendar({ plan, today, schoolWeeks, recoveryDay }: PlanCale
                   }
             }
           />
-          <WeekGrid week={week} today={today} schoolWeeks={schoolWeeks} recoveryDay={recoveryDay} />
+          <WeekGrid
+            week={week}
+            today={today}
+            schoolWeeks={schoolWeeks}
+            recoveryDay={recoveryDay}
+            {...(editing === undefined ? {} : { editing })}
+          />
           <TotalRow label="Total prévu sur la semaine" total={week.total} />
         </>
       ) : (

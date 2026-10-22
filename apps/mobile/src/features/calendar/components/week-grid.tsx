@@ -1,4 +1,10 @@
-import type { CalendarDate, RecoveryDay, SchoolWeeks } from '@alterno/engine';
+import type {
+  CalendarDate,
+  RecoveryDay,
+  SchoolWeeks,
+  WorkRules,
+  WorkedDayInput,
+} from '@alterno/engine';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,15 +13,21 @@ import { COLORS } from '@/shared/theme/colors';
 import { FONTS } from '@/shared/theme/fonts';
 import { RADIUS, SPACING } from '@/shared/theme/spacing';
 
-import {
-  dayBlocks,
-  dayKind,
-  gridHours,
-  recoveryBlocks,
-  type DayBlock,
-  type WeekColumn,
-  type WeekView,
-} from '../week-view';
+import { StretchableDay } from '@/shared/components/stretchable-day';
+import { dayBlocks, type DayBlock } from '@/shared/planning/day-blocks';
+import type { EditedDays } from '@/shared/planning/edited-days';
+import { stretchRanges } from '@/shared/planning/time-drag';
+
+import { isStretchable, stretchGridHours } from '../week-edit';
+import { dayKind, gridHours, recoveryBlocks, type WeekColumn, type WeekView } from '../week-view';
+
+/** Mode « Modifier » : les blocs des jours à venir s'étirent. */
+export interface GridEditing {
+  readonly rules: WorkRules;
+  /** Jours déjà étirés (mis en valeur). */
+  readonly edits: EditedDays;
+  readonly onChange: (date: CalendarDate, times: WorkedDayInput) => void;
+}
 
 const HOUR_HEIGHT = 46;
 
@@ -30,19 +42,25 @@ interface WeekGridProps {
   readonly schoolWeeks: SchoolWeeks;
   /** Horaires du jour de récup du plan (dessinés dans sa colonne), s'il y en a un. */
   readonly recoveryDay: RecoveryDay | null;
+  /** Présent en mode « Modifier ». */
+  readonly editing?: GridEditing;
 }
 
 /**
  * Grille de la semaine au format d'un emploi du temps (EDT EPSI) : une colonne par jour,
  * les heures en vertical, le travail en rouge, la pause en rose clair et le repos compensatoire
  * en vert (style distinct, comme un autre type de cours).
+ * En mode « Modifier », les blocs des jours à venir s'étirent par le haut et par le bas.
  *
- * @param props - Semaine à afficher, date du jour, semaines d'école et horaires du jour de récup
+ * @param props - Semaine à afficher, date du jour, semaines d'école, horaires du jour de récup
+ *   et, en mode « Modifier », de quoi étirer les blocs
  * @returns La grille
  */
-export function WeekGrid({ week, today, schoolWeeks, recoveryDay }: WeekGridProps) {
+export function WeekGrid({ week, today, schoolWeeks, recoveryDay, editing }: WeekGridProps) {
   const router = useRouter();
-  const hours = gridHours(week, recoveryDay);
+  // En modification, la grille couvre toute la journée possible, pour avoir de la place où étirer.
+  const hours =
+    editing === undefined ? gridHours(week, recoveryDay) : stretchGridHours(editing.rules);
   const hourCount = hours.end - hours.start;
   const height = hourCount * HOUR_HEIGHT;
 
@@ -77,12 +95,32 @@ export function WeekGrid({ week, today, schoolWeeks, recoveryDay }: WeekGridProp
         {week.columns.map((column) => {
           const { date, day } = column;
           const kind = dayKind(column, schoolWeeks);
+          if (editing !== undefined && day !== null && isStretchable(date, true, today)) {
+            return (
+              <View key={date.toIsoString()} style={styles.column}>
+                {Array.from({ length: hourCount }, (_, index) => (
+                  <View key={index} style={[styles.hourLine, { top: index * HOUR_HEIGHT }]} />
+                ))}
+                <StretchableDay
+                  day={day.plan}
+                  hours={hours}
+                  height={height}
+                  ranges={stretchRanges(editing.rules, day.plan)}
+                  name={formatShortDate(date)}
+                  highlighted={editing.edits[date.toIsoString()] !== undefined}
+                  onChange={(times) => {
+                    editing.onChange(date, times);
+                  }}
+                />
+              </View>
+            );
+          }
           return (
             // Appui sur un jour planifié : ouvre son détail pour le modifier.
             <Pressable
               key={date.toIsoString()}
               style={({ pressed }) => [styles.column, pressed && styles.columnPressed]}
-              disabled={day === null}
+              disabled={day === null || editing !== undefined}
               accessibilityRole="button"
               accessibilityLabel={`Détail du ${formatShortDate(date)}`}
               onPress={() => {
