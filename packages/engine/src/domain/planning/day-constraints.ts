@@ -5,7 +5,7 @@ import { Duration } from '../time/duration';
 import type { TimeOfDay } from '../time/time-of-day';
 import type { WorkloadBounds } from './pace/workload';
 import { DEFAULT_PLANNING_HABITS, type PlanningHabits } from './planning-habits';
-import type { DayPreferences, PlanningPreferences } from './planning-preferences';
+import type { DayPreferences, FlexibleEnd, PlanningPreferences } from './planning-preferences';
 
 /**
  * Contraintes de chaque jour pour la planification : règles de l'entreprise combinées aux préférences.
@@ -54,6 +54,56 @@ export class DayConstraints {
 
   /**
    * @param day - Jour travaillé
+   * @returns L'heure d'arrivée à ne pas devancer : la plus tardive entre la règle (7h30) et la préférence
+   */
+  earliestArrivalFor(day: Weekday): TimeOfDay {
+    const ruleLimit = this.rules.scheduleFor(day).earliestArrival;
+    const preferred = this.days[day]?.earliestArrival;
+    return preferred?.isAfter(ruleLimit) === true ? preferred : ruleLimit;
+  }
+
+  /**
+   * @param day - Jour travaillé
+   * @returns Le bout de journée qui absorbe les heures en plus ou en moins (le départ par défaut)
+   */
+  flexibleEndFor(day: Weekday): FlexibleEnd {
+    return this.days[day]?.flexibleEnd ?? 'departure';
+  }
+
+  /**
+   * Durée de la pause habituelle du jour, allongée au minimum de l'entreprise si elle est plus courte.
+   *
+   * @param day - Jour travaillé
+   * @returns La durée de pause à prévoir
+   */
+  lunchDurationFor(day: Weekday): Duration {
+    const habitual = this.habitsFor(day).lunchBreak.duration();
+    const minimum = this.rules.minimumLunchBreak;
+    // Une pause habituelle plus courte que le minimum de l'entreprise (45 min) est allongée jusqu'à ce minimum.
+    return habitual.isLessThan(minimum) ? minimum : habitual;
+  }
+
+  /**
+   * Départ d'une journée standard (7h) commencée à l'heure habituelle : c'est lui qui reste fixe
+   * quand l'utilisateur préfère arriver plus tôt plutôt que partir plus tard.
+   *
+   * @param day - Jour travaillé
+   * @returns L'arrivée habituelle + 7h + la pause, ramenée entre la fin de la plage fixe et le départ au plus tard
+   */
+  habitualDepartureFor(day: Weekday): TimeOfDay {
+    const departure = this.habitsFor(day).arrival.plus(
+      this.rules.expectedDailyWork.plus(this.lunchDurationFor(day)),
+    );
+    const earliest = this.rules.scheduleFor(day).earliestDeparture;
+    const latest = this.latestDepartureFor(day);
+    if (departure.isBefore(earliest)) {
+      return earliest;
+    }
+    return departure.isAfter(latest) ? latest : departure;
+  }
+
+  /**
+   * @param day - Jour travaillé
    * @returns L'heure de départ à ne pas dépasser : la plus tôt entre la règle (18h15) et la préférence
    */
   latestDepartureFor(day: Weekday): TimeOfDay {
@@ -70,11 +120,11 @@ export class DayConstraints {
    * @throws {InvalidValueError} Si le jour n'est pas travaillé
    */
   boundsFor(day: Weekday): WorkloadBounds {
-    const schedule = this.rules.scheduleFor(day);
     const expected = this.rules.expectedDailyWork;
     const minimum = this.rules.minimumWorkedTime(day);
-    // Partir plus tôt réduit l'amplitude : arrivée au plus tôt jusqu'au départ choisi, moins la pause minimale.
-    const maximum = schedule.earliestArrival
+    // Arriver plus tard ou partir plus tôt réduit l'amplitude : arrivée au plus tôt jusqu'au départ au plus tard
+    // (préférences comprises), moins la pause minimale.
+    const maximum = this.earliestArrivalFor(day)
       .durationUntil(this.latestDepartureFor(day))
       .minus(this.rules.minimumLunchBreak);
 
@@ -103,6 +153,20 @@ export class DayConstraints {
       throw new InvalidValueError(
         `Le ${label}, la pause habituelle (${lunchBreak.format()}) doit être dans la plage de déjeuner (${window.format()}).`,
       );
+    }
+    const earliestArrival = this.days[day]?.earliestArrival;
+    if (earliestArrival !== undefined) {
+      if (earliestArrival.isBefore(schedule.earliestArrival)) {
+        throw new InvalidValueError(
+          `Le ${label}, l'arrivée au plus tôt (${earliestArrival.format()}) ne peut pas précéder le début de la plage d'arrivée (${schedule.earliestArrival.format()}).`,
+        );
+      }
+      // L'arrivée habituelle sert de point de départ au plan : elle ne peut pas être interdite.
+      if (earliestArrival.isAfter(arrival)) {
+        throw new InvalidValueError(
+          `Le ${label}, l'arrivée au plus tôt (${earliestArrival.format()}) ne peut pas suivre l'arrivée habituelle (${arrival.format()}).`,
+        );
+      }
     }
     const latestDeparture = this.days[day]?.latestDeparture;
     if (latestDeparture?.isBefore(schedule.earliestDeparture) === true) {

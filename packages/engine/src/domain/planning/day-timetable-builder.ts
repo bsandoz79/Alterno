@@ -9,17 +9,18 @@ import type { DayPlan } from './plan';
 /**
  * Transforme un temps de travail en horaires concrets (arrivée, pause, départ) pour un jour donné.
  *
- * Part des habitudes de l'utilisateur pour ce jour et ne s'en écarte que si les règles l'imposent :
- * 1. départ = arrivée habituelle + travail + pause, ramené entre la fin de la plage fixe
- *    et le départ au plus tard (règle ou préférence du jour) ;
- * 2. arrivée recalculée depuis ce départ, sans dépasser le début de la plage fixe du matin ;
- * 3. si la présence dépasse alors le besoin (journée courte), l'excédent allonge la pause,
- *    qui reste dans la plage de déjeuner.
+ * Part des habitudes de l'utilisateur pour ce jour et ne s'en écarte que si les règles l'imposent.
+ * Le bout de journée qui bouge dépend de la préférence du jour :
+ * - partir plus tard (par défaut) : départ = arrivée habituelle + travail + pause, puis arrivée recalculée ;
+ * - arriver plus tôt : arrivée = départ habituel − travail − pause, puis départ recalculé.
+ * Chaque heure reste entre ses bornes (plages de l'entreprise et préférences « au plus tôt / au plus tard ») :
+ * quand un bout est bloqué, l'autre prend le relais. Si la présence dépasse alors le besoin (journée courte),
+ * l'excédent allonge la pause, qui reste dans la plage de déjeuner.
  */
 export class DayTimetableBuilder {
   /**
    * @param rules - Règles horaires de l'entreprise
-   * @param constraints - Contraintes du jour : habitudes et départ au plus tard, préférences comprises
+   * @param constraints - Contraintes du jour : habitudes, bornes et bout de journée qui bouge, préférences comprises
    */
   constructor(
     private readonly rules: WorkRules,
@@ -37,26 +38,28 @@ export class DayTimetableBuilder {
   build(day: Weekday, worked: Duration): DayPlan {
     const schedule = this.rules.scheduleFor(day);
     const habits = this.constraints.habitsFor(day);
-    const habitualBreak = habits.lunchBreak.duration();
-    const minimumBreak = this.rules.minimumLunchBreak;
-    // Une pause habituelle plus courte que le minimum de l'entreprise (45 min) est allongée jusqu'à ce minimum.
-    const breakDuration = habitualBreak.isLessThan(minimumBreak) ? minimumBreak : habitualBreak;
-    const presence = worked.plus(breakDuration);
+    const presence = worked.plus(this.constraints.lunchDurationFor(day));
 
     // On ne peut partir ni avant la fin de la plage fixe (16h00), ni après le départ au plus tard
     // (fin de la plage variable, 18h15, ou plus tôt si l'utilisateur l'a choisi pour ce jour).
-    const departure = clamp(
-      habits.arrival.plus(presence),
-      schedule.earliestDeparture,
-      this.constraints.latestDepartureFor(day),
-    );
-    // Ni arriver après le début de la plage fixe du matin (9h00).
-    const idealArrival = departure.plus(presence.negate());
-    const arrival = idealArrival.isAfter(schedule.latestArrival)
-      ? schedule.latestArrival
-      : idealArrival;
+    const placeDeparture = (wanted: TimeOfDay): TimeOfDay =>
+      clamp(wanted, schedule.earliestDeparture, this.constraints.latestDepartureFor(day));
+    // Ni arriver après le début de la plage fixe du matin (9h00), ni avant l'arrivée au plus tôt
+    // (début de la plage variable, 7h30, ou plus tard si l'utilisateur l'a choisi pour ce jour).
+    const placeArrival = (wanted: TimeOfDay): TimeOfDay =>
+      clamp(wanted, this.constraints.earliestArrivalFor(day), schedule.latestArrival);
 
-    // Arrivée plafonnée : la présence imposée dépasse le travail visé, la pause absorbe la différence.
+    let arrival: TimeOfDay;
+    let departure: TimeOfDay;
+    if (this.constraints.flexibleEndFor(day) === 'arrival') {
+      arrival = placeArrival(this.constraints.habitualDepartureFor(day).plus(presence.negate()));
+      departure = placeDeparture(arrival.plus(presence));
+    } else {
+      departure = placeDeparture(habits.arrival.plus(presence));
+      arrival = placeArrival(departure.plus(presence.negate()));
+    }
+
+    // Bornes atteintes : la présence imposée s'écarte du travail visé, la pause absorbe la différence.
     const lunchDuration = arrival.durationUntil(departure).minus(worked);
     const window = schedule.lunchWindow;
     const lunchStart = clamp(
