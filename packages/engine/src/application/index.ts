@@ -31,4 +31,7 @@ export {
   type ReminderScheduling,
 } from './schedule-departure-reminders';
 export { EditPlanDays, type PlanDaysEdit } from './edit-plan-days';
+export { ArchiveElapsedDays, type ArchiveSources } from './archive-elapsed-days';
+export { ArchivingPlanRepository } from './archiving-plan-repository';
+export { LoadHistory, type Archiving, type LoadedHistory } from './load-history';
 export { ValidatePlan } from './validate-plan';

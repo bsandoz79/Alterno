@@ -1,4 +1,6 @@
 import {
+  ArchiveElapsedDays,
+  ArchivingPlanRepository,
   PlanWithDefaultWeek,
   ScheduleDepartureReminders,
   type ReminderScheduling,
@@ -17,6 +19,8 @@ import { RepositoriesContext } from './repositories-context';
 import { fromExpoDatabase } from './sqlite/expo-sql-database';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
+import { SqliteContractStartRepository } from './sqlite/sqlite-contract-start-repository';
+import { SqliteDayArchiveRepository } from './sqlite/sqlite-day-archive-repository';
 import { SqlitePersonalDataEraser } from './sqlite/sqlite-personal-data-eraser';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
@@ -47,8 +51,9 @@ export function RepositoriesProvider({ children }: { readonly children: ReactNod
 
 /**
  * Crée les dépôts une seule fois à partir de la base ouverte par `SQLiteProvider`.
- * Le dépôt du plan est décoré deux fois : faute de plan validé, il donne la semaine standard
- * (`PlanWithDefaultWeek`), et chaque plan enregistré reprogramme les rappels de départ
+ * Le dépôt du plan est décoré trois fois : faute de plan validé, il donne la semaine standard
+ * (`PlanWithDefaultWeek`), il archive les journées passées avant d'être remplacé (`ArchivingPlanRepository`),
+ * et chaque plan enregistré reprogramme les rappels de départ
  * (cas d'usage `ScheduleDepartureReminders`). Le réglage des rappels, lui, est validé
  * depuis son écran, qui affiche le résultat de la reprogrammation.
  */
@@ -59,11 +64,21 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
     const workRules = new SqliteWorkRulesSettingsRepository(sql);
     const preferences = new SqlitePlanningPreferencesRepository(sql);
     const schoolWeeks = new SqliteSchoolWeeksRepository(sql);
-    const plans = new PlanWithDefaultWeek(
-      new SqlitePlanRepository(sql),
+    const stored = new SqlitePlanRepository(sql);
+    const withDefault = new PlanWithDefaultWeek(
+      stored,
       { workRules, preferences, schoolWeeks },
       systemClock,
     );
+    const archive = new SqliteDayArchiveRepository(sql);
+    // Plan enregistré d'abord, plan affiché ensuite : le plan affiché l'emporte pour une même date.
+    const archiving = new ArchiveElapsedDays(
+      [stored, withDefault],
+      archive,
+      { workRules, schoolWeeks },
+      systemClock,
+    );
+    const plans = new ArchivingPlanRepository(withDefault, archiving);
     const reminders = new SqliteReminderSettingsRepository(sql);
     const notifier = createNotifier();
     const scheduler = new ScheduleDepartureReminders(plans, reminders, notifier, systemClock);
@@ -78,6 +93,9 @@ function SqliteRepositories({ children }: { readonly children: ReactNode }) {
       reminders,
       notifier,
       eraser: new SqlitePersonalDataEraser(sql),
+      archive,
+      contractStart: new SqliteContractStartRepository(sql),
+      archiving,
     };
     return { repositories: all, reschedule: rescheduleReminders };
   }, [db]);

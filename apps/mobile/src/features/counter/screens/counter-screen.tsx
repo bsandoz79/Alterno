@@ -17,7 +17,7 @@ import { useCounter } from '../hooks/use-counter';
 /**
  * Écran « Compteur » : solde d'heures, solde à venir à la fin du plan en cours
  * et recalage sur le solde officiel de Smart RH.
- * Donne aussi accès au réglage du rappel de départ et aux règles horaires.
+ * Donne aussi accès à l'historique des heures, au réglage du rappel de départ et aux règles horaires.
  *
  * @returns L'écran
  */
@@ -32,6 +32,9 @@ export function CounterScreen() {
           <BalanceCard counter={counter} status={status} />
           <BackToZeroLink counter={counter} />
           {upcoming === null ? null : <UpcomingBalanceCard upcoming={upcoming} />}
+          <Link href="/historique" style={styles.settingsLink} accessibilityRole="button">
+            <Text style={styles.settingsTitle}>Historique des heures</Text>
+          </Link>
           <RecalibrateCard
             input={input}
             onChange={setInput}

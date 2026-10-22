@@ -43,6 +43,16 @@ export type {
 } from './planning/planning-preferences';
 export { ImpossiblePlanError } from './planning/impossible-plan-error';
 export { FixedDaysPlanner } from './planning/fixed-days-planner';
+export type { ArchivedDay, ArchivedDayKind } from './history/archived-day';
+export { DayArchiver } from './history/day-archiver';
+export {
+  summarizeHistory,
+  type HistorySummary,
+  type HistoryTotals,
+  type MonthSummary,
+} from './history/history-summary';
+export type { ContractStartRepository } from './ports/contract-start-repository';
+export type { DayArchiveRepository } from './ports/day-archive-repository';
 export { PlanCounterEffect } from './planning/plan-counter-effect';
 export { PlanGenerator } from './planning/plan-generator';
 export { RecoveryPlanner, type RecoveryOutlook } from './planning/recovery-planner';

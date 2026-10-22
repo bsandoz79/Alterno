@@ -9,6 +9,7 @@ import {
   TimeSlot,
   laBrosseEtDupontRules,
   laBrosseEtDupontSettings,
+  type ArchivedDay,
   type DatedPlan,
   type RecoveryPart,
 } from '@alterno/engine';
@@ -17,6 +18,8 @@ import { describe, expect, it } from 'vitest';
 import { SilentNotifier } from '../notifications/silent-notifier';
 import type { PickedDocument } from './annual-calendar-store';
 import { BrowserAnnualCalendarStore } from './browser/browser-annual-calendar-store';
+import { BrowserContractStartRepository } from './browser/browser-contract-start-repository';
+import { BrowserDayArchiveRepository } from './browser/browser-day-archive-repository';
 import { BrowserCounterRepository } from './browser/browser-counter-repository';
 import { BrowserPersonalDataEraser } from './browser/browser-personal-data-eraser';
 import { BrowserPlanRepository } from './browser/browser-plan-repository';
@@ -27,6 +30,8 @@ import { BrowserWorkRulesSettingsRepository } from './browser/browser-work-rules
 import type { Repositories } from './repositories';
 import { migrateDatabase } from './sqlite/migrate-database';
 import { SqliteAnnualCalendarStore } from './sqlite/sqlite-annual-calendar-store';
+import { SqliteContractStartRepository } from './sqlite/sqlite-contract-start-repository';
+import { SqliteDayArchiveRepository } from './sqlite/sqlite-day-archive-repository';
 import { SqliteCounterRepository } from './sqlite/sqlite-counter-repository';
 import { SqlitePersonalDataEraser } from './sqlite/sqlite-personal-data-eraser';
 import { SqlitePlanRepository } from './sqlite/sqlite-plan-repository';
@@ -58,6 +63,9 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         reminders: new SqliteReminderSettingsRepository(db),
         notifier: new SilentNotifier(),
         eraser: new SqlitePersonalDataEraser(db),
+        archive: new SqliteDayArchiveRepository(db),
+        contractStart: new SqliteContractStartRepository(db),
+        archiving: { execute: () => Promise.resolve() },
       };
     },
   ],
@@ -75,6 +83,9 @@ const implementations: readonly [string, () => Promise<Repositories>][] = [
         reminders: new BrowserReminderSettingsRepository(storage),
         notifier: new SilentNotifier(),
         eraser: new BrowserPersonalDataEraser(storage),
+        archive: new BrowserDayArchiveRepository(storage),
+        contractStart: new BrowserContractStartRepository(storage),
+        archiving: { execute: () => Promise.resolve() },
       });
     },
   ],
@@ -455,6 +466,8 @@ describe.each(implementations)('Stockage %s', (_, create) => {
         CalendarDate.fromIsoString('2026-10-21'),
       );
       await repositories.reminders.save(ReminderSettings.disabled());
+      await repositories.archive.save([archivedWorkDay]);
+      await repositories.contractStart.save(CalendarDate.fromIsoString('2026-10-01'));
 
       await repositories.eraser.eraseAll();
 
@@ -465,6 +478,65 @@ describe.each(implementations)('Stockage %s', (_, create) => {
       expect((await repositories.schoolWeeks.load()).mondays()).toEqual([]);
       expect(await repositories.annualCalendar.load()).toBeNull();
       expect((await repositories.reminders.load()).departureLead?.format()).toBe('0h15');
+      expect(await repositories.archive.loadAll()).toEqual([]);
+      expect(await repositories.contractStart.load()).toBeNull();
+    });
+  });
+
+  describe('historique (journées archivées)', () => {
+    it('ne contient rien au départ', async () => {
+      const { archive } = await create();
+
+      expect(await archive.loadAll()).toEqual([]);
+    });
+
+    it('retrouve les journées à l’identique, dans l’ordre des dates', async () => {
+      const { archive } = await create();
+      await archive.save([archivedRecovery, archivedWorkDay]);
+
+      expect(await archive.loadAll()).toEqual([archivedWorkDay, archivedRecovery]);
+    });
+
+    it('remplace une journée de même date (écart déclaré après coup)', async () => {
+      const { archive } = await create();
+      await archive.save([archivedWorkDay]);
+      await archive.save([{ ...archivedWorkDay, worked: Duration.ofHours(9) }]);
+
+      const days = await archive.loadAll();
+      expect(days).toHaveLength(1);
+      expect(days[0]?.worked.format()).toBe('9h');
+    });
+  });
+
+  describe('début du contrat', () => {
+    it('vide au départ, puis retrouvé tel qu’enregistré', async () => {
+      const { contractStart } = await create();
+      expect(await contractStart.load()).toBeNull();
+
+      await contractStart.save(CalendarDate.fromIsoString('2026-10-01'));
+
+      expect((await contractStart.load())?.toIsoString()).toBe('2026-10-01');
     });
   });
 });
+
+/** Journée travaillée archivée, avec ses horaires. */
+const archivedWorkDay: ArchivedDay = {
+  date: CalendarDate.fromIsoString('2026-10-19'),
+  kind: 'work',
+  worked: Duration.ofHours(8, 12),
+  expected: Duration.ofHours(7),
+  times: {
+    arrival: TimeOfDay.of(8, 0),
+    lunchBreak: TimeSlot.between(TimeOfDay.of(12, 15), TimeOfDay.of(13, 0)),
+    departure: TimeOfDay.of(16, 57),
+  },
+};
+
+/** Demi-journée de récup archivée, sans horaires. */
+const archivedRecovery: ArchivedDay = {
+  date: CalendarDate.fromIsoString('2026-10-23'),
+  kind: 'half-recovery',
+  worked: Duration.ofHours(3, 30),
+  expected: Duration.ofHours(7),
+};

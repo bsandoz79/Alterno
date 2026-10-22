@@ -17,7 +17,9 @@ describe('migrateDatabase — schéma de la base locale', () => {
 
     expect(await tablesOf(db)).toEqual([
       'annual_calendar',
+      'contract',
       'counter',
+      'day_archive',
       'plan_day',
       'plan_recovery',
       'planning_preferences',
@@ -32,7 +34,7 @@ describe('migrateDatabase — schéma de la base locale', () => {
     await migrateDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
 
-    expect(version?.user_version).toBe(12);
+    expect(version?.user_version).toBe(13);
   });
 
   it('enregistre la date de chaque journée du plan (version 4)', async () => {

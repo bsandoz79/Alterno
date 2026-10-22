@@ -29,7 +29,7 @@ export function MyDataScreen() {
         />
         <InfoTip
           title="Ce qu’Alterno enregistre"
-          info="Ton plan et ta récup, ton compteur, tes règles horaires et préférences, tes semaines d’école, le calendrier joint et le réglage des notifications."
+          info="Ton plan et ta récup, ton compteur, l’historique de tes journées passées et le début du contrat, tes règles horaires et préférences, tes semaines d’école, le calendrier joint et le réglage des notifications."
         />
       </View>
 

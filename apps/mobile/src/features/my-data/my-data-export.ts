@@ -1,5 +1,6 @@
 import type { CalendarDate } from '@alterno/engine';
 
+import { toArchivedDayRecord, type ArchivedDayRecord } from '@/shared/storage/archived-day-record';
 import { toDayRecord, type DayRecord } from '@/shared/storage/day-record';
 import {
   toPlanRecoveryRecord,
@@ -22,7 +23,15 @@ import {
 /** Dépôts lus pour l'export. */
 export type ExportSources = Pick<
   Repositories,
-  'plans' | 'counter' | 'workRules' | 'preferences' | 'schoolWeeks' | 'annualCalendar' | 'reminders'
+  | 'plans'
+  | 'counter'
+  | 'workRules'
+  | 'preferences'
+  | 'schoolWeeks'
+  | 'annualCalendar'
+  | 'reminders'
+  | 'archive'
+  | 'contractStart'
 >;
 
 /**
@@ -50,6 +59,10 @@ export interface MyDataExport {
     readonly addedOn: string;
   } | null;
   readonly reminders: ReminderSettingsRecord;
+  /** Début du contrat ; `null` s'il n'est pas renseigné. */
+  readonly contractStart: string | null;
+  /** Journées passées gardées pour l'historique. */
+  readonly history: readonly ArchivedDayRecord[];
 }
 
 /**
@@ -63,16 +76,27 @@ export async function exportMyData(
   sources: ExportSources,
   exportedOn: CalendarDate,
 ): Promise<MyDataExport> {
-  const [plan, counter, workRules, preferences, schoolWeeks, calendar, reminders] =
-    await Promise.all([
-      sources.plans.loadCurrent(),
-      sources.counter.load(),
-      sources.workRules.load(),
-      sources.preferences.load(),
-      sources.schoolWeeks.load(),
-      sources.annualCalendar.load(),
-      sources.reminders.load(),
-    ]);
+  const [
+    plan,
+    counter,
+    workRules,
+    preferences,
+    schoolWeeks,
+    calendar,
+    reminders,
+    history,
+    contractStart,
+  ] = await Promise.all([
+    sources.plans.loadCurrent(),
+    sources.counter.load(),
+    sources.workRules.load(),
+    sources.preferences.load(),
+    sources.schoolWeeks.load(),
+    sources.annualCalendar.load(),
+    sources.reminders.load(),
+    sources.archive.loadAll(),
+    sources.contractStart.load(),
+  ]);
   return {
     app: 'Alterno',
     exportedOn: exportedOn.toIsoString(),
@@ -98,5 +122,7 @@ export async function exportMyData(
             addedOn: calendar.addedOn,
           },
     reminders: toReminderSettingsRecord(reminders),
+    contractStart: contractStart?.toIsoString() ?? null,
+    history: history.map(toArchivedDayRecord),
   };
 }

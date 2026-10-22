@@ -14,6 +14,8 @@ const PERSONAL_KEYS = [
   'alterno.schoolWeeks',
   'alterno.annualCalendar',
   'alterno.reminders',
+  'alterno.history',
+  'alterno.contractStart',
 ] as const;
 
 /** Effacement des données enregistrées dans le navigateur (version web). */
